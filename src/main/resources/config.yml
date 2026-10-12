@@ -1,0 +1,160 @@
+# ============================================================
+#  CustomCraft - konfigurace
+#  Po úpravě stačí /recepty reload (není potřeba restart).
+#
+#  Výroba probíhá v menu /recepty (kovárna): hráč vybere recept
+#  a klikne na Proceed, plugin mu z inventáře vezme suroviny.
+#
+#  Sekce "forge" = suroviny pro výrobu v menu (max. 5 různých):
+#      forge:
+#        - { item: DIAMOND, amount: 16 }
+#        - { item: "box:common", amount: 3 }
+#  Surovina může být vanilla materiál nebo jiný custom item
+#  (weapon:<id> / box:<id>). Amount může být i víc než 64.
+#
+#  Volitelně lze přidat i vanilla "recipe" (tvarovaný recept na
+#  crafting stůl), viz README.
+# ============================================================
+
+# Odemknout vanilla "recipe" recepty (pokud nějaké jsou) ve vanilla knížce po připojení
+discover-recipes-on-join: true
+
+menu:
+  # Zapni, až mají hráči nainstalovaný resource pack CustomCraft-pack.
+  # Pozadí menu a průhledné panely/tlačítka se pak vykreslí podle packu.
+  # Bez packu nech false, jinak hráči uvidí v titulku divné znaky.
+  resource-pack: false
+  # Shift + pravý klik prázdnou rukou na crafting stůl otevře menu
+  sneak-click-crafting-table: true
+  title-weapons: "&8Kovárna • Zbraně"
+  title-boxes: "&8Kovárna • Mystery boxy"
+  title-loot: "&8Možná výhra"
+
+messages:
+  prefix: "&8[&6CustomCraft&8] &7"
+  no-permission: "&cNa tohle nemáš oprávnění."
+  player-only: "&cTento příkaz může použít jen hráč."
+  reloaded: "&aKonfigurace načtena (&e{weapons} &azbraní, &e{boxes} &amystery boxů)."
+  unknown-item: "&cNeznámý item '{item}'. Použij weapon:<id> nebo box:<id>."
+  unknown-player: "&cHráč '{player}' není online."
+  given: "&aDáno &e{amount}x &a{item} &ahráči &e{player}&a."
+  forge-select-first: "&cNejdřív vyber recept."
+  forge-missing: "&cNemáš dostatek surovin."
+  forge-crafted: "&aVyrobil jsi {item}&a."
+  box-already-opening: "&cJiž otevíráš jednu bednu."
+  box-empty: "&cTahle bedna nemá nastavenou žádnou výhru."
+  box-reward: "&aZískal jsi: &f{item} &7x{amount}"
+  box-broadcast: "&6{player} &7otevřel {box} &7a vyhrál &f{item}&7!"
+  usage: "&7Použití: &e/recepty [reload | give <hráč> <weapon:id|box:id> [počet]]"
+
+# ------------------------------------------------------------
+#  ZBRANĚ
+#  attack-damage / attack-speed jsou CELKOVÉ hodnoty (jako v tooltipu).
+#  Vanilla meč: damage 7-9, speed 1.6; sekera: speed 0.9-1.1
+#  Jména enchantů: minecraft názvy malými písmeny (sharpness, fire_aspect, ...)
+# ------------------------------------------------------------
+weapons:
+  flame_sword:
+    material: NETHERITE_SWORD
+    name: "&6Plamenný meč"
+    lore:
+      - "&7Meč vykovaný v ohni Netheru."
+      - "&cZapaluje nepřátele."
+    custom-model-data: 1001
+    unbreakable: true
+    attack-damage: 10
+    attack-speed: 1.8
+    enchants:
+      sharpness: 5
+      fire_aspect: 2
+    forge:
+      - { item: NETHERITE_SWORD, amount: 1 }
+      - { item: BLAZE_ROD, amount: 16 }
+      - { item: DIAMOND_BLOCK, amount: 4 }
+      - { item: NETHER_STAR, amount: 1 }
+
+  frost_axe:
+    material: DIAMOND_AXE
+    name: "&bLedová sekera"
+    lore:
+      - "&7Chladná jako severní vítr."
+    custom-model-data: 1002
+    enchants:
+      sharpness: 4
+      efficiency: 5
+      unbreaking: 3
+    forge:
+      - { item: DIAMOND_AXE, amount: 1 }
+      - { item: BLUE_ICE, amount: 32 }
+      - { item: PACKED_ICE, amount: 64 }
+
+  thunder_bow:
+    material: BOW
+    name: "&eBouřkový luk"
+    lore:
+      - "&7Šípy sviští jako blesk."
+    custom-model-data: 1003
+    unbreakable: true
+    enchants:
+      power: 5
+      infinity: 1
+    forge:
+      - { item: BOW, amount: 1 }
+      - { item: LIGHTNING_ROD, amount: 8 }
+      - { item: COPPER_BLOCK, amount: 16 }
+      - { item: STRING, amount: 32 }
+
+# ------------------------------------------------------------
+#  MYSTERY BOXY (shulker boxy)
+#  color: NONE (fialový základní) nebo vanilla barva: WHITE, GRAY, RED, BLUE, ...
+#  loot: item (vanilla materiál / weapon:id / box:id), amount, weight, broadcast
+#  Šance = weight / součet všech weightů v dané bedně.
+#  Otevírá se pravým klikem s bednou v ruce.
+# ------------------------------------------------------------
+boxes:
+  common:
+    color: GRAY
+    name: "&7Obyčejná bedna"
+    lore:
+      - "&7Pravý klik pro otevření."
+    forge:
+      - { item: IRON_INGOT, amount: 32 }
+      - { item: CHEST, amount: 4 }
+    loot:
+      - { item: IRON_INGOT, amount: 16, weight: 40 }
+      - { item: GOLD_INGOT, amount: 8, weight: 30 }
+      - { item: DIAMOND, amount: 2, weight: 20 }
+      - { item: GOLDEN_APPLE, amount: 2, weight: 8 }
+      - { item: "weapon:frost_axe", amount: 1, weight: 2, broadcast: true }
+
+  rare:
+    color: BLUE
+    name: "&9Vzácná bedna"
+    lore:
+      - "&7Pravý klik pro otevření."
+      - "&9Vzácnější výhry než obyčejná."
+    forge:
+      - { item: "box:common", amount: 3 }
+      - { item: DIAMOND, amount: 16 }
+    loot:
+      - { item: DIAMOND, amount: 8, weight: 35 }
+      - { item: EMERALD, amount: 16, weight: 30 }
+      - { item: ENCHANTED_GOLDEN_APPLE, amount: 1, weight: 15 }
+      - { item: "weapon:thunder_bow", amount: 1, weight: 12, broadcast: true }
+      - { item: "weapon:flame_sword", amount: 1, weight: 8, broadcast: true }
+
+  legendary:
+    color: ORANGE
+    name: "&6&lLegendární bedna"
+    lore:
+      - "&7Pravý klik pro otevření."
+      - "&6Šance na nejlepší zbraně."
+    forge:
+      - { item: "box:rare", amount: 3 }
+      - { item: NETHERITE_INGOT, amount: 8 }
+    loot:
+      - { item: NETHERITE_INGOT, amount: 4, weight: 40 }
+      - { item: NETHER_STAR, amount: 1, weight: 20 }
+      - { item: TOTEM_OF_UNDYING, amount: 1, weight: 15 }
+      - { item: "weapon:flame_sword", amount: 1, weight: 15, broadcast: true }
+      - { item: "weapon:thunder_bow", amount: 1, weight: 10, broadcast: true }
