@@ -274,7 +274,7 @@ public final class MenuManager implements Listener {
             return;
         }
         switch (slot) {
-            case CANCEL_A, CANCEL_B -> Bukkit.getScheduler().runTask(plugin, player::closeInventory);
+            case CANCEL_A, CANCEL_B -> Bukkit.getScheduler().runTask(plugin, () -> player.closeInventory());
             case PREV -> {
                 if (h.page > 0) {
                     h.page--;
