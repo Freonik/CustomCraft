@@ -34,9 +34,10 @@
 
 ## Features
 
-- **5 legendary weapons** with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
-- **4 relics**, armor and off-hand items inspired by MOBA items (stasis, revive, thorns, a heart that keeps growing)
-- **9 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
+- **7 legendary weapons** with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
+- **5 relics**, armor and off-hand items inspired by MOBA items (stasis, revive, thorns, a heart that keeps growing, grey health)
+- **Tank builds**: some abilities scale with your **max HP**, so they get stronger with Heartsteel Core
+- **12 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
 - **Forge rituals**: forging takes 15 minutes on a crafting table and the location is revealed step by step
 - **One of each**: every weapon and relic can exist only once per server
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
@@ -56,8 +57,9 @@
    `plugins/CustomCraft/config.yml`.
 4. Run `/forge reload` after any config change. No restart needed.
 
-> **Updating:** when the default config changes between versions, delete `plugins/CustomCraft/config.yml` so the new one is
-> generated. Your forged items and running rituals are kept in `data.yml`.
+> **Updating:** just replace the jar. New weapons, relics, materials and messages are added to your existing `config.yml`
+> automatically (your own changes stay). Entries you delete on purpose are remembered and not added back.
+> Your forged items and running rituals are kept in `data.yml`.
 
 ---
 
@@ -140,13 +142,33 @@ On-hit effects need a **charged** hit (no spam-clicking).
 | F | **Crescent** (12 s): spin attack, 8 damage around you, +1 heart per enemy hit |
 | Shift + F | **Hydra's Wrath** (45 s): 6 s of Haste II, Strength I and Speed I; Cleave hits twice as hard |
 
+### Butcher's Cleaver (axe)
+| | |
+|---|---|
+| Passive | below 30 % HP you regenerate 1.5 % of your max HP per second |
+| On hit | **Blunt Force**: +0.6 damage for every heart *you* are missing (max +6) |
+| F | **Cleaver Toss** (8 s, costs 1 heart): the cleaver flies 18 blocks and hits for 4 + 15 % of the target's *current* health (max 16) with Slowness II. A hit heals you 5 % of your max HP and refunds half the cooldown |
+| Shift + F | **Bloodrush** (70 s): pay 10 % of your current health, then regenerate **40 % of your max HP** over 10 s with Speed II; debuffs don't stick |
+
+### Abyssal Maw (sword)
+| | |
+|---|---|
+| On hit | **Taste**: charged hits (and the tongue) stack Taste on the target, max 3, for 6 s |
+| F | **Tongue Lash** (10 s): a tongue grabs the first enemy, deals 3 + 4 % of your max HP, slows it and **yanks it to you**. Reach is 8 blocks **+0.25 per HP above 20** (max 20), so it grows with Heartsteel |
+| Shift + F | **Devour** (45 s): swallow what you look at. **A player ally**: hidden and untouchable inside you for 4 s (they can sneak out). **An enemy with 3 Taste**: trapped and blinded for 2 s, then spat out far for 6 + 5 % of your max HP |
+
+> **Max HP scaling.** Cleaver Toss, Bloodrush, Tongue Lash and Devour use your *max* health, so Heartsteel Core
+> (up to +10 hearts) and Health Boost make them stronger. Example for Tongue Lash: 20 HP → 8 blocks,
+> 40 HP (full Heartsteel) → 13 blocks.
+
 ---
 
 ## Relics
 
 <p align="center"><img src="docs/relics.gif" alt="Relics"></p>
 
-Relics only work in their own slot. You can combine **one off-hand relic**, **one chestplate** and **one pair of boots**.
+Relics only work in their own slot. You can combine **one off-hand relic**, **one chestplate**, **one pair of leggings**
+and **one pair of boots**.
 
 | Relic | Slot | Effect |
 |---|---|---|
@@ -154,6 +176,7 @@ Relics only work in their own slot. You can combine **one off-hand relic**, **on
 | **Angel's Wings** | boots | When you would die, you come back with 50 % HP and 3 s of protection (600 s cooldown). Half fall damage |
 | **Thorn Plate** | chestplate | Reflects 2 + 25 % of melee damage; attackers get **Grievous Wounds** (no healing for 3 s) |
 | **Heartsteel Core** | chestplate | A charged hit on a player or big mob deals bonus damage and **permanently** adds max HP (up to +10 hearts, stored on the item) |
+| **Thick Hide** | leggings | 40 % of the damage you take becomes **grey health** that is lost over ~3 s (up to 50 % of your max HP). **Double-tap Shift** to shrug the grey health off so you never lose it (20 s cooldown) |
 
 - Cooldowns and Heartsteel stacks are stored on the item itself.
 - The armor relics have their own look when worn and small particle effects
@@ -181,6 +204,9 @@ Every weapon and relic needs one legendary material. **Nothing is guaranteed**: 
 | Seraph Feather | Ender Dragon 45 % · Phantom above Y 200, 2 % | Angel's Wings |
 | Thornheart Seed | Jungle Temple chests 8 % · Ravager 4 % | Thorn Plate |
 | Crimson Heart | Wither 25 % · Piglin Brute 3 % | Heartsteel Core |
+| Ravenous Marrow | Zoglin 6 % · Hoglin 2 % · Bastion hoglin stable chests 6 % | Butcher's Cleaver |
+| Abyssal Lure | Drowned 1 % · big Underwater Ruin chests 5 % · Shipwreck treasure 4 % | Abyssal Maw |
+| Behemoth Hide | Warden 20 % · Woodland Mansion chests 6 % | Thick Hide |
 
 - Mob drops only count when a **player** kills the mob (no farms). Looting helps a little, but the 45 % cap stays.
 - The material drops on the ground, glowing, and can't burn, blow up or despawn.
@@ -271,9 +297,9 @@ weapons:
 
 | | Types |
 |---|---|
-| Active abilities | `REWIND`, `RESONANCE`, `GRAVITY_ANCHOR`, `UPHEAVAL`, `MIRROR_SHOT`, `HEX_MARK`, `SOUL_LINK`, `HARVEST`, `CRESCENT`, `FRENZY` |
-| On-hit effects | `ECHO`, `CRUSH`, `RICOCHET`, `SOUL`, `LIFESTEAL`, `CLEAVE` |
-| Relic types | `STASIS`, `REVIVE`, `THORNS`, `HEARTSTEEL` (slots: `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`) |
+| Active abilities | `REWIND`, `RESONANCE`, `GRAVITY_ANCHOR`, `UPHEAVAL`, `MIRROR_SHOT`, `HEX_MARK`, `SOUL_LINK`, `HARVEST`, `CRESCENT`, `FRENZY`, `CLEAVER_TOSS`, `BLOODRUSH`, `TONGUE_LASH`, `DEVOUR` |
+| On-hit effects | `ECHO`, `CRUSH`, `RICOCHET`, `SOUL`, `LIFESTEAL`, `CLEAVE`, `BLUNT_FORCE`, `TASTE` |
+| Relic types | `STASIS`, `REVIVE`, `THORNS`, `HEARTSTEEL`, `THICK_HIDE` (slots: `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`) |
 | Material drops | `{ mob: WARDEN, chance: 35 }`, `{ loot-table: chests/ancient_city, chance: 3 }`, optional `biomes`, `min-y`, `max-y` |
 
 ---
@@ -301,7 +327,7 @@ The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it 
 
 **Local testing:** drop the zip into `.minecraft/resourcepacks`, enable it in the game, and set `menu.resource-pack: true`.
 
-Custom model data used by the pack: weapons `1001-1005`, relics `1201-1204`, materials `1301-1309`, menu icons `9000-9021`.
+Custom model data used by the pack: weapons `1001-1004`, `1006`, `1007`, `1205`, relics `1201-1204` and `1206`, materials `1301-1312`, menu icons `9000-9021`.
 
 ---
 
