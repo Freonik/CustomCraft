@@ -1,0 +1,23 @@
+name: CustomCraft
+version: ${project.version}
+main: cz.customcraft.CustomCraft
+api-version: '1.21'
+description: Legendary one-of-a-kind weapons and relics with abilities, legendary materials and forge rituals
+authors: [ filip ]
+
+commands:
+  forge:
+    description: Forge info and admin tools (the menu opens from a crafting table)
+    usage: /<command> [reload|status|give|release|finish]
+    aliases: [recipes, recepty]
+
+permissions:
+  customcraft.use:
+    description: Use the forge at a crafting table and open mystery crates
+    default: true
+  customcraft.nocooldown:
+    description: Weapon abilities without cooldowns (for testing)
+    default: false
+  customcraft.admin:
+    description: /forge reload, give, status, release and finish
+    default: op
