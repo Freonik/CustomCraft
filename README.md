@@ -318,10 +318,10 @@ The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it 
 **Setup on a server**
 1. Copy the two lines from the release notes into `server.properties`:
    ```properties
-   resource-pack=https://github.com/<owner>/<repo>/releases/download/latest/CustomCraft-pack.zip
+   resource-pack=https://github.com/<owner>/<repo>/releases/latest/download/CustomCraft-pack.zip
    resource-pack-sha1=<sha1 from the release notes>
    ```
-   The `latest` link never changes. Only update the SHA1 when the pack itself changed (the release notes always show the current one).
+   This link never changes, it always points to the newest release. Only update the SHA1 when the pack itself changed (the release notes always show the current one).
    Optionally add `require-resource-pack=true`.
 2. Set `menu.resource-pack: true` in the plugin config and run `/forge reload`.
 
@@ -346,7 +346,7 @@ The plugin ends up in `target/CustomCraft.jar`.
 
 | You do | You get |
 |---|---|
-| push to `main` / `master` | the **`latest`** release is replaced with the new `CustomCraft.jar` + `CustomCraft-pack.zip` |
+| push to `main` / `master` | a new release `v<version>-build.<n>` marked **Latest**, with `CustomCraft.jar` + `CustomCraft-pack.zip` |
 | push a tag like `v1.9.0` (`git tag v1.9.0 && git push origin v1.9.0`) | a permanent release **v1.9.0** with both files and a changelog |
 | any build | both files are also attached to the workflow run as an artifact |
 
