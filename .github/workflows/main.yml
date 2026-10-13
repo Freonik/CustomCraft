@@ -1,0 +1,110 @@
+name: Build plugin
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create releases
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build plugin
+        run: mvn -B clean package
+
+      - name: Zip resource pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          # find the folder that holds pack.mcmeta AND assets/ (wherever it is in the repo)
+          PACK_DIR=""
+          while IFS= read -r meta; do
+            dir=$(dirname "$meta")
+            if [ -d "$dir/assets" ]; then PACK_DIR="$dir"; break; fi
+          done < <(find . -path ./target -prune -o -path ./.git -prune -o -name pack.mcmeta -print | sort)
+          if [ -z "$PACK_DIR" ]; then
+            echo "::error::No folder with both pack.mcmeta and assets/ found in the repository"
+            find . -path ./.git -prune -o -maxdepth 3 -print
+            exit 1
+          fi
+          echo "Resource pack folder: $PACK_DIR"
+
+          # fixed timestamps + sorted order = the same SHA1 as long as the pack doesn't change
+          find "$PACK_DIR" -exec touch -h -t 202001010000 {} +
+          mkdir -p target
+          OUT="$PWD/target/CustomCraft-pack.zip"
+          rm -f "$OUT"
+          (cd "$PACK_DIR" && find . -type f ! -name '.*' | sed 's|^\./||' | sort | zip -X -D "$OUT" -@)
+
+          LIST=$(unzip -Z1 "$OUT")
+          COUNT=$(printf '%s\n' "$LIST" | wc -l)
+          echo "Files in the pack: $COUNT"
+          printf '%s\n' "$LIST" | cut -d/ -f1-2 | sort -u
+          if [ "$COUNT" -lt 20 ] || [[ "$LIST" != *"assets/customcraft/"* ]]; then
+            echo "::error::The resource pack zip looks incomplete ($COUNT files)"
+            exit 1
+          fi
+
+          echo "PACK_SHA1=$(sha1sum "$OUT" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          echo "VERSION=$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)" >> "$GITHUB_ENV"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CustomCraft-${{ env.VERSION }}
+          path: |
+            target/CustomCraft.jar
+            target/CustomCraft-pack.zip
+
+      - name: Write release notes
+        run: |
+          cat > notes.md <<NOTES
+          **CustomCraft ${VERSION}** for Paper 1.21.11 (Java 21)
+
+          - \`CustomCraft.jar\` - put it into \`plugins/\`
+          - \`CustomCraft-pack.zip\` - the resource pack
+
+          For \`server.properties\`:
+          \`\`\`
+          resource-pack=https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/CustomCraft-pack.zip
+          resource-pack-sha1=${PACK_SHA1}
+          \`\`\`
+
+          Built from commit ${GITHUB_SHA::7}.
+          NOTES
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || 'latest' }}
+
+      - name: Publish the "latest" release (every push to main)
+        if: github.ref_type == 'branch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest target/CustomCraft.jar target/CustomCraft-pack.zip \
+            --target "$GITHUB_SHA" \
+            --title "CustomCraft ${VERSION} (latest build)" \
+            --notes-file notes.md \
+            --latest
+
+      - name: Publish a versioned release (tags like v1.9.0)
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" target/CustomCraft.jar target/CustomCraft-pack.zip \
+            --title "CustomCraft $GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            --generate-notes
