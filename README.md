@@ -34,11 +34,11 @@
 
 ## Features
 
-- **14 legendary weapons and tools** (swords, axes, a mace, a bow, a crossbow, a spear, a trident, a pickaxe...) with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
+- **13 legendary weapons and tools** (swords, axes, a bow, a crossbow, a spear, a trident, a pickaxe...) with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
 - **7 relics** for every slot: helmet, chestplate, leggings, boots and off-hand (stasis, revive, thorns,
   a growing heart, grey health, soul focus, a parrying shield)
 - **Tank builds**: some abilities scale with your **max HP**, so they get stronger with Heartsteel Core
-- **21 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
+- **20 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
 - **Forge rituals**: forging takes 15 minutes on a crafting table and the location is revealed step by step
 - **One of each**: every weapon and relic can exist only once per server
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
@@ -173,23 +173,6 @@ On-hit effects need a **charged** hit (no spam-clicking).
 | F | **Silk Dart** (8 s): throw the needle on a thread (16 blocks); it stabs the first enemy for 4 and pulls you to it, or to the block it hits |
 | Shift + F | **Thread Storm** (40 s): spin in a storm of silk for 3 s, 1.5 damage to everyone within 3.5 blocks every ¼ s; you float while in the air |
 
-### Knightfall (mace)
-> **Not obtainable yet:** it's ready in the config, but `craftable: false` keeps it out of the forge and its material
-> doesn't drop. Admins can hand it out with `/forge give <player> weapon:knightfall`.
-
-Levels up with every **player kill** (counted on the item, shown in the lore and the action bar).
-
-| Kills | Unlocks |
-|---|---|
-| 2 | **Wind Burst** can be added (anvil / enchanting table) |
-| 4 | **F – Grappling Hook** (3 charges, then 10 s): hook a block and pull yourself to it; reach the end of the chain in time and you leap |
-| 6 | **Speed II** while held |
-| 8 | **Density** or **Breach** can be added |
-| 10 | **Shift + F – Hammer Throw** (30 s): throw the hammer, 12 damage, and it pulls the enemy to you |
-
-6 attack damage, 0.6 attack speed, unbreakable. An optional `CLOAK` on-hit (10 % chance to turn truly invisible for 3 s)
-is in the config, commented out.
-
 ### Rimebreaker (war axe)
 | | |
 |---|---|
@@ -277,7 +260,6 @@ Every weapon and relic needs one legendary material. **Nothing is guaranteed**: 
 | Carapace Shard | Shulker 3 % · End City chests 5 % | Stitchguard |
 | Deepsteel Claw | Dungeon chests 6 % · Trial Chamber corridor chests 3 % | Clawline Pick |
 | Weaver's Silk | Cave Spider 2 % · Spider 1 % · Mineshaft chests 4 % | Silk Needle |
-| Fallen Crest | Vindicator 3 % · Bastion treasure chests 6 % *(off until Knightfall is forgeable)* | Knightfall |
 | Rime Core | Stray 2 % · Igloo chests 12 % | Rimebreaker |
 | Hunter's Bolt | Pillager 2 % · Pillager Outpost chests 6 % | Pinning Repeater |
 | Valkyrie Plume | Vex 2 % · Village weaponsmith chests 4 % | Valkyrie's Lance |
@@ -402,7 +384,7 @@ The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it 
 
 **Local testing:** drop the zip into `.minecraft/resourcepacks`, enable it in the game, and set `menu.resource-pack: true`.
 
-Custom model data used by the pack: weapons `1001-1004`, `1006-1015`, `1205`, relics `1201-1204`, `1206-1208`, materials `1301-1321`, menu icons `9000-9021`.
+Custom model data used by the pack: weapons `1001-1004`, `1006-1009`, `1011-1015`, `1205`, relics `1201-1204`, `1206-1208`, materials `1301-1321`, menu icons `9000-9021`.
 
 ---
 
@@ -417,7 +399,7 @@ mvn clean package
 The plugin ends up in `target/CustomCraft.jar`.
 
 ### Automatic releases (GitHub Actions)
-[`.github/workflows/build.yml`](.github/workflows/build.yml) builds the plugin and zips the resource pack on every push:
+[`.github/workflows/main.yml`](.github/workflows/main.yml) builds the plugin and zips the resource pack on every push:
 
 | You do | You get |
 |---|---|
