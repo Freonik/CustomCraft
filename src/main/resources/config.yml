@@ -1032,7 +1032,9 @@ relics:
       target-cooldown: 30
       health-per-stack: 1
       max-bonus-health: 20
-      description: ["A charged hit on a player or big mob", "deals 3 + 5% of your max HP and", "PERMANENTLY grows your max HP", "(+½ heart, up to +10 hearts).", "Once per target every 30s."]
+      # true = big mobs (20+ max HP) also trigger it and grow your max HP
+      stack-from-mobs: false
+      description: ["A charged hit on a player deals", "3 + 5% of your max HP and", "PERMANENTLY grows your max HP", "(+½ heart, up to +10 hearts).", "Once per player every 30s."]
     forge:
       - { item: NETHERITE_CHESTPLATE, amount: 1 }
       - { item: HEART_OF_THE_SEA, amount: 1 }

@@ -80,6 +80,14 @@ public final class WeaponAbilities {
             return def;
         }
 
+        public boolean b(String key, boolean def) {
+            Object value = values.get(key);
+            if (value instanceof Boolean bool) {
+                return bool;
+            }
+            return value == null ? def : Boolean.parseBoolean(String.valueOf(value));
+        }
+
         public int i(String key, int def) {
             return (int) Math.round(d(key, def));
         }

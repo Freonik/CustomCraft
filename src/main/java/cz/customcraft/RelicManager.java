@@ -579,7 +579,9 @@ public final class RelicManager implements Listener {
 
         // Heartsteel Core: big hit on a worthy target, grows your max HP for good
         ItemManager.Entry heart = equipped(player, Relic.Type.HEARTSTEEL);
-        if (heart != null && (victim instanceof Player || maxHealth(victim) >= 20)) {
+        // only players count (stack-from-mobs: true lets big mobs with 20+ max HP count too)
+        if (heart != null && (victim instanceof Player
+                || (heart.relic.params().b("stack-from-mobs", false) && maxHealth(victim) >= 20))) {
             long now = System.currentTimeMillis();
             Map<UUID, Long> ready = heartsteel.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>());
             Long until = ready.get(victim.getUniqueId());
