@@ -24,6 +24,7 @@
 - [Weapons](#weapons)
 - [Relics](#relics)
 - [Legendary materials](#legendary-materials)
+- [Advancements](#advancements)
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
 - [Resource pack](#resource-pack)
@@ -40,6 +41,7 @@
 - **Forge rituals**: forging takes 15 minutes on a crafting table and the location is revealed step by step
 - **One of each**: every weapon and relic can exist only once per server
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
+- **Advancements**: a CustomCraft tab in the advancements screen, with toasts, chat messages and rewards
 - **Resource pack** with animated textures, custom worn armor, particles and a themed menu
 - **Fully configurable**: numbers, cooldowns, drop chances, ritual length, messages, on/off switches
 
@@ -266,6 +268,36 @@ Every weapon and relic needs one legendary material. **Nothing is guaranteed**: 
   The **Ender Dragon**'s drop rises out of the dragon and spirals down onto the egg pillar.
 - Every find is announced to the server.
 - Materials can't be placed, eaten, traded, brewed, smelted or used in vanilla crafting.
+
+---
+
+## Advancements
+
+CustomCraft adds its own tab to the advancements screen (**L**). They are real Minecraft advancements:
+a toast pops up, the chat announces it, and progress is saved with the player. Challenges give XP like vanilla ones.
+
+| | Advancement | How to get it |
+|---|---|---|
+| <img src="docs/items/echo_blade.png" width="40" alt=""> | **CustomCraft** | open the forge |
+| <img src="docs/items/crimson_heart.png" width="40" alt=""> | **Legendary Find** | find a legendary material |
+| <img src="docs/items/chrono_sand.png" width="40" alt=""> | **Hoarder** | find 5 different legendary materials |
+| <img src="docs/items/seraph_feather.png" width="40" alt=""> | **Dragon's Gift** | find a Seraph Feather |
+| <img src="docs/items/graviton_hammer.png" width="40" alt=""> | **Forgemaster** | finish a forge ritual |
+| <img src="docs/items/hex_bow.png" width="40" alt=""> | **Finders Keepers** | pick up a legendary item someone else forged |
+| <img src="docs/items/hydra_edge.png" width="40" alt=""> | **Arsenal** | carry 3 legendary items at once |
+| <img src="docs/items/echo_blade.png" width="40" alt=""> | **Not Today** | Rewind away from death with less than 2 hearts |
+| <img src="docs/items/graviton_hammer.png" width="40" alt=""> | **Hammer Time** | slam someone for 20+ damage with the Graviton Hammer |
+| <img src="docs/items/abyssal_maw.png" width="40" alt=""> | **Swallowed Whole** | Devour an enemy |
+| <img src="docs/items/rimebreaker.png" width="40" alt=""> | **Ice Cold** | kill something you froze with the Rimebreaker |
+| <img src="docs/items/great_sea_trident.png" width="40" alt=""> | **Riptide Anywhere** | use Tidal Surge without water or rain |
+| <img src="docs/items/angels_wings.png" width="40" alt=""> | **Saved by an Angel** | let Angel's Wings bring you back from death |
+| <img src="docs/items/stasis_hourglass.png" width="40" alt=""> | **Frozen in Time** | survive a deadly hit inside the Stasis Hourglass |
+| <img src="docs/items/heartsteel_core.png" width="40" alt=""> | **Heart of Steel** | grow the Heartsteel Core to its full size *(challenge, 50 XP)* |
+| <img src="docs/items/stitchguard.png" width="40" alt=""> | **Perfect Parry** | parry 10 hits with the Stitchguard *(challenge, 50 XP)* |
+
+*Some advancements are hidden until someone earns them...*
+
+Turn them all off with `advancements.enabled: false` in the config.
 
 ---
 

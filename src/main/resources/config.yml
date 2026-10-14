@@ -917,6 +917,10 @@ weapons:
       - { item: GOLD_BLOCK, amount: 8 }
       - { item: "material:sea_kings_doubloon", amount: 1 }
 
+# CustomCraft advancement tab (toasts, chat messages, XP for challenges)
+advancements:
+  enabled: true
+
 # Small visual effects for worn relics (wing feathers at the ankles, heartbeat, spores)
 relic-settings:
   particles: true
