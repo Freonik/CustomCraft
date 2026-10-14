@@ -419,6 +419,9 @@ public final class RelicManager implements Listener {
         if (event.getEntity() instanceof Player player && inStasis(player)
                 && event.getCause() != EntityDamageEvent.DamageCause.VOID
                 && event.getCause() != EntityDamageEvent.DamageCause.KILL) {
+            if (event.getFinalDamage() >= player.getHealth() + player.getAbsorptionAmount()) {
+                plugin.award(player, "frozen_in_time");
+            }
             event.setCancelled(true);
         }
     }
@@ -454,6 +457,7 @@ public final class RelicManager implements Listener {
         }
         event.setCancelled(false);
         startCooldown(player, entry);
+        plugin.award(player, "saved_by_an_angel");
         double heal = entry.relic.params().d("heal-percent", 50) / 100.0;
         int protect = entry.relic.params().i("protection-seconds", 3);
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -607,6 +611,9 @@ public final class RelicManager implements Listener {
         EquipmentSlot slot = entry.relic.slot().equipment;
         ItemStack stack = player.getInventory().getItem(slot);
         double bonus = Math.min(p.d("max-bonus-health", 20), heartBonus(stack) + p.d("health-per-stack", 1));
+        if (bonus >= p.d("max-bonus-health", 20)) {
+            plugin.award(player, "heart_of_steel");
+        }
         ItemMeta meta = stack.getItemMeta();
         int stacks = meta.getPersistentDataContainer().getOrDefault(stacksKey, PersistentDataType.INTEGER, 0) + 1;
         meta.getPersistentDataContainer().set(stacksKey, PersistentDataType.INTEGER, stacks);
@@ -783,6 +790,9 @@ public final class RelicManager implements Listener {
         world.spawnParticle(Particle.DUST, at, 20, 0.4, 0.4, 0.4, 0, SILK);
         player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, p.i("protect-ticks", 12), 4, false, false, true));
         player.sendActionBar(plugin.raw("relic-parry", "&f✦ Parry!"));
+        if (plugin.advancements() != null) {
+            plugin.advancements().parried(player);
+        }
         if (attacker == null || attacker.equals(player) || attacker.getWorld() != world
                 || attacker.getLocation().distanceSquared(player.getLocation()) > p.d("counter-range", 6) * p.d("counter-range", 6)) {
             return;

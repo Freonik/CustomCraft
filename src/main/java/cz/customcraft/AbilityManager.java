@@ -158,6 +158,8 @@ public final class AbilityManager implements Listener {
     /** player -> Pin Bolt armed until; entity -> pinned until */
     private final Map<UUID, Long> pinArmed = new HashMap<>();
     private final Map<UUID, Long> pinned = new HashMap<>();
+    /** entity -> who froze it with the Rimebreaker (Ice Cold) */
+    private final Map<UUID, FrozenBy> frozenBy = new HashMap<>();
     /** player -> Cloak (true invisibility) until */
     private final Map<UUID, Long> cloaked = new HashMap<>();
     /** player -> "Sea King" (Great Tide) until */
@@ -180,6 +182,8 @@ public final class AbilityManager implements Listener {
     private record Taste(int stacks, int max, long expires) { }
 
     private record Landing(float distance, long time) { }
+
+    private record FrozenBy(UUID player, long until) { }
 
     private static final class Swallow {
         final UUID devourer;
@@ -321,6 +325,7 @@ public final class AbilityManager implements Listener {
                 }
             }
             bloodrush.values().removeIf(t -> t < now);
+            frozenBy.values().removeIf(f -> f.until() < now);
             pinArmed.values().removeIf(t -> t < now);
             seaKing.values().removeIf(t -> t < now);
             mirrorArmed.values().removeIf(t -> t < now);
@@ -580,12 +585,16 @@ public final class AbilityManager implements Listener {
         world.spawnParticle(Particle.SCULK_SOUL, from.clone().add(0, 1, 0), 15, 0.3, 0.6, 0.3, 0.02);
         world.playSound(from, Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 1f, 1.6f);
 
+        double before = player.getHealth();
         player.teleport(to);
         player.setFallDistance(0);
         player.setFireTicks(0);
         double restore = Math.min(maxHealth(player), found.health());
         if (restore > player.getHealth()) {
             player.setHealth(player.getHealth() + heal(player, restore - player.getHealth()));
+        }
+        if (before < 4 && player.getHealth() > before) {
+            plugin.award(player, "not_today");
         }
         history.remove(player.getUniqueId()); // no chaining through older echoes
 
@@ -1269,6 +1278,9 @@ public final class AbilityManager implements Listener {
                 victim.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, ticks + 20, 0, false, false, false));
                 victim.sendActionBar(plugin.raw("ability-devoured-enemy", "&4You've been devoured!"));
             }
+        }
+        if (!ally) {
+            plugin.award(player, "swallowed_whole");
         }
         s.task = Bukkit.getScheduler().runTaskTimer(plugin, () -> devourTick(s), 1L, 1L);
         return true;
@@ -2061,7 +2073,8 @@ public final class AbilityManager implements Listener {
         BukkitTask task;
     }
 
-    private void freeze(LivingEntity target, Params p) {
+    private void freeze(Player source, LivingEntity target, Params p) {
+        frozenBy.put(target.getUniqueId(), new FrozenBy(source.getUniqueId(), System.currentTimeMillis() + 6000));
         target.setFreezeTicks(Math.max(target.getFreezeTicks(), p.i("freeze-ticks", 160)));
         target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, p.i("slow-ticks", 50),
                 Math.max(0, p.i("slow-level", 3) - 1)));
@@ -2119,7 +2132,7 @@ public final class AbilityManager implements Listener {
                         : world.rayTrace(state.pos, dir, speed, FluidCollisionMode.NEVER, true, 0.6, e -> valid(player, e));
                 if (hit != null && hit.getHitEntity() instanceof LivingEntity target) {
                     hurt(player, target, damage);
-                    freeze(target, p);
+                    freeze(player, target, p);
                     state.stuck = target;
                     flying[0] = false;
                     world.playSound(target.getLocation(), Sound.ITEM_TRIDENT_HIT, 1.2f, 0.7f);
@@ -2172,7 +2185,7 @@ public final class AbilityManager implements Listener {
         }
         flyBack(player, state.display, state.display.getLocation(), true, target -> {
             hurt(player, target, damage);
-            freeze(target, state.params);
+            freeze(player, target, state.params);
         }, 1.4, () -> {
             if (player.isOnline()) {
                 setAxeLook(player, state.weapon, false, 0);
@@ -2229,7 +2242,7 @@ public final class AbilityManager implements Listener {
             for (LivingEntity target : targets(player, center, width + 0.8)) {
                 if (hitOnce.add(target.getUniqueId())) {
                     hurt(player, target, damage);
-                    freeze(target, p);
+                    freeze(player, target, p);
                 }
             }
             return true;
@@ -2375,6 +2388,9 @@ public final class AbilityManager implements Listener {
 
     /** Tidal Surge: a riptide launch that works anywhere - no water or rain needed. */
     private boolean tidalSurge(Player player, Params p) {
+        if (!player.isInWaterOrRain()) {
+            plugin.award(player, "riptide_anywhere");
+        }
         Vector dir = player.getEyeLocation().getDirection().normalize().multiply(p.d("power", 2.2));
         if (player.isOnGround()) {
             player.teleport(player.getLocation().add(0, 1.1, 0));    // like vanilla riptide on the ground
@@ -2670,6 +2686,9 @@ public final class AbilityManager implements Listener {
                     world.spawnParticle(Particle.EXPLOSION, ground, 1, 0, 0, 0, 0);
                     if (attacker instanceof Player hammer) {
                         hammer.sendActionBar(ItemManager.color("&5⬇ Slam &d+" + Math.round(bonus) + " &7damage"));
+                        if (event.getDamage() >= 20) {
+                            plugin.award(hammer, "hammer_time");
+                        }
                     }
                 }
                 if (!victim.isOnGround()) {
@@ -2816,6 +2835,11 @@ public final class AbilityManager implements Listener {
             dropAxeState(dead);
         }
         Player killer = event.getEntity().getKiller();
+        FrozenBy frost = frozenBy.remove(event.getEntity().getUniqueId());
+        if (killer != null && frost != null && frost.player().equals(killer.getUniqueId())
+                && frost.until() > System.currentTimeMillis()) {
+            plugin.award(killer, "ice_cold");
+        }
         if (killer != null) {
             ItemManager.Entry killWeapon = weaponOf(killer.getInventory().getItemInMainHand());
             if (killWeapon != null && killWeapon.abilities.trackKills && !killer.equals(event.getEntity())

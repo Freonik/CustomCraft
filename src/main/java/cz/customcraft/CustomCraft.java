@@ -18,6 +18,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private ForgeData data;
     private RitualManager rituals;
     private AbilityManager abilities;
+    private AdvancementManager advancements;
 
     @Override
     public void onEnable() {
@@ -46,6 +47,10 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(abilities, this);
         abilities.start();
         getServer().getPluginManager().registerEvents(this, this);
+        advancements = new AdvancementManager(this, items);
+        getServer().getPluginManager().registerEvents(advancements, this);
+        advancements.register();
+        advancements.start();
 
         RecipesCommand command = new RecipesCommand(this, items, rituals, data);
         PluginCommand pluginCommand = getCommand("forge");
@@ -66,6 +71,21 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         if (rituals != null) {
             rituals.shutdown();
         }
+    }
+
+    public RitualManager rituals() {
+        return rituals;
+    }
+
+    /** Completes one of the plugin's advancements for a player (no-op if they're off). */
+    public void award(org.bukkit.entity.Player player, String id) {
+        if (advancements != null) {
+            advancements.award(player, id);
+        }
+    }
+
+    public AdvancementManager advancements() {
+        return advancements;
     }
 
     /** Reloads config.yml and re-registers recipes. */

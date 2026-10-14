@@ -81,6 +81,7 @@ public final class MenuManager implements Listener {
     // ---------------------------------------------------------------- opening
 
     public void openMain(Player player, Block table) {
+        plugin.award(player, "root");
         openForge(player, ItemManager.Kind.WEAPON, 0, null, table);
     }
 

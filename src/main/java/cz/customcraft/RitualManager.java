@@ -238,7 +238,11 @@ public final class RitualManager implements Listener {
         }
         Location c = center(r);
         World world = c.getWorld();
-        Item drop = world.dropItem(c.clone().add(0, 0.7, 0), weapon.item.clone(), item -> {
+        ItemStack forged = weapon.item.clone();
+        if (plugin.advancements() != null) {
+            plugin.advancements().markForged(forged, r.player);
+        }
+        Item drop = world.dropItem(c.clone().add(0, 0.7, 0), forged, item -> {
             item.setVelocity(new org.bukkit.util.Vector(0, 0.15, 0));
             item.setUnlimitedLifetime(true);
             item.setInvulnerable(true);
@@ -260,6 +264,9 @@ public final class RitualManager implements Listener {
             online.playSound(online.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1f);
         }
         plugin.getLogger().info("Ritual finished: " + r.weapon + " by " + r.name + " (item " + drop.getUniqueId() + ")");
+        if (plugin.advancements() != null) {
+            plugin.advancements().awardLater(r.player, "forgemaster");
+        }
     }
 
     /** Admin: finish a ritual right now. */
