@@ -27,8 +27,6 @@
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
 - [Resource pack](#resource-pack)
-- [Building from source](#building-from-source)
-- [Limitations](#limitations)
 
 ---
 
@@ -385,50 +383,3 @@ The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it 
 **Local testing:** drop the zip into `.minecraft/resourcepacks`, enable it in the game, and set `menu.resource-pack: true`.
 
 Custom model data used by the pack: weapons `1001-1004`, `1006-1009`, `1011-1015`, `1205`, relics `1201-1204`, `1206-1208`, materials `1301-1321`, menu icons `9000-9021`.
-
----
-
-## Building from source
-
-Requires **Java 21** and **Maven**.
-
-```bash
-mvn clean package
-```
-
-The plugin ends up in `target/CustomCraft.jar`.
-
-### Automatic releases (GitHub Actions)
-[`.github/workflows/main.yml`](.github/workflows/main.yml) builds the plugin and zips the resource pack on every push:
-
-| You do | You get |
-|---|---|
-| push to `main` / `master` | a new release `v<version>-build.<n>` marked **Latest**, with `CustomCraft.jar` + `CustomCraft-pack.zip` |
-| push a tag like `v1.9.0` (`git tag v1.9.0 && git push origin v1.9.0`) | a permanent release **v1.9.0** with both files and a changelog |
-| any build | both files are also attached to the workflow run as an artifact |
-
-The release notes include the `server.properties` lines with the current pack SHA1.
-If a release fails with a permission error, enable *Settings → Actions → General → Workflow permissions → Read and write*.
-
-### Project layout
-
-| File | What it does |
-|---|---|
-| `CustomCraft.java` | plugin entry point, messages |
-| `ItemManager.java` | loads weapons, relics and materials from the config and builds the items |
-| `MenuManager.java` | the forge menu |
-| `RitualManager.java` | forge rituals, uniqueness, boss bar, location reveal |
-| `ForgeData.java` | `data.yml`: who owns what, running rituals |
-| `AbilityManager.java` / `WeaponAbilities.java` | weapon abilities, cooldowns, action bar HUD |
-| `RelicManager.java` / `Relic.java` | relic effects |
-| `LootManager.java` | legendary material drops, chest and vault loot |
-| `RecipesCommand.java` | `/forge` command |
-| `resourcepack/` | resource pack source (zipped by GitHub Actions) |
-
----
-
-## Limitations
-
-- A plugin can't add buttons to the vanilla crafting table window, so the forge is its own menu (shift + right-click).
-- Worn armor can only change its texture, not its 3D shape, without client mods.
-- A forge recipe has room for 5 different ingredients.
