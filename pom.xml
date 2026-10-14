@@ -6,7 +6,7 @@
 
     <groupId>cz.customcraft</groupId>
     <artifactId>CustomCraft</artifactId>
-    <version>1.12.4</version>
+    <version>1.12.5</version>
     <packaging>jar</packaging>
 
     <properties>

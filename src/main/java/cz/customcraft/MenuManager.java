@@ -410,7 +410,8 @@ public final class MenuManager implements Listener {
         return switch (mode) {
             case "true" -> true;
             case "false" -> false;
-            default -> packLoaded.contains(player.getUniqueId());
+            // remembered status, or what the server knows about the player's pack (e.g. after a plugin reload)
+            default -> packLoaded.contains(player.getUniqueId()) || player.hasResourcePack();
         };
     }
 
