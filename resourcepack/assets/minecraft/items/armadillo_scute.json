@@ -1,0 +1,19 @@
+{
+  "model": {
+    "type": "minecraft:range_dispatch",
+    "property": "minecraft:custom_model_data",
+    "entries": [
+      {
+        "threshold": 1314,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/carapace_shard"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:item/armadillo_scute"
+    }
+  }
+}

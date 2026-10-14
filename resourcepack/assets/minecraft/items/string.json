@@ -9,6 +9,13 @@
           "type": "minecraft:model",
           "model": "customcraft:item/hexed_thread"
         }
+      },
+      {
+        "threshold": 1316,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/weavers_silk"
+        }
       }
     ],
     "fallback": {

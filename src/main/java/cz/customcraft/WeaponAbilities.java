@@ -20,6 +20,7 @@ import java.util.Map;
  *   passive:            # potion effects while the weapon is held in the main hand
  *     effects: { resistance: 0 }
  *     low-health-regen: { below-percent: 30, percent-per-second: 1.5 }
+ *     ore-double-chance: 20   # tools: % chance a mined ore drops twice
  *     description: "Resistance I"
  *   arrow-trail: WITCH  # bows / crossbows only
  *   on-hit:             # triggered by a charged melee hit (or an arrow from this bow)
@@ -47,12 +48,13 @@ public final class WeaponAbilities {
     /** Active ability types (logic lives in AbilityManager). */
     public enum ActiveType {
         REWIND, RESONANCE, GRAVITY_ANCHOR, UPHEAVAL, MIRROR_SHOT, HEX_MARK, SOUL_LINK, HARVEST, CRESCENT, FRENZY,
-        CLEAVER_TOSS, BLOODRUSH, TONGUE_LASH, DEVOUR
+        CLEAVER_TOSS, BLOODRUSH, TONGUE_LASH, DEVOUR, CLAWLINE, DIVE, SILK_DART, THREAD_STORM,
+        GRAPPLE, HAMMER_THROW, AXE_THROW, FROST_WAVE, PIN_BOLT, VOLLEY, LUNGE, JAVELIN, TIDAL_SURGE, GREAT_TIDE
     }
 
     /** On-hit ability types. */
     public enum HitType {
-        ECHO, CRUSH, RICOCHET, SOUL, LIFESTEAL, CLEAVE, BLUNT_FORCE, TASTE
+        ECHO, CRUSH, RICOCHET, SOUL, LIFESTEAL, CLEAVE, BLUNT_FORCE, TASTE, SILK_BIND, TIDE, CLOAK
     }
 
     /** Numeric ability parameters (damage, radius, ...) with defaults. */
@@ -101,9 +103,19 @@ public final class WeaponAbilities {
     public double regenBelow;
     /** ... heal this % of max HP per second (0 = off). */
     public double regenPercent;
+    /** Chance (%) that a mined ore drops twice (tools). */
+    public double oreDoubleChance;
+    /** Kill tracking (weapons that upgrade with kills): kills are stored on the item. */
+    public boolean trackKills;
+    public boolean countMobs;
+    /** Passive effects only start working at this many kills (0 = always). */
+    public int passiveUnlockKills;
+    /** Enchantment key -> kills needed before it can be put on the weapon (anvil / enchanting table). */
+    public final Map<String, Integer> enchantUnlocks = new LinkedHashMap<>();
 
     public boolean isEmpty() {
-        return actives.isEmpty() && onHit.isEmpty() && passives.isEmpty() && arrowTrail == null && regenPercent <= 0;
+        return actives.isEmpty() && onHit.isEmpty() && passives.isEmpty() && arrowTrail == null && regenPercent <= 0
+                && oreDoubleChance <= 0;
     }
 
     public Active active(Trigger trigger) {
@@ -145,11 +157,25 @@ public final class WeaponAbilities {
                 }
             }
             result.passiveDescription = lines(passive.get("description"));
+            result.oreDoubleChance = Math.max(0, passive.getDouble("ore-double-chance", 0));
+            result.passiveUnlockKills = Math.max(0, passive.getInt("unlock-kills", 0));
             ConfigurationSection regen = passive.getConfigurationSection("low-health-regen");
             if (regen != null) {
                 result.regenBelow = regen.getDouble("below-percent", 30);
                 result.regenPercent = Math.max(0, regen.getDouble("percent-per-second", 1.5));
             }
+        }
+
+        ConfigurationSection unlocks = s.getConfigurationSection("enchant-unlocks");
+        if (unlocks != null) {
+            for (String key : unlocks.getKeys(false)) {
+                result.enchantUnlocks.put(key.toLowerCase(Locale.ROOT), Math.max(0, unlocks.getInt(key)));
+            }
+        }
+        ConfigurationSection kills = s.getConfigurationSection("kills");
+        if (kills != null) {
+            result.trackKills = kills.getBoolean("enabled", true);
+            result.countMobs = kills.getBoolean("count-mobs", false);
         }
 
         String trail = s.getString("arrow-trail");
@@ -202,22 +228,35 @@ public final class WeaponAbilities {
         lore.add("");
         lore.add("&8» &6&lABILITIES");
         for (Active active : actives) {
-            lore.add("&e" + active.trigger().label + " &8• " + active.name() + " &8(" + active.cooldown() + "s)");
+            int unlock = active.params().i("unlock-kills", 0);
+            int charges = active.params().i("charges", 1);
+            lore.add("&e" + active.trigger().label + " &8• " + active.name() + " &8(" + active.cooldown() + "s"
+                    + (charges > 1 ? ", " + charges + " charges" : "") + ")"
+                    + (unlock > 0 ? " &6[" + unlock + " kills]" : ""));
             for (String line : active.description()) {
                 lore.add("  &7" + line);
             }
         }
         for (OnHit hit : onHit) {
             String chance = hit.chance() >= 100 ? "" : " &8(" + trim(hit.chance()) + "%)";
+            int unlock = hit.params().i("unlock-kills", 0);
             List<String> desc = hit.description();
-            lore.add("&cOn hit" + chance + " &8• &7" + (desc.isEmpty() ? hit.type().name() : desc.get(0)));
+            lore.add("&cOn hit" + chance + " &8• &7" + (desc.isEmpty() ? hit.type().name() : desc.get(0))
+                    + (unlock > 0 ? " &6[" + unlock + " kills]" : ""));
             for (int i = 1; i < desc.size(); i++) {
                 lore.add("  &7" + desc.get(i));
             }
         }
-        if (!passives.isEmpty() || !passiveDescription.isEmpty() || regenPercent > 0) {
+        for (Map.Entry<String, Integer> e : enchantUnlocks.entrySet()) {
+            String name = java.util.Arrays.stream(e.getKey().split("_"))
+                    .map(w -> w.isEmpty() ? w : Character.toUpperCase(w.charAt(0)) + w.substring(1))
+                    .collect(java.util.stream.Collectors.joining(" "));
+            lore.add("&bEnchant &8• &7" + name + " can be added &6[" + e.getValue() + " kills]");
+        }
+        if (!passives.isEmpty() || !passiveDescription.isEmpty() || regenPercent > 0 || oreDoubleChance > 0) {
             List<String> desc = passiveDescription;
-            lore.add("&dPassive &8• &7" + (desc.isEmpty() ? "effects while held" : desc.get(0)));
+            lore.add("&dPassive &8• &7" + (desc.isEmpty() ? "effects while held" : desc.get(0))
+                    + (passiveUnlockKills > 0 ? " &6[" + passiveUnlockKills + " kills]" : ""));
             for (int i = 1; i < desc.size(); i++) {
                 lore.add("  &7" + desc.get(i));
             }

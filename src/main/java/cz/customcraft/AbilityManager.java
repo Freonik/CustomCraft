@@ -99,6 +99,14 @@ public final class AbilityManager implements Listener {
     private static final Particle.DustOptions TONGUE_DUST = new Particle.DustOptions(Color.fromRGB(214, 84, 116), 1.5f);
     private static final Particle.DustOptions TONGUE_TIP = new Particle.DustOptions(Color.fromRGB(255, 150, 178), 2.0f);
     private static final Particle.DustOptions ABYSS_DUST = new Particle.DustOptions(Color.fromRGB(40, 210, 190), 1.0f);
+    private static final Particle.DustOptions SILK_DUST = new Particle.DustOptions(Color.fromRGB(245, 240, 230), 0.8f);
+    private static final Particle.DustOptions NEEDLE_RED = new Particle.DustOptions(Color.fromRGB(200, 30, 40), 0.9f);
+    private static final Particle.DustOptions SOUL_WHITE = new Particle.DustOptions(Color.fromRGB(230, 236, 255), 1.2f);
+    private static final Particle.DustOptions KNIGHT_GOLD = new Particle.DustOptions(Color.fromRGB(255, 200, 70), 1.2f);
+    private static final Particle.DustOptions FROST_DUST = new Particle.DustOptions(Color.fromRGB(170, 230, 255), 1.1f);
+    private static final Particle.DustOptions CHAIN_DUST = new Particle.DustOptions(Color.fromRGB(120, 124, 140), 0.8f);
+    private static final Particle.DustOptions VALK_DUST = new Particle.DustOptions(Color.fromRGB(255, 236, 170), 1.0f);
+    private static final Particle.DustOptions SEA_DUST = new Particle.DustOptions(Color.fromRGB(40, 140, 220), 1.1f);
     private static final Particle.DustOptions ABYSS_FULL = new Particle.DustOptions(Color.fromRGB(255, 190, 60), 1.1f);
     /** Effects Bloodrush shrugs off. */
     private static final Set<PotionEffectType> DEBUFFS = Set.of(PotionEffectType.POISON, PotionEffectType.WITHER,
@@ -109,6 +117,9 @@ public final class AbilityManager implements Listener {
     private final ItemManager items;
     private final NamespacedKey arrowKey;
     private final NamespacedKey mirrorKey;
+    private final NamespacedKey killsKey;
+    private final NamespacedKey pinKey;
+    private final NamespacedKey pinShotKey;
 
     /** player -> (weapon:ability -> cooldown end in ms) */
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
@@ -138,6 +149,23 @@ public final class AbilityManager implements Listener {
     private final Map<UUID, Swallow> swallowed = new HashMap<>();
     /** devourer -> swallowed entity */
     private final Map<UUID, UUID> belly = new HashMap<>();
+    /** player -> fall damage ignored until (ms) - Clawline, Dive, Silk Dart */
+    private final Map<UUID, Long> noFall = new HashMap<>();
+    /** player -> how far they fell when they last landed (Graviton Hammer slam right after landing) */
+    private final Map<UUID, Landing> landed = new HashMap<>();
+    /** player -> thrown Rimebreaker */
+    private final Map<UUID, AxeState> axes = new HashMap<>();
+    /** player -> Pin Bolt armed until; entity -> pinned until */
+    private final Map<UUID, Long> pinArmed = new HashMap<>();
+    private final Map<UUID, Long> pinned = new HashMap<>();
+    /** player -> Cloak (true invisibility) until */
+    private final Map<UUID, Long> cloaked = new HashMap<>();
+    /** player -> "Sea King" (Great Tide) until */
+    private final Map<UUID, Long> seaKing = new HashMap<>();
+    /** player -> (weapon:ability -> charges used) */
+    private final Map<UUID, Map<String, Integer>> chargeUse = new HashMap<>();
+    /** attacker -> charged hits counted for Silk Bind */
+    private final Map<UUID, Integer> silkHits = new HashMap<>();
     private RelicManager relics;
     private int ticks;
 
@@ -150,6 +178,8 @@ public final class AbilityManager implements Listener {
     private record Link(UUID target, double percent, double maxDistance, long expires) { }
 
     private record Taste(int stacks, int max, long expires) { }
+
+    private record Landing(float distance, long time) { }
 
     private static final class Swallow {
         final UUID devourer;
@@ -183,6 +213,9 @@ public final class AbilityManager implements Listener {
         this.items = items;
         this.arrowKey = new NamespacedKey(plugin, "weapon");
         this.mirrorKey = new NamespacedKey(plugin, "mirror_shot");
+        this.killsKey = new NamespacedKey(plugin, "weapon_kills");
+        this.pinKey = new NamespacedKey(plugin, "pinned");
+        this.pinShotKey = new NamespacedKey(plugin, "pin_shot");
     }
 
     /** Starts the repeating task: history, HUD, passive effects, marks. */
@@ -228,7 +261,7 @@ public final class AbilityManager implements Listener {
             }
             ItemManager.Entry weapon = weaponOf(player.getInventory().getItemInMainHand());
             boolean hasWeapon = weapon != null && !weapon.abilities.isEmpty() && enabledIn(player.getWorld());
-            if (hasWeapon) {
+            if (hasWeapon && weapon.abilities.passiveUnlockKills <= killsOf(player.getInventory().getItemInMainHand())) {
                 for (Passive passive : weapon.abilities.passives) {
                     player.addPotionEffect(new PotionEffect(passive.type(), 50, passive.amplifier(), true, false, true));
                 }
@@ -288,6 +321,8 @@ public final class AbilityManager implements Listener {
                 }
             }
             bloodrush.values().removeIf(t -> t < now);
+            pinArmed.values().removeIf(t -> t < now);
+            seaKing.values().removeIf(t -> t < now);
             mirrorArmed.values().removeIf(t -> t < now);
             dealt.values().forEach(m -> m.values().removeIf(d -> d.last() < now - DAMAGE_MEMORY_MS));
             dealt.values().removeIf(Map::isEmpty);
@@ -302,11 +337,30 @@ public final class AbilityManager implements Listener {
             }
             bar.append(active.name()).append(' ');
             long left = remaining(player, weapon, active, now);
-            if (active.type() == ActiveType.MIRROR_SHOT && mirrorArmed.containsKey(player.getUniqueId())) {
+            int unlock = active.params().i("unlock-kills", 0);
+            int charges = active.params().i("charges", 1);
+            if (unlock > killsOf(player.getInventory().getItemInMainHand())) {
+                bar.append("&8🔒");
+            } else if ((active.type() == ActiveType.MIRROR_SHOT && mirrorArmed.containsKey(player.getUniqueId()))
+                    || (active.type() == ActiveType.PIN_BOLT && pinArmed.containsKey(player.getUniqueId()))) {
                 bar.append("&dARMED");
+            } else if (active.type() == ActiveType.AXE_THROW && axes.containsKey(player.getUniqueId())) {
+                bar.append("&bRECALL");
+            } else if (active.type() == ActiveType.TIDAL_SURGE && seaKing(player)) {
+                bar.append("&b∞");
+            } else if (charges > 1 && left <= 0) {
+                Map<String, Integer> use = chargeUse.get(player.getUniqueId());
+                int used = use == null ? 0 : use.getOrDefault(weapon.ref() + ":" + active.key(), 0);
+                bar.append("&a").append(charges - used).append("/").append(charges);
             } else {
                 bar.append(left <= 0 ? "&a✔" : "&c" + seconds(left) + "s");
             }
+        }
+        if (weapon.abilities.trackKills) {
+            if (!bar.isEmpty()) {
+                bar.append("  &8┃  ");
+            }
+            bar.append("&6⚔ ").append(killsOf(player.getInventory().getItemInMainHand()));
         }
         OnHit soul = weapon.abilities.onHit(HitType.SOUL);
         if (soul != null) {
@@ -377,7 +431,20 @@ public final class AbilityManager implements Listener {
         if (last != null && now - last < 150) {
             return true;
         }
-        long left = remaining(player, weapon, active, now);
+        // Rimebreaker: pressing F again calls the thrown axe back (no cooldown)
+        if (active.type() == ActiveType.AXE_THROW && axes.containsKey(player.getUniqueId())) {
+            recallAxe(player);
+            return true;
+        }
+        int unlock = active.params().i("unlock-kills", 0);
+        int kills = killsOf(player.getInventory().getItemInMainHand());
+        if (unlock > kills) {
+            player.sendActionBar(plugin.raw("ability-locked", "&c{ability} &7unlocks at &6{need} kills &8({have}/{need})",
+                    "ability", ItemManager.color(active.name()), "need", String.valueOf(unlock), "have", String.valueOf(kills)));
+            return true;
+        }
+        boolean free = active.type() == ActiveType.TIDAL_SURGE && seaKing(player);
+        long left = free ? 0 : remaining(player, weapon, active, now);
         if (left > 0) {
             player.sendActionBar(plugin.raw("ability-cooldown", "&c{ability} &7is recharging: &c{time}s",
                     "ability", ItemManager.color(active.name()), "time", seconds(left)));
@@ -391,9 +458,22 @@ public final class AbilityManager implements Listener {
             used = false;
         }
         if (used) {
-            if (!player.hasPermission("customcraft.nocooldown")) {
-                cooldowns.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
-                        .put(weapon.ref() + ":" + active.key(), now + active.cooldown() * 1000L);
+            if (!free && !player.hasPermission("customcraft.nocooldown")) {
+                String key = weapon.ref() + ":" + active.key();
+                int charges = active.params().i("charges", 1);
+                boolean start = true;
+                if (charges > 1) {
+                    Map<String, Integer> use = chargeUse.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>());
+                    int count = use.merge(key, 1, Integer::sum);
+                    start = count >= charges;
+                    if (start) {
+                        use.remove(key);
+                    }
+                }
+                if (start) {
+                    cooldowns.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
+                            .put(key, now + active.cooldown() * 1000L);
+                }
             }
             player.sendActionBar(plugin.raw("ability-used", "&a» {ability}&a!",
                     "ability", ItemManager.color(active.name())));
@@ -445,6 +525,20 @@ public final class AbilityManager implements Listener {
             case BLOODRUSH -> bloodrush(player, p);
             case TONGUE_LASH -> tongueLash(player, weapon, p);
             case DEVOUR -> devour(player, p);
+            case CLAWLINE -> clawline(player, p);
+            case DIVE -> dive(player, p);
+            case SILK_DART -> silkDart(player, p);
+            case THREAD_STORM -> threadStorm(player, p);
+            case GRAPPLE -> grappleTo(player, p);
+            case HAMMER_THROW -> hammerThrow(player, weapon, p);
+            case AXE_THROW -> throwAxe(player, weapon, p);
+            case FROST_WAVE -> frostWave(player, p);
+            case PIN_BOLT -> pinBolt(player, p);
+            case VOLLEY -> volley(player, weapon, p);
+            case LUNGE -> lunge(player, p);
+            case JAVELIN -> javelin(player, weapon, p);
+            case TIDAL_SURGE -> tidalSurge(player, p);
+            case GREAT_TIDE -> greatTide(player, p);
         };
     }
 
@@ -1267,6 +1361,23 @@ public final class AbilityManager implements Listener {
         for (Swallow s : new ArrayList<>(swallowed.values())) {
             release(s, false);
         }
+        for (UUID id : new ArrayList<>(axes.keySet())) {
+            Player player = Bukkit.getPlayer(id);
+            if (player != null) {
+                dropAxeState(player);
+            } else {
+                AxeState state = axes.remove(id);
+                state.display.remove();
+            }
+        }
+        for (UUID id : new ArrayList<>(cloaked.keySet())) {
+            uncloak(id);
+        }
+        for (UUID id : new ArrayList<>(pinned.keySet())) {
+            if (Bukkit.getEntity(id) instanceof LivingEntity living) {
+                unpin(living);
+            }
+        }
     }
 
     public boolean isSwallowed(Entity entity) {
@@ -1332,6 +1443,16 @@ public final class AbilityManager implements Listener {
     }
 
     @EventHandler
+    public void onJoinCloak(PlayerJoinEvent event) {
+        for (UUID id : cloaked.keySet()) {
+            Player hidden = Bukkit.getPlayer(id);
+            if (hidden != null && !hidden.equals(event.getPlayer())) {
+                event.getPlayer().hidePlayer(plugin, hidden);
+            }
+        }
+    }
+
+    @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         for (UUID id : swallowed.keySet()) {
             Entity hidden = Bukkit.getEntity(id);
@@ -1353,6 +1474,988 @@ public final class AbilityManager implements Listener {
         }
     }
 
+    // ================================================================ CLAWLINE PICK
+
+    /** Clawline: shoot a hook at the block you look at and get yanked there. */
+    private boolean clawline(Player player, Params p) {
+        Location eye = player.getEyeLocation();
+        RayTraceResult ray = player.getWorld().rayTraceBlocks(eye, eye.getDirection(), p.d("range", 24),
+                FluidCollisionMode.NEVER, true);
+        if (ray == null || ray.getHitBlock() == null) {
+            fail(player, "ability-clawline-miss", "&cNothing to hook onto.");
+            return false;
+        }
+        Location hook = ray.getHitPosition().toLocation(player.getWorld());
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_FISHING_BOBBER_THROW, 1.2f, 0.6f);
+        grapple(player, hook, null, p.d("power", 1.0), 0);
+        return true;
+    }
+
+    /**
+     * A silk thread flies to the point (2 ticks), then yanks the player toward it.
+     * If target is set, the thread follows that entity and the player stops a bit short of it.
+     */
+    private void grapple(Player player, Location point, LivingEntity target, double power, double stopShort) {
+        World world = player.getWorld();
+        int flyTicks = 2;
+        repeat(1, flyTicks + 8, step -> {
+            if (!player.isOnline() || player.isDead() || player.getWorld() != world) {
+                return false;
+            }
+            Location to = target != null && target.isValid()
+                    ? target.getLocation().add(0, target.getHeight() / 2, 0) : point;
+            Location hand = player.getLocation().add(0, 1.2, 0);
+            if (step < flyTicks) {
+                Location tip = hand.clone().add(to.toVector().subtract(hand.toVector()).multiply((step + 1.0) / flyTicks));
+                line(hand, tip, 0.3, l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, SILK_DUST));
+                return true;
+            }
+            if (step == flyTicks) {
+                world.playSound(to, Sound.BLOCK_CHAIN_HIT, 1.2f, 1.4f);
+                world.playSound(hand, Sound.ENTITY_FISHING_BOBBER_RETRIEVE, 1.2f, 0.8f);
+                Vector pull = to.toVector().subtract(player.getLocation().toVector());
+                double distance = Math.max(0, pull.length() - stopShort);
+                if (pull.lengthSquared() > 1.0E-4) {
+                    pull.normalize().multiply(Math.min(3.2, (0.45 + distance * 0.11) * power));
+                    pull.setY(Math.max(pull.getY(), 0) + 0.3);
+                    player.setVelocity(pull);
+                }
+                noFall.put(player.getUniqueId(), System.currentTimeMillis() + 3000);
+            }
+            line(hand, to, 0.35, l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, SILK_DUST));
+            return player.getLocation().distanceSquared(to) > 2.5;
+        });
+    }
+
+    /**
+     * Dive: hop up, then slam straight down, carving a 3x3 shaft (protection plugins are respected).
+     * Landing sends out a shockwave.
+     */
+    private boolean dive(Player player, Params p) {
+        int depth = Math.max(1, p.i("depth", 8));
+        double maxHardness = p.d("max-hardness", 30);
+        double damage = p.d("impact-damage", 6);
+        double radius = p.d("impact-radius", 4);
+        World world = player.getWorld();
+        Block start = player.getLocation().getBlock();
+        int cx = start.getX();
+        int cz = start.getZ();
+        int topY = start.getY() - 1;
+        ItemStack tool = player.getInventory().getItemInMainHand();
+        player.setVelocity(new Vector(0, 0.8, 0));
+        noFall.put(player.getUniqueId(), System.currentTimeMillis() + 8000);
+        world.playSound(player.getLocation(), Sound.ENTITY_BREEZE_JUMP, 1.2f, 0.7f);
+        world.spawnParticle(Particle.CLOUD, player.getLocation(), 15, 0.4, 0.1, 0.4, 0.05);
+        int[] dug = {0};
+        boolean[] stopped = {false};
+        repeat(1, 8 + depth + 60, step -> {
+            if (!player.isOnline() || player.isDead() || player.getWorld() != world) {
+                return false;
+            }
+            if (step < 8) {
+                return true;                                   // still rising
+            }
+            if (step == 8) {
+                world.playSound(player.getLocation(), Sound.ITEM_MACE_SMASH_AIR, 1.2f, 0.6f);
+            }
+            Location at = player.getLocation();
+            world.spawnParticle(Particle.DUST, at.clone().add(0, 1, 0), 3, 0.25, 0.5, 0.25, 0, SOUL_WHITE);
+            if (!stopped[0] && dug[0] < depth) {
+                int y = topY - dug[0];
+                if (y < world.getMinHeight()
+                        || !breakable(world.getBlockAt(cx, y, cz), maxHardness)) {
+                    stopped[0] = true;
+                } else {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            Block b = world.getBlockAt(cx + dx, y, cz + dz);
+                            if (breakable(b, maxHardness)) {
+                                breakAs(player, b, tool);
+                            }
+                        }
+                    }
+                    world.playSound(new Location(world, cx + 0.5, y, cz + 0.5), Sound.BLOCK_DEEPSLATE_BREAK, 1f, 0.7f);
+                    dug[0]++;
+                }
+            }
+            player.setVelocity(new Vector(0, -1.6, 0));
+            boolean done = stopped[0] || dug[0] >= depth;
+            if (done && (player.isOnGround() || step >= 8 + depth + 55)) {
+                impact(player, damage, radius);
+                return false;
+            }
+            return true;
+        });
+        return true;
+    }
+
+    private static boolean breakable(Block block, double maxHardness) {
+        Material type = block.getType();
+        if (type.isAir() || block.isLiquid()) {
+            return false;
+        }
+        float hardness = type.getHardness();
+        return hardness >= 0 && hardness <= maxHardness
+                && !(block.getState(false) instanceof org.bukkit.block.Container);
+    }
+
+    /** Breaks a block as if the player mined it (fires BlockBreakEvent so claims / regions apply). */
+    private void breakAs(Player player, Block block, ItemStack tool) {
+        org.bukkit.event.block.BlockBreakEvent check = new org.bukkit.event.block.BlockBreakEvent(block, player);
+        Bukkit.getPluginManager().callEvent(check);
+        if (check.isCancelled()) {
+            return;
+        }
+        if (check.isDropItems() && player.getGameMode() != GameMode.CREATIVE) {
+            block.breakNaturally(tool, true);
+        } else {
+            block.setType(Material.AIR);
+        }
+    }
+
+    private void impact(Player player, double damage, double radius) {
+        Location at = player.getLocation();
+        World world = player.getWorld();
+        world.playSound(at, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1.4f, 0.7f);
+        world.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.4f);
+        ring(at.clone().add(0, 0.2, 0), radius, 40, l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0.05, 0, 0, SOUL_WHITE));
+        world.spawnParticle(Particle.EXPLOSION, at, 2, 0.5, 0.2, 0.5, 0);
+        for (LivingEntity target : targets(player, at, radius)) {
+            hurt(player, target, damage);
+            Vector out = target.getLocation().toVector().subtract(at.toVector()).setY(0);
+            if (out.lengthSquared() > 1.0E-4) {
+                out.normalize().multiply(0.9);
+            }
+            target.setVelocity(out.setY(0.5));
+        }
+    }
+
+    /** Tools with ore-double-chance: a mined ore sometimes drops twice. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMine(org.bukkit.event.block.BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        if (!event.isDropItems() || player.getGameMode() == GameMode.CREATIVE || !enabledIn(player.getWorld())) {
+            return;
+        }
+        ItemManager.Entry tool = weaponOf(player.getInventory().getItemInMainHand());
+        if (tool == null || tool.abilities.oreDoubleChance <= 0) {
+            return;
+        }
+        Block block = event.getBlock();
+        String name = block.getType().name();
+        if (!name.endsWith("_ORE") && block.getType() != Material.ANCIENT_DEBRIS) {
+            return;
+        }
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.containsEnchantment(org.bukkit.enchantments.Enchantment.SILK_TOUCH)
+                || ThreadLocalRandom.current().nextDouble(100) >= tool.abilities.oreDoubleChance) {
+            return;
+        }
+        Location center = block.getLocation().add(0.5, 0.5, 0.5);
+        for (ItemStack drop : block.getDrops(hand, player)) {
+            block.getWorld().dropItemNaturally(center, drop);
+        }
+        block.getWorld().spawnParticle(Particle.WAX_OFF, center, 12, 0.3, 0.3, 0.3, 0.5);
+        block.getWorld().playSound(center, Sound.BLOCK_AMETHYST_BLOCK_CHIME, 1f, 1.6f);
+    }
+
+    /** Remembers landings, so a hammer hit right after landing still counts as a slam. */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onLanding(EntityDamageEvent event) {
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL && event.getEntity() instanceof Player player
+                && player.getFallDistance() >= 1.5) {
+            landed.put(player.getUniqueId(), new Landing(player.getFallDistance(), System.currentTimeMillis()));
+        }
+    }
+
+    /** Clawline / Dive / Silk Dart: no fall damage right after. */
+    @EventHandler(ignoreCancelled = true)
+    public void onToolFall(EntityDamageEvent event) {
+        if (event.getCause() != EntityDamageEvent.DamageCause.FALL) {
+            return;
+        }
+        Long until = noFall.remove(event.getEntity().getUniqueId());
+        if (until != null && until > System.currentTimeMillis()) {
+            event.setCancelled(true);
+        }
+    }
+
+    // ================================================================ SILK NEEDLE
+
+    /** Silk Dart: throw the needle on a thread. It stabs the first enemy and pulls you to it (or to a block). */
+    private boolean silkDart(Player player, Params p) {
+        Location eye = player.getEyeLocation();
+        RayTraceResult ray = player.getWorld().rayTrace(eye, eye.getDirection(), p.d("range", 16),
+                FluidCollisionMode.NEVER, true, 0.5, e -> valid(player, e));
+        if (ray == null) {
+            fail(player, "ability-no-target", "&cNo target in range.");
+            return false;
+        }
+        World world = player.getWorld();
+        world.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1f, 1.8f);
+        if (ray.getHitEntity() instanceof LivingEntity target) {
+            double damage = p.d("damage", 4);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (target.isValid() && player.isOnline()) {
+                    hurt(player, target, damage);
+                    world.spawnParticle(Particle.CRIT, target.getLocation().add(0, target.getHeight() / 2, 0), 12, 0.2, 0.3, 0.2, 0.3);
+                }
+            }, 2L);
+            grapple(player, target.getLocation(), target, p.d("power", 1.1), 1.6);
+        } else {
+            grapple(player, ray.getHitPosition().toLocation(world), null, p.d("power", 1.1), 0);
+        }
+        return true;
+    }
+
+    /** Thread Storm: spin in a storm of silk for a few seconds, cutting everything around you. */
+    private boolean threadStorm(Player player, Params p) {
+        int ticks = Math.max(10, p.i("duration-ticks", 60));
+        double radius = p.d("radius", 3.5);
+        double damage = p.d("damage", 1.5);
+        int every = Math.max(2, p.i("hit-every-ticks", 5));
+        World world = player.getWorld();
+        if (!player.isOnGround()) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, ticks, 0, false, false, true));
+        }
+        world.playSound(player.getLocation(), Sound.ITEM_TRIDENT_RIPTIDE_1, 1.2f, 1.5f);
+        repeat(1, ticks, step -> {
+            if (!player.isOnline() || player.isDead()) {
+                return false;
+            }
+            Location c = player.getLocation();
+            for (int k = 0; k < 6; k++) {
+                double a = step * 0.55 + k * Math.PI / 3;
+                double r = radius * (0.35 + 0.65 * (((step + k * 3) % 10) / 10.0));
+                double y = 0.3 + (k % 3) * 0.6 + 0.15 * Math.sin(step * 0.4 + k);
+                world.spawnParticle(Particle.DUST, c.clone().add(Math.cos(a) * r, y, Math.sin(a) * r), 1, 0, 0, 0, 0,
+                        k % 3 == 0 ? NEEDLE_RED : SILK_DUST);
+            }
+            if (step % every == 0) {
+                world.playSound(c, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.6f, 1.8f);
+                world.spawnParticle(Particle.SWEEP_ATTACK, c.clone().add(0, 1, 0), 2, radius / 2, 0.2, radius / 2, 0);
+                for (LivingEntity target : targets(player, c, radius)) {
+                    hurt(player, target, damage);
+                }
+            }
+            return true;
+        });
+        return true;
+    }
+
+    // ================================================================ shared: flying items
+
+    private ItemDisplay spawnFlying(World world, Location pos, ItemStack look, float scale) {
+        return world.spawn(pos.clone(), ItemDisplay.class, d -> {
+            d.setItemStack(look);
+            d.setPersistent(false);
+            d.setTeleportDuration(1);
+            d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+            d.setBillboard(Display.Billboard.FIXED);
+            d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(),
+                    new Vector3f(scale, scale, scale), new Quaternionf()));
+        });
+    }
+
+    /** Moves a flying item one step: spin (tumbling) or point along the direction (spears). */
+    private static void moveFlying(ItemDisplay display, Location pos, Vector dir, int step, boolean spin, float scale) {
+        float yaw = (float) Math.toDegrees(Math.atan2(-dir.getX(), dir.getZ()));
+        Location to = pos.clone();
+        to.setYaw(yaw + 90f);
+        to.setPitch(0);
+        Quaternionf rot = spin ? new Quaternionf().rotateZ((float) (-step * 0.9))
+                : new Quaternionf().rotateZ((float) (Math.atan2(dir.getY(), Math.hypot(dir.getX(), dir.getZ())) - Math.PI / 4));
+        display.setInterpolationDelay(0);
+        display.setInterpolationDuration(1);
+        display.setTransformation(new Transformation(new Vector3f(), rot, new Vector3f(scale, scale, scale), new Quaternionf()));
+        display.teleport(to);
+    }
+
+    /**
+     * Throws the weapon as a flying item. It hits the first enemy (onEntity) or block, optionally homes on a target,
+     * and then flies back to the thrower.
+     */
+    private void throwWeapon(Player player, ItemStack look, Vector direction, double range, double speed, LivingEntity homing,
+                             boolean spin, Consumer<LivingEntity> onEntity, Particle.DustOptions trail) {
+        World world = player.getWorld();
+        Location pos = player.getEyeLocation().subtract(0, 0.3, 0);
+        Vector dir = direction.clone().normalize();
+        ItemDisplay display = spawnFlying(world, pos, look, 1.3f);
+        int steps = (int) Math.ceil(range / speed);
+        repeat(1, steps + 1, step -> {
+            if (!display.isValid()) {
+                return false;
+            }
+            if (!player.isOnline() || player.getWorld() != world) {
+                display.remove();
+                return false;
+            }
+            if (homing != null && homing.isValid() && !homing.isDead() && homing.getWorld() == world) {
+                Vector want = homing.getLocation().add(0, homing.getHeight() / 2, 0).toVector().subtract(pos.toVector());
+                if (want.lengthSquared() > 1.0E-4) {
+                    dir.multiply(0.5).add(want.normalize().multiply(0.5)).normalize();
+                }
+            }
+            RayTraceResult hit = step >= steps ? null
+                    : world.rayTrace(pos, dir, speed, FluidCollisionMode.NEVER, true, 0.6, e -> valid(player, e));
+            if (hit != null && hit.getHitEntity() instanceof LivingEntity target) {
+                onEntity.accept(target);
+                flyBack(player, display, hit.getHitPosition().toLocation(world), spin, null, 0, null);
+                return false;
+            }
+            if (step >= steps || (hit != null && hit.getHitBlock() != null)) {
+                if (hit != null) {
+                    world.playSound(pos, Sound.BLOCK_ANVIL_LAND, 0.5f, 1.6f);
+                }
+                flyBack(player, display, pos, spin, null, 0, null);
+                return false;
+            }
+            pos.add(dir.clone().multiply(speed));
+            moveFlying(display, pos, dir, step, spin, 1.3f);
+            if (trail != null) {
+                world.spawnParticle(Particle.DUST, pos, 2, 0.08, 0.08, 0.08, 0, trail);
+            }
+            return true;
+        });
+    }
+
+    /**
+     * The flying item returns to the player's hand. With onPass set, everything it passes through
+     * gets hit once on the way back.
+     */
+    private void flyBack(Player player, ItemDisplay display, Location from, boolean spin, Consumer<LivingEntity> onPass,
+                         double passRadius, Runnable onCaught) {
+        World world = from.getWorld();
+        Location pos = from.clone();
+        Set<UUID> passed = new java.util.HashSet<>();
+        repeat(1, 100, step -> {
+            if (!display.isValid() || !player.isOnline() || player.getWorld() != world) {
+                display.remove();
+                if (onCaught != null) {
+                    onCaught.run();
+                }
+                return false;
+            }
+            Location hand = player.getLocation().add(0, 1.2, 0);
+            Vector to = hand.toVector().subtract(pos.toVector());
+            double distance = to.length();
+            if (distance < 1.6 || step == 99) {
+                display.remove();
+                world.playSound(hand, Sound.ITEM_TRIDENT_RETURN, 1f, 1.2f);
+                if (onCaught != null) {
+                    onCaught.run();
+                }
+                return false;
+            }
+            Vector dir = to.multiply(1 / distance);
+            pos.add(dir.clone().multiply(Math.min(distance, 1.8)));
+            moveFlying(display, pos, dir, step, spin, 1.3f);
+            if (onPass != null) {
+                for (LivingEntity near : targets(player, pos, passRadius)) {
+                    if (passed.add(near.getUniqueId())) {
+                        onPass.accept(near);
+                    }
+                }
+            }
+            return true;
+        });
+    }
+
+    // ================================================================ KNIGHTFALL (mace that upgrades with kills)
+
+    private int killsOf(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) {
+            return 0;
+        }
+        return stack.getItemMeta().getPersistentDataContainer().getOrDefault(killsKey, PersistentDataType.INTEGER, 0);
+    }
+
+    /** A kill with a kill-tracking weapon: +1 on the item, lore updated, unlocks announced. */
+    private void addKill(Player killer, ItemManager.Entry weapon) {
+        ItemStack hand = killer.getInventory().getItemInMainHand();
+        org.bukkit.inventory.meta.ItemMeta meta = hand.getItemMeta();
+        int kills = meta.getPersistentDataContainer().getOrDefault(killsKey, PersistentDataType.INTEGER, 0) + 1;
+        meta.getPersistentDataContainer().set(killsKey, PersistentDataType.INTEGER, kills);
+        List<net.kyori.adventure.text.Component> lore = new ArrayList<>(
+                weapon.item.getItemMeta().lore() == null ? List.of() : weapon.item.getItemMeta().lore());
+        lore.add(ItemManager.color("&6⚔ Kills: &f" + kills));
+        meta.lore(lore);
+        hand.setItemMeta(meta);
+        killer.getInventory().setItemInMainHand(hand);
+        List<String> unlocked = new ArrayList<>();
+        for (Active active : weapon.abilities.actives) {
+            if (active.params().i("unlock-kills", 0) == kills) {
+                unlocked.add(active.name());
+            }
+        }
+        if (weapon.abilities.passiveUnlockKills == kills) {
+            unlocked.add("&dPassive");
+        }
+        if (!unlocked.isEmpty()) {
+            killer.showTitle(net.kyori.adventure.title.Title.title(ItemManager.color("&6&lUPGRADE"),
+                    ItemManager.color("&7Unlocked: " + String.join("&7, ", unlocked))));
+            killer.playSound(killer.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
+        }
+    }
+
+    /** Grapple: hook the enemy you look at and get pulled to it (several charges per cooldown). */
+    private boolean grappleTo(Player player, Params p) {
+        Location eye = player.getEyeLocation();
+        RayTraceResult ray = player.getWorld().rayTraceBlocks(eye, eye.getDirection(), p.d("range", 24),
+                FluidCollisionMode.NEVER, true);
+        if (ray == null || ray.getHitBlock() == null) {
+            fail(player, "ability-clawline-miss", "&cNothing to hook onto.");
+            return false;
+        }
+        World world = player.getWorld();
+        Location hook = ray.getHitPosition().toLocation(world);
+        double power = p.d("power", 1.15);
+        double leap = p.d("leap", 0.9);
+        long window = (long) (p.d("leap-window-ms", 1500));
+        long start = System.currentTimeMillis();
+        world.playSound(player.getLocation(), Sound.ITEM_CROSSBOW_SHOOT, 1f, 0.7f);
+        noFall.put(player.getUniqueId(), start + 4000);
+        repeat(1, 40, step -> {
+            if (!player.isOnline() || player.isDead() || player.getWorld() != world) {
+                return false;
+            }
+            Location hand = player.getLocation().add(0, 1.2, 0);
+            if (step < 2) {
+                Location tip = hand.clone().add(hook.toVector().subtract(hand.toVector()).multiply((step + 1) / 2.0));
+                line(hand, tip, 0.3, l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, CHAIN_DUST));
+                return true;
+            }
+            if (step == 2) {
+                world.playSound(hook, Sound.BLOCK_CHAIN_HIT, 1.2f, 1.2f);
+                Vector pull = hook.toVector().subtract(player.getLocation().toVector());
+                double distance = pull.length();
+                if (distance > 0.1) {
+                    pull.normalize().multiply(Math.min(3.2, (0.45 + distance * 0.11) * power));
+                    pull.setY(Math.max(pull.getY(), 0) + 0.3);
+                    player.setVelocity(pull);
+                }
+            }
+            line(hand, hook, 0.35, l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, CHAIN_DUST));
+            // reaching the end of the chain in time: leap
+            if (player.getLocation().distanceSquared(hook) < 6.5) {
+                if (System.currentTimeMillis() - start <= window) {
+                    Vector v = player.getVelocity();
+                    player.setVelocity(new Vector(v.getX() * 0.6, leap, v.getZ() * 0.6));
+                    world.playSound(player.getLocation(), Sound.ENTITY_BREEZE_JUMP, 1f, 1.2f);
+                    world.spawnParticle(Particle.CLOUD, player.getLocation(), 10, 0.3, 0.1, 0.3, 0.05);
+                }
+                return false;
+            }
+            return true;
+        });
+        return true;
+    }
+
+    /** Cloak: become truly invisible (armor and items too) for a few seconds. */
+    private void cloak(Player player, double seconds) {
+        boolean fresh = cloaked.put(player.getUniqueId(), System.currentTimeMillis() + (long) (seconds * 1000)) == null;
+        if (fresh) {
+            for (Player viewer : Bukkit.getOnlinePlayers()) {
+                if (!viewer.equals(player)) {
+                    viewer.hidePlayer(plugin, player);
+                }
+            }
+        }
+        player.getWorld().spawnParticle(Particle.LARGE_SMOKE, player.getLocation().add(0, 1, 0), 20, 0.3, 0.6, 0.3, 0.02);
+        player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
+        player.sendActionBar(plugin.raw("ability-cloaked", "&8☁ &7You vanished!"));
+        UUID id = player.getUniqueId();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            Long until = cloaked.get(id);
+            if (until != null && until <= System.currentTimeMillis() + 50) {
+                uncloak(id);
+            }
+        }, (long) Math.ceil(seconds * 20) + 1);
+    }
+
+    private void uncloak(UUID id) {
+        if (cloaked.remove(id) == null) {
+            return;
+        }
+        Player player = Bukkit.getPlayer(id);
+        if (player == null) {
+            return;
+        }
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            viewer.showPlayer(plugin, player);
+        }
+        player.getWorld().spawnParticle(Particle.LARGE_SMOKE, player.getLocation().add(0, 1, 0), 12, 0.3, 0.6, 0.3, 0.02);
+    }
+
+    /** Some enchantments can only go on the weapon after enough kills (anvil). */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onAnvil(org.bukkit.event.inventory.PrepareAnvilEvent event) {
+        ItemStack base = event.getInventory().getFirstItem();
+        ItemStack result = event.getResult();
+        ItemManager.Entry weapon = weaponOf(base);
+        if (weapon == null || result == null || weapon.abilities.enchantUnlocks.isEmpty()) {
+            return;
+        }
+        int kills = killsOf(base);
+        for (org.bukkit.enchantments.Enchantment ench : result.getEnchantments().keySet()) {
+            Integer need = weapon.abilities.enchantUnlocks.get(ench.getKey().getKey());
+            if (need != null && need > kills && !base.containsEnchantment(ench)) {
+                event.setResult(null);
+                return;
+            }
+        }
+    }
+
+    /** Same rule for the enchanting table. */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEnchantTable(org.bukkit.event.enchantment.EnchantItemEvent event) {
+        ItemManager.Entry weapon = weaponOf(event.getItem());
+        if (weapon == null || weapon.abilities.enchantUnlocks.isEmpty()) {
+            return;
+        }
+        int kills = killsOf(event.getItem());
+        event.getEnchantsToAdd().keySet().removeIf(ench -> {
+            Integer need = weapon.abilities.enchantUnlocks.get(ench.getKey().getKey());
+            return need != null && need > kills;
+        });
+    }
+
+    /** Hammer Throw: hurl the mace, a heavy hit that pulls the target to you, then it flies home. */
+    private boolean hammerThrow(Player player, ItemManager.Entry weapon, Params p) {
+        double damage = p.d("damage", 12);
+        double knock = p.d("knockback", 1.5);
+        player.getWorld().playSound(player.getLocation(), Sound.ITEM_MACE_SMASH_AIR, 1.2f, 0.7f);
+        throwWeapon(player, weapon.item.clone(), player.getEyeLocation().getDirection(), p.d("range", 24), 1.5, null, true,
+                target -> {
+                    hurt(player, target, damage);
+                    // the hit yanks the enemy toward you
+                    Vector v = player.getLocation().toVector().subtract(target.getLocation().toVector()).setY(0);
+                    double distance = v.length();
+                    if (distance > 1.0E-4) {
+                        v.normalize().multiply(Math.min(2.8, knock * (0.4 + distance * 0.09)));
+                    }
+                    Vector pull = v.setY(0.45);
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        if (target.isValid()) {
+                            target.setVelocity(pull);
+                        }
+                    });
+                    World world = target.getWorld();
+                    Location at = target.getLocation().add(0, 1, 0);
+                    world.playSound(at, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1.4f, 0.8f);
+                    world.spawnParticle(Particle.EXPLOSION, at, 1, 0, 0, 0, 0);
+                    world.spawnParticle(Particle.DUST, at, 20, 0.4, 0.5, 0.4, 0, KNIGHT_GOLD);
+                }, KNIGHT_GOLD);
+        return true;
+    }
+
+    // ================================================================ RIMEBREAKER (war axe: throw, recall)
+
+    private static final class AxeState {
+        ItemManager.Entry weapon;
+        Params params;
+        ItemDisplay display;
+        Location pos;
+        LivingEntity stuck;
+        long thrownAt;
+        BukkitTask task;
+    }
+
+    private void freeze(LivingEntity target, Params p) {
+        target.setFreezeTicks(Math.max(target.getFreezeTicks(), p.i("freeze-ticks", 160)));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, p.i("slow-ticks", 50),
+                Math.max(0, p.i("slow-level", 3) - 1)));
+        World world = target.getWorld();
+        Location at = target.getLocation().add(0, target.getHeight() / 2, 0);
+        world.spawnParticle(Particle.SNOWFLAKE, at, 20, 0.3, 0.5, 0.3, 0.02);
+        world.spawnParticle(Particle.DUST, at, 10, 0.3, 0.5, 0.3, 0, FROST_DUST);
+        world.playSound(at, Sound.BLOCK_GLASS_BREAK, 0.8f, 1.6f);
+    }
+
+    /** Shows the hand item in its "thrown" look (or back to normal). */
+    private void setAxeLook(Player player, ItemManager.Entry weapon, boolean thrown, int thrownModel) {
+        Integer normal = weapon.item.getItemMeta().hasCustomModelData() ? weapon.item.getItemMeta().getCustomModelData() : null;
+        ItemStack[] contents = player.getInventory().getContents();
+        for (int i = 0; i < contents.length; i++) {
+            ItemStack stack = contents[i];
+            if (stack == null || !weapon.ref().equals(items.idOf(stack))) {
+                continue;
+            }
+            org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+            meta.setCustomModelData(thrown && thrownModel > 0 ? Integer.valueOf(thrownModel) : normal);
+            stack.setItemMeta(meta);
+            player.getInventory().setItem(i, stack);
+        }
+    }
+
+    private boolean throwAxe(Player player, ItemManager.Entry weapon, Params p) {
+        World world = player.getWorld();
+        AxeState state = new AxeState();
+        state.weapon = weapon;
+        state.params = p;
+        state.thrownAt = System.currentTimeMillis();
+        state.pos = player.getEyeLocation().subtract(0, 0.3, 0);
+        state.display = spawnFlying(world, state.pos, weapon.item.clone(), 1.3f);
+        axes.put(player.getUniqueId(), state);
+        setAxeLook(player, weapon, true, p.i("thrown-model-data", 0));
+        world.playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.2f, 0.6f);
+        Vector dir = player.getEyeLocation().getDirection().normalize();
+        double speed = 1.6;
+        int steps = (int) Math.ceil(p.d("range", 30) / speed);
+        double damage = p.d("damage", 7);
+        long maxOut = (long) (p.d("max-out-seconds", 30) * 1000);
+        int[] step = {0};
+        boolean[] flying = {true};
+        state.task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (axes.get(player.getUniqueId()) != state || !state.display.isValid()) {
+                return;
+            }
+            if (!player.isOnline() || System.currentTimeMillis() - state.thrownAt > maxOut) {
+                recallAxe(player);
+                return;
+            }
+            if (flying[0]) {
+                RayTraceResult hit = step[0] >= steps ? null
+                        : world.rayTrace(state.pos, dir, speed, FluidCollisionMode.NEVER, true, 0.6, e -> valid(player, e));
+                if (hit != null && hit.getHitEntity() instanceof LivingEntity target) {
+                    hurt(player, target, damage);
+                    freeze(target, p);
+                    state.stuck = target;
+                    flying[0] = false;
+                    world.playSound(target.getLocation(), Sound.ITEM_TRIDENT_HIT, 1.2f, 0.7f);
+                } else if (step[0] >= steps || (hit != null && hit.getHitBlock() != null)) {
+                    if (hit != null) {
+                        state.pos = hit.getHitPosition().toLocation(world).subtract(dir.clone().multiply(0.3));
+                        world.playSound(state.pos, Sound.ITEM_TRIDENT_HIT_GROUND, 1.2f, 0.7f);
+                        world.spawnParticle(Particle.SNOWFLAKE, state.pos, 15, 0.2, 0.2, 0.2, 0.02);
+                    }
+                    flying[0] = false;
+                } else {
+                    state.pos.add(dir.clone().multiply(speed));
+                    moveFlying(state.display, state.pos, dir, step[0], true, 1.3f);
+                    world.spawnParticle(Particle.SNOWFLAKE, state.pos, 1, 0.05, 0.05, 0.05, 0);
+                }
+                step[0]++;
+                return;
+            }
+            // stuck in a block or riding in an enemy
+            if (state.stuck != null && state.stuck.isValid() && !state.stuck.isDead()) {
+                state.pos = state.stuck.getLocation().add(0, state.stuck.getHeight() * 0.6, 0);
+                state.display.teleport(state.pos);
+            }
+            if (step[0]++ % 8 == 0) {
+                world.spawnParticle(Particle.SNOWFLAKE, state.pos, 2, 0.15, 0.15, 0.15, 0.01);
+            }
+        }, 1L, 1L);
+        return true;
+    }
+
+    /** Calls the thrown axe back. It hits and freezes everything on its way home. */
+    private void recallAxe(Player player) {
+        AxeState state = axes.remove(player.getUniqueId());
+        if (state == null) {
+            return;
+        }
+        if (state.task != null) {
+            state.task.cancel();
+        }
+        if (!player.isOnline()) {
+            state.display.remove();
+            return;
+        }
+        player.getWorld().playSound(player.getLocation(), Sound.ITEM_TRIDENT_RETURN, 1.2f, 0.6f);
+        double damage = state.params.d("recall-damage", 6);
+        if (state.display.getWorld() != player.getWorld()) {
+            state.display.remove();
+            setAxeLook(player, state.weapon, false, 0);
+            return;
+        }
+        flyBack(player, state.display, state.display.getLocation(), true, target -> {
+            hurt(player, target, damage);
+            freeze(target, state.params);
+        }, 1.4, () -> {
+            if (player.isOnline()) {
+                setAxeLook(player, state.weapon, false, 0);
+                player.getWorld().spawnParticle(Particle.SNOWFLAKE, player.getLocation().add(0, 1.2, 0), 15, 0.3, 0.3, 0.3, 0.05);
+            }
+        });
+    }
+
+    /** Puts the axe back instantly (quit, death, shutdown). */
+    private void dropAxeState(Player player) {
+        AxeState state = axes.remove(player.getUniqueId());
+        if (state == null) {
+            return;
+        }
+        if (state.task != null) {
+            state.task.cancel();
+        }
+        state.display.remove();
+        setAxeLook(player, state.weapon, false, 0);
+    }
+
+    /** Frost Runic: a wave of ice rolls forward, freezing and hurting everything it passes. */
+    private boolean frostWave(Player player, Params p) {
+        World world = player.getWorld();
+        Vector dir = player.getLocation().getDirection().setY(0);
+        if (dir.lengthSquared() < 1.0E-4) {
+            dir = new Vector(0, 0, 1);
+        }
+        dir.normalize();
+        Vector side = new Vector(-dir.getZ(), 0, dir.getX());
+        Location origin = player.getLocation().add(0, 0.2, 0);
+        int length = Math.max(2, p.i("length", 12));
+        double damage = p.d("damage", 6);
+        Set<UUID> hitOnce = new java.util.HashSet<>();
+        world.playSound(origin, Sound.ITEM_MACE_SMASH_GROUND, 1.2f, 0.6f);
+        world.playSound(origin, Sound.BLOCK_GLASS_BREAK, 1.2f, 0.5f);
+        Vector d = dir;
+        repeat(1, length, step -> {
+            double width = 1 + step * 2.0 / length;
+            Location center = origin.clone().add(d.clone().multiply(step + 1));
+            for (double w = -width; w <= width; w += 0.5) {
+                Location l = center.clone().add(side.clone().multiply(w));
+                world.spawnParticle(Particle.SNOWFLAKE, l, 1, 0.1, 0.2, 0.1, 0.01);
+                world.spawnParticle(Particle.DUST, l.clone().add(0, 0.3, 0), 1, 0.05, 0.2, 0.05, 0, FROST_DUST);
+                Block below = l.getBlock().getRelative(0, -1, 0);
+                if (below.getType() == Material.WATER && l.getBlock().getType().isAir()
+                        && below.getBlockData() instanceof org.bukkit.block.data.Levelled lv && lv.getLevel() == 0) {
+                    below.setType(Material.FROSTED_ICE);
+                }
+            }
+            if (step % 3 == 0) {
+                world.playSound(center, Sound.BLOCK_POWDER_SNOW_BREAK, 1f, 0.8f);
+            }
+            for (LivingEntity target : targets(player, center, width + 0.8)) {
+                if (hitOnce.add(target.getUniqueId())) {
+                    hurt(player, target, damage);
+                    freeze(target, p);
+                }
+            }
+            return true;
+        });
+        return true;
+    }
+
+    // ================================================================ PINNING REPEATER (crossbow)
+
+    private boolean pinBolt(Player player, Params p) {
+        pinArmed.put(player.getUniqueId(), System.currentTimeMillis() + (long) (p.d("window", 10) * 1000));
+        player.getWorld().playSound(player.getLocation(), Sound.BLOCK_CHAIN_PLACE, 1.2f, 0.8f);
+        player.getWorld().spawnParticle(Particle.DUST, player.getLocation().add(0, 1.2, 0), 15, 0.3, 0.4, 0.3, 0, CHAIN_DUST);
+        return true;
+    }
+
+    /** Pins an entity in place: no walking, no jumping, a chain to where the bolt landed. */
+    private void pin(LivingEntity target, Location anchor, double seconds) {
+        long until = System.currentTimeMillis() + (long) (seconds * 1000);
+        boolean fresh = pinned.put(target.getUniqueId(), until) == null;
+        if (fresh) {
+            for (Attribute attribute : new Attribute[] {Attribute.MOVEMENT_SPEED, Attribute.JUMP_STRENGTH}) {
+                AttributeInstance inst = target.getAttribute(attribute);
+                if (inst != null) {
+                    inst.removeModifier(pinKey);
+                    inst.addTransientModifier(new org.bukkit.attribute.AttributeModifier(pinKey, -1,
+                            org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1));
+                }
+            }
+        }
+        World world = target.getWorld();
+        world.playSound(target.getLocation(), Sound.BLOCK_CHAIN_HIT, 1.5f, 0.6f);
+        if (target instanceof Player victim) {
+            victim.sendActionBar(plugin.raw("ability-pinned", "&7You've been &fpinned&7!"));
+        }
+        repeat(2, (int) Math.ceil(seconds * 10) + 1, step -> {
+            Long end = pinned.get(target.getUniqueId());
+            if (end == null || end < System.currentTimeMillis() || !target.isValid() || target.isDead()) {
+                unpin(target);
+                return false;
+            }
+            target.setVelocity(new Vector(0, Math.min(0, target.getVelocity().getY()), 0));
+            if (anchor.getWorld() == target.getWorld()) {
+                line(anchor, target.getLocation().add(0, target.getHeight() / 2, 0), 0.4,
+                        l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, CHAIN_DUST));
+            }
+            return true;
+        });
+    }
+
+    private void unpin(LivingEntity target) {
+        pinned.remove(target.getUniqueId());
+        for (Attribute attribute : new Attribute[] {Attribute.MOVEMENT_SPEED, Attribute.JUMP_STRENGTH}) {
+            AttributeInstance inst = target.getAttribute(attribute);
+            if (inst != null) {
+                inst.removeModifier(pinKey);
+            }
+        }
+    }
+
+    /** Volley: five bolts at once in a fan, no reload needed. */
+    private boolean volley(Player player, ItemManager.Entry weapon, Params p) {
+        int count = Math.max(1, p.i("arrows", 5));
+        double spread = p.d("spread-degrees", 24);
+        double damage = p.d("arrow-damage", 4);
+        World world = player.getWorld();
+        Location eye = player.getEyeLocation();
+        for (int i = 0; i < count; i++) {
+            double offset = count == 1 ? 0 : -spread / 2 + spread * i / (count - 1);
+            Location aim = eye.clone();
+            aim.setYaw(eye.getYaw() + (float) offset);
+            Vector v = aim.getDirection().multiply(p.d("speed", 3.0));
+            org.bukkit.entity.Arrow arrow = world.spawnArrow(eye.clone().add(aim.getDirection().multiply(0.5)), v, (float) v.length(), 0f);
+            arrow.setShooter(player);
+            arrow.setDamage(damage);
+            arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+            arrow.setCritical(true);
+            arrow.getPersistentDataContainer().set(arrowKey, PersistentDataType.STRING, weapon.ref());
+        }
+        world.playSound(eye, Sound.ITEM_CROSSBOW_SHOOT, 1.4f, 0.8f);
+        world.playSound(eye, Sound.ITEM_CROSSBOW_SHOOT, 1.4f, 1.2f);
+        return true;
+    }
+
+    // ================================================================ VALKYRIE'S LANCE (spear)
+
+    /** Lunge: dash forward, piercing everyone in the way. */
+    private boolean lunge(Player player, Params p) {
+        Vector dir = player.getEyeLocation().getDirection();
+        dir.setY(Math.max(-0.2, Math.min(0.35, dir.getY())));
+        dir.normalize().multiply(p.d("power", 1.8));
+        player.setVelocity(dir);
+        noFall.put(player.getUniqueId(), System.currentTimeMillis() + 2500);
+        double damage = p.d("damage", 7);
+        Set<UUID> hitOnce = new java.util.HashSet<>();
+        World world = player.getWorld();
+        world.playSound(player.getLocation(), Sound.ENTITY_BREEZE_WIND_BURST, 1.2f, 1.2f);
+        repeat(1, p.i("ticks", 9), step -> {
+            if (!player.isOnline() || player.isDead()) {
+                return false;
+            }
+            Location at = player.getLocation().add(0, 1, 0);
+            world.spawnParticle(Particle.DUST, at, 3, 0.3, 0.3, 0.3, 0, VALK_DUST);
+            world.spawnParticle(Particle.CLOUD, at, 1, 0.1, 0.1, 0.1, 0.01);
+            for (LivingEntity target : targets(player, at, 1.8)) {
+                if (hitOnce.add(target.getUniqueId())) {
+                    hurt(player, target, damage);
+                    target.setVelocity(target.getVelocity().add(player.getVelocity().clone().multiply(0.5)).setY(0.3));
+                    world.playSound(target.getLocation(), Sound.ITEM_TRIDENT_HIT, 1.2f, 1.3f);
+                    world.spawnParticle(Particle.CRIT, target.getLocation().add(0, 1, 0), 12, 0.3, 0.4, 0.3, 0.3);
+                }
+            }
+            return true;
+        });
+        return true;
+    }
+
+    /** Javelin: throw the lance; it homes in on the target you look at, then flies back. */
+    private boolean javelin(Player player, ItemManager.Entry weapon, Params p) {
+        LivingEntity target = lookTarget(player, p.d("lock-range", 32));
+        double damage = p.d("damage", 10);
+        int glow = p.i("glow-ticks", 60);
+        player.getWorld().playSound(player.getLocation(), Sound.ITEM_TRIDENT_THROW, 1.2f, 1.1f);
+        throwWeapon(player, weapon.item.clone(), player.getEyeLocation().getDirection(), p.d("range", 40), 1.7, target, false,
+                hit -> {
+                    hurt(player, hit, damage);
+                    hit.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, glow, 0, false, false, false));
+                    World world = hit.getWorld();
+                    Location at = hit.getLocation().add(0, hit.getHeight() / 2, 0);
+                    world.playSound(at, Sound.ITEM_TRIDENT_HIT, 1.4f, 0.9f);
+                    world.spawnParticle(Particle.END_ROD, at, 12, 0.3, 0.4, 0.3, 0.08);
+                    world.spawnParticle(Particle.DUST, at, 15, 0.3, 0.4, 0.3, 0, VALK_DUST);
+                }, VALK_DUST);
+        return true;
+    }
+
+    // ================================================================ TRIDENT OF THE GREAT SEA
+
+    private boolean seaKing(Player player) {
+        Long until = seaKing.get(player.getUniqueId());
+        return until != null && until > System.currentTimeMillis();
+    }
+
+    /** Tidal Surge: a riptide launch that works anywhere - no water or rain needed. */
+    private boolean tidalSurge(Player player, Params p) {
+        Vector dir = player.getEyeLocation().getDirection().normalize().multiply(p.d("power", 2.2));
+        if (player.isOnGround()) {
+            player.teleport(player.getLocation().add(0, 1.1, 0));    // like vanilla riptide on the ground
+        }
+        player.setVelocity(dir);
+        player.startRiptideAttack(p.i("spin-ticks", 20), (float) p.d("spin-damage", 8), player.getInventory().getItemInMainHand());
+        noFall.put(player.getUniqueId(), System.currentTimeMillis() + 3500);
+        World world = player.getWorld();
+        world.playSound(player.getLocation(), Sound.ITEM_TRIDENT_RIPTIDE_3, 1.2f, 1f);
+        repeat(1, 14, step -> {
+            if (!player.isOnline()) {
+                return false;
+            }
+            Location at = player.getLocation().add(0, 0.8, 0);
+            world.spawnParticle(Particle.SPLASH, at, 12, 0.4, 0.4, 0.4, 0.2);
+            world.spawnParticle(Particle.BUBBLE_POP, at, 4, 0.3, 0.3, 0.3, 0.05);
+            world.spawnParticle(Particle.DUST, at, 2, 0.3, 0.3, 0.3, 0, SEA_DUST);
+            return true;
+        });
+        return true;
+    }
+
+    /** The Great Sea: a tidal wave rolls out from you, and for a few seconds you rule the sea. */
+    private boolean greatTide(Player player, Params p) {
+        double radius = p.d("radius", 8);
+        double damage = p.d("damage", 6);
+        int seconds = p.i("king-seconds", 8);
+        World world = player.getWorld();
+        Location center = player.getLocation();
+        Set<UUID> hitOnce = new java.util.HashSet<>();
+        world.playSound(center, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.8f, 1.4f);
+        world.playSound(center, Sound.AMBIENT_UNDERWATER_ENTER, 1.5f, 0.7f);
+        repeat(1, 10, step -> {
+            double r = radius * (step + 1) / 10.0;
+            ring(center.clone().add(0, 0.3, 0), r, Math.max(16, (int) (r * 8)), l -> {
+                world.spawnParticle(Particle.SPLASH, l, 3, 0.1, 0.3, 0.1, 0.1);
+                world.spawnParticle(Particle.DUST, l.clone().add(0, 0.6, 0), 1, 0.05, 0.3, 0.05, 0, SEA_DUST);
+            });
+            for (LivingEntity target : targets(player, center, r + 0.5)) {
+                if (hitOnce.add(target.getUniqueId())) {
+                    hurt(player, target, damage);
+                    Vector out = target.getLocation().toVector().subtract(center.toVector()).setY(0);
+                    if (out.lengthSquared() > 1.0E-4) {
+                        out.normalize().multiply(p.d("push", 1.3));
+                    }
+                    target.setVelocity(out.setY(0.5));
+                    target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 60, 1));
+                }
+            }
+            return true;
+        });
+        seaKing.put(player.getUniqueId(), System.currentTimeMillis() + seconds * 1000L);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.DOLPHINS_GRACE, seconds * 20, 0, false, true, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.CONDUIT_POWER, seconds * 20, 0, false, true, true));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, seconds * 20, 1, false, true, true));
+        player.sendActionBar(plugin.raw("ability-sea-king", "&3The law doesn't cover the Great Sea. &bSurge has no cooldown!"));
+        repeat(5, seconds * 4, step -> {
+            if (!player.isOnline() || !seaKing(player)) {
+                return false;
+            }
+            Location l = player.getLocation();
+            ring(l.clone().add(0, 2.3, 0), 0.4, 8, x -> world.spawnParticle(Particle.DUST, x, 1, 0, 0, 0, 0, SEA_DUST));
+            world.spawnParticle(Particle.DRIPPING_WATER, l.clone().add(0, 2, 0), 3, 0.3, 0.1, 0.3, 0);
+            return true;
+        });
+        return true;
+    }
+
+    /** Tags thrown tridents with their weapon, so on-hit effects work on throws too. */
+    @EventHandler(ignoreCancelled = true)
+    public void onTridentThrow(ProjectileLaunchEvent event) {
+        if (!(event.getEntity() instanceof org.bukkit.entity.Trident trident)
+                || !(trident.getShooter() instanceof Player player)) {
+            return;
+        }
+        ItemManager.Entry weapon = weaponOf(trident.getItemStack());
+        if (weapon != null) {
+            trident.getPersistentDataContainer().set(arrowKey, PersistentDataType.STRING, weapon.ref());
+        }
+    }
+
     // ================================================================ bows
 
     @EventHandler
@@ -1366,6 +2469,10 @@ public final class AbilityManager implements Listener {
         }
         Entity projectile = event.getProjectile();
         projectile.getPersistentDataContainer().set(arrowKey, PersistentDataType.STRING, weapon.ref());
+        if (pinArmed.remove(player.getUniqueId()) != null) {
+            projectile.getPersistentDataContainer().set(pinShotKey, PersistentDataType.BYTE, (byte) 1);
+            player.getWorld().playSound(player.getLocation(), Sound.BLOCK_CHAIN_BREAK, 1f, 0.8f);
+        }
         boolean mirror = mirrorArmed.remove(player.getUniqueId()) != null;
         if (mirror) {
             projectile.getPersistentDataContainer().set(mirrorKey, PersistentDataType.BYTE, (byte) 1);
@@ -1446,6 +2553,11 @@ public final class AbilityManager implements Listener {
             attacker = player;
             weapon = weaponOf(player.getInventory().getItemInMainHand());
             melee = true;
+            AxeState out = axes.get(player.getUniqueId());
+            if (weapon != null && out != null && out.weapon.ref().equals(weapon.ref())) {
+                event.setDamage(1);          // the axe is out: you're fighting with your fists
+                return;
+            }
             if (weapon != null && isRanged(weapon)) {
                 weapon = null;
             }
@@ -1460,6 +2572,10 @@ public final class AbilityManager implements Listener {
                     && !shooter.equals(victim) && valid(shooter, victim)) {
                 swapPlaces(shooter, victim);
             }
+            if (projectile.getPersistentDataContainer().has(pinShotKey, PersistentDataType.BYTE)
+                    && !shooter.equals(victim) && valid(shooter, victim) && weapon_pinSeconds(ref) > 0) {
+                pin(victim, projectile.getLocation(), weapon_pinSeconds(ref));
+            }
         }
         if (attacker == null || attacker.equals(victim) || weapon == null
                 || weapon.abilities.onHit.isEmpty() || !enabledIn(attacker.getWorld())) {
@@ -1470,7 +2586,11 @@ public final class AbilityManager implements Listener {
         if (melee && strength != null && strength < 0.85f) {
             return;
         }
+        int weaponKills = melee ? killsOf(attacker.getInventory().getItemInMainHand()) : Integer.MAX_VALUE;
         for (OnHit hit : weapon.abilities.onHit) {
+            if (hit.params().i("unlock-kills", 0) > weaponKills) {
+                continue;
+            }
             if (ThreadLocalRandom.current().nextDouble(100) < hit.chance()) {
                 applyOnHit(attacker, victim, hit, event);
             }
@@ -1517,12 +2637,40 @@ public final class AbilityManager implements Listener {
                 }, delay);
             }
             case CRUSH -> {
+                // 1) standing above the target
                 double height = attacker.getLocation().getY() - victim.getLocation().getY();
-                if (height >= 1) {
-                    double bonus = Math.min(p.d("max-bonus", 8), height * p.d("damage-per-block", 1.5));
+                double bonus = height >= 1 ? Math.min(p.d("max-bonus", 8), height * p.d("damage-per-block", 1.5)) : 0;
+                // 2) falling onto it: the fall so far, or a landing that happened a moment ago
+                double fall = attacker.getFallDistance();
+                Landing landing = landed.get(attacker.getUniqueId());
+                if (landing != null && System.currentTimeMillis() - landing.time() <= p.d("landing-window-ms", 700)) {
+                    fall = Math.max(fall, landing.distance());
+                }
+                boolean slammed = false;
+                if (fall >= 1.5) {
+                    double fallBonus = Math.min(p.d("max-fall-bonus", 20), fall * p.d("fall-damage-per-block", 1.0));
+                    if (fallBonus > bonus) {
+                        bonus = fallBonus;
+                        slammed = true;
+                    }
+                }
+                if (bonus > 0) {
                     event.setDamage(event.getDamage() + scaled(victim, bonus));
                     world.spawnParticle(Particle.DUST, at, 20, 0.3, 0.5, 0.3, 0, GRAVITY_CORE);
                     world.playSound(at, Sound.BLOCK_ANVIL_LAND, 0.7f, 0.6f);
+                }
+                if (slammed) {
+                    // like a mace: the slam eats the fall, so a mid-air hit means no fall damage
+                    attacker.setFallDistance(0);
+                    landed.remove(attacker.getUniqueId());
+                    Location ground = victim.getLocation();
+                    world.playSound(ground, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1.3f, 0.6f);
+                    ring(ground.clone().add(0, 0.2, 0), 2.5, 28,
+                            l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0.05, 0, 0, GRAVITY_DUST));
+                    world.spawnParticle(Particle.EXPLOSION, ground, 1, 0, 0, 0, 0);
+                    if (attacker instanceof Player hammer) {
+                        hammer.sendActionBar(ItemManager.color("&5⬇ Slam &d+" + Math.round(bonus) + " &7damage"));
+                    }
                 }
                 if (!victim.isOnGround()) {
                     double slam = p.d("slam", 1.6);
@@ -1588,6 +2736,30 @@ public final class AbilityManager implements Listener {
                 }
             }
             case TASTE -> addTaste(victim, 1, Math.max(1, p.i("max", 3)), p.d("duration", 6));
+            case CLOAK -> cloak(attacker, p.d("seconds", 3));
+            case TIDE -> {
+                if (victim.isInWaterOrRain() || attacker.isInWaterOrRain() || seaKing(attacker)) {
+                    event.setDamage(event.getDamage() * (1 + p.d("bonus-percent", 40) / 100.0));
+                    victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, p.i("slow-ticks", 40), 1));
+                    world.spawnParticle(Particle.SPLASH, at, 25, 0.3, 0.5, 0.3, 0.2);
+                    world.spawnParticle(Particle.DUST, at, 8, 0.3, 0.4, 0.3, 0, SEA_DUST);
+                    world.playSound(at, Sound.ENTITY_PLAYER_SPLASH_HIGH_SPEED, 0.8f, 1.2f);
+                }
+            }
+            case SILK_BIND -> {
+                int every = Math.max(1, p.i("every", 3));
+                int count = silkHits.merge(attacker.getUniqueId(), 1, Integer::sum);
+                if (count >= every) {
+                    silkHits.remove(attacker.getUniqueId());
+                    victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, p.i("bind-ticks", 25),
+                            Math.max(0, p.i("slow-level", 4) - 1)));
+                    for (int k = 0; k < 3; k++) {
+                        ring(victim.getLocation().add(0, 0.4 + k * 0.6, 0), 0.6, 12,
+                                l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, SILK_DUST));
+                    }
+                    world.playSound(at, Sound.BLOCK_WOOL_PLACE, 1.4f, 0.6f);
+                }
+            }
             case LIFESTEAL -> {
                 double heal = event.getFinalDamage() * p.d("percent", 20) / 100.0;
                 attacker.setHealth(Math.min(maxHealth(attacker), attacker.getHealth() + heal(attacker, heal)));
@@ -1629,7 +2801,28 @@ public final class AbilityManager implements Listener {
     public void onDeath(EntityDeathEvent event) {
         releaseFor(event.getEntity().getUniqueId());
         taste.remove(event.getEntity().getUniqueId());
+        unpin(event.getEntity());
+        if (event.getEntity() instanceof Player dead && axes.containsKey(dead.getUniqueId())) {
+            AxeState state = axes.get(dead.getUniqueId());
+            Integer normal = state.weapon.item.getItemMeta().hasCustomModelData()
+                    ? state.weapon.item.getItemMeta().getCustomModelData() : null;
+            for (ItemStack drop : event.getDrops()) {
+                if (state.weapon.ref().equals(items.idOf(drop))) {
+                    org.bukkit.inventory.meta.ItemMeta meta = drop.getItemMeta();
+                    meta.setCustomModelData(normal);
+                    drop.setItemMeta(meta);
+                }
+            }
+            dropAxeState(dead);
+        }
         Player killer = event.getEntity().getKiller();
+        if (killer != null) {
+            ItemManager.Entry killWeapon = weaponOf(killer.getInventory().getItemInMainHand());
+            if (killWeapon != null && killWeapon.abilities.trackKills && !killer.equals(event.getEntity())
+                    && (event.getEntity() instanceof Player || killWeapon.abilities.countMobs)) {
+                addKill(killer, killWeapon);
+            }
+        }
         if (killer == null) {
             return;
         }
@@ -1649,6 +2842,15 @@ public final class AbilityManager implements Listener {
         releaseFor(id);
         taste.remove(id);
         bloodrush.remove(id);
+        noFall.remove(id);
+        silkHits.remove(id);
+        landed.remove(id);
+        dropAxeState(event.getPlayer());
+        uncloak(id);
+        unpin(event.getPlayer());
+        pinArmed.remove(id);
+        seaKing.remove(id);
+        chargeUse.remove(id);
         charge.remove(id);
         lastTrigger.remove(id);
         history.remove(id);
@@ -1674,6 +2876,20 @@ public final class AbilityManager implements Listener {
             return null;
         }
         return items.get(ref);
+    }
+
+    /** Pin length (seconds) of the weapon's PIN_BOLT ability, 0 if it has none. */
+    private double weapon_pinSeconds(String ref) {
+        ItemManager.Entry weapon = ref == null ? null : items.get(ref);
+        if (weapon == null) {
+            return 0;
+        }
+        for (Active active : weapon.abilities.actives) {
+            if (active.type() == ActiveType.PIN_BOLT) {
+                return active.params().d("pin-seconds", 2);
+            }
+        }
+        return 0;
     }
 
     private static boolean isRanged(ItemManager.Entry weapon) {

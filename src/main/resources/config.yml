@@ -50,6 +50,8 @@ messages:
   relic-revived: "&f✦ {player} &7was saved by {relic}&7!"
   relic-wounded: "&4✖ Grievous Wounds &7- you can't heal for a moment"
   relic-shrugged: "&3⛨ Shrugged off &f{amount} ❤"
+  relic-parry: "&f✦ Parry!"
+  relic-shell-broken: "&7The shell cracked - it grows back in {time}"
   usage: "&7Usage: &e/forge [reload | status | give <player> <weapon:id|relic:id> [amount] | release <id> | finish <id>]"
   forge-open-hint: "&7Shift + right-click a &fcrafting table &7with an empty hand to open the forge."
   # forge rituals ({where} is replaced by ritual-where, or nothing if show-coordinates is false)
@@ -91,6 +93,11 @@ messages:
   ability-devour-taste: "&cIt needs &6{stacks} Taste &cstacks first."
   ability-devoured-ally: "&3You were swallowed for safety. &7Sneak to hop out."
   ability-devoured-enemy: "&4You've been devoured!"
+  ability-clawline-miss: "&cNothing to hook onto."
+  ability-locked: "&c{ability} &7unlocks at &6{need} kills &8({have}/{need})"
+  ability-pinned: "&7You've been &fpinned&7!"
+  ability-cloaked: "&8☁ &7You vanished!"
+  ability-sea-king: "&3The law doesn't cover the Great Sea. &bSurge has no cooldown!"
 
 # ------------------------------------------------------------
 #  CRAFTABLE - switch items on/off without deleting them
@@ -108,12 +115,22 @@ craftable:
     hydra_edge: true
     butcher_cleaver: true
     abyssal_maw: true
+    clawline_pick: true
+    silk_needle: true
+    # not obtainable yet - only /forge give (flip to true to put it in the forge)
+    knightfall: false
+    rimebreaker: true
+    pinning_repeater: true
+    valkyries_lance: true
+    great_sea_trident: true
   relics:
     stasis_hourglass: true
     angels_wings: true
     thorn_plate: true
     heartsteel_core: true
     thick_hide: true
+    soul_vessel_mask: true
+    stitchguard: true
   materials:
     resonant_shard: true
     graviton_core: true
@@ -127,6 +144,16 @@ craftable:
     ravenous_marrow: true
     abyssal_lure: true
     behemoth_hide: true
+    pale_fragment: true
+    carapace_shard: true
+    deepsteel_claw: true
+    weavers_silk: true
+    # Knightfall's material - doesn't drop while Knightfall isn't forgeable
+    fallen_crest: false
+    rime_core: true
+    hunters_bolt: true
+    valkyrie_plume: true
+    sea_kings_doubloon: true
 
 # ------------------------------------------------------------
 #  FORGE RITUAL (weapons)
@@ -200,13 +227,22 @@ ability-settings:
 #    passive:   potion effects while the weapon is held in the main hand
 #               effects: { effect_name: level-1 }   (0 = level I)
 #               low-health-regen: { below-percent: 30, percent-per-second: 1.5 }
+#               ore-double-chance: 20   (tools: % chance a mined ore drops twice)
 #    on-hit:    effects on hit (charged melee hit, or an arrow from this bow)
-#               types: ECHO, CRUSH, RICOCHET, SOUL, LIFESTEAL, CLEAVE, BLUNT_FORCE, TASTE
+#               types: ECHO, CRUSH, RICOCHET, SOUL, LIFESTEAL, CLEAVE, BLUNT_FORCE, TASTE, SILK_BIND, TIDE, CLOAK
+#               (on-hit entries can also have unlock-kills)
 #    active:    abilities with a cooldown (seconds)
 #               trigger: RIGHT_CLICK, SHIFT_RIGHT_CLICK, SWAP (F key), SHIFT_SWAP
 #               types: REWIND, RESONANCE, GRAVITY_ANCHOR, UPHEAVAL,
 #                      MIRROR_SHOT, HEX_MARK, SOUL_LINK, HARVEST, CRESCENT, FRENZY,
-#                      CLEAVER_TOSS, BLOODRUSH, TONGUE_LASH, DEVOUR
+#                      CLEAVER_TOSS, BLOODRUSH, TONGUE_LASH, DEVOUR,
+#                      CLAWLINE, DIVE, SILK_DART, THREAD_STORM, GRAPPLE, HAMMER_THROW,
+#                      AXE_THROW, FROST_WAVE, PIN_BOLT, VOLLEY, LUNGE, JAVELIN, TIDAL_SURGE, GREAT_TIDE
+#               charges: 3        -> usable 3 times before the cooldown starts
+#               unlock-kills: 10  -> locked until the weapon has this many kills (needs "kills:")
+#    kills:     { enabled: true, count-mobs: false } -> the weapon counts its kills (stored on the item);
+#               passive "unlock-kills" works the same way
+#    enchant-unlocks: { wind_burst: 2 } -> that enchantment can only be added after 2 kills
 #  "max HP" scaling: Cleaver Toss, Bloodrush, Tongue Lash and Devour grow with your
 #  MAX health, so they pair well with Heartsteel Core and Health Boost.
 #    arrow-trail: particle behind arrows (bows only), e.g. WITCH
@@ -278,9 +314,14 @@ weapons:
           chance: 100
           damage-per-block: 1.5
           max-bonus: 8
+          # falling onto the target (like a mace): +1 per block fallen, max +20.
+          # Hitting while still in the air cancels your fall damage.
+          fall-damage-per-block: 1.0
+          max-fall-bonus: 20
+          landing-window-ms: 700
           slam: 1.6
           slow-ticks: 30
-          description: ["Crushing Weight: +1.5 dmg per block", "you're above the target, airborne", "targets get slammed down."]
+          description: ["Crushing Weight: fall onto the target for", "+1 dmg per block fallen (max +20) - a", "mid-air hit cancels your fall damage.", "Standing above it: +1.5 per block (max +8).", "Airborne targets get slammed down."]
       active:
         anchor:
           type: GRAVITY_ANCHOR
@@ -558,6 +599,324 @@ weapons:
       - { item: PRISMARINE_CRYSTALS, amount: 32 }
       - { item: "material:abyssal_lure", amount: 1 }
 
+  clawline_pick:
+    material: NETHERITE_PICKAXE
+    name: "&c&lClawline Pick"
+    lore:
+      - "&7Hook in. Pull. Dig."
+    custom-model-data: 1008
+    unbreakable: true
+    attack-damage: 7
+    attack-speed: 1.2
+    enchants:
+      efficiency: 5
+      fortune: 3
+    abilities:
+      passive:
+        effects: { haste: 1 }
+        ore-double-chance: 20
+        description: ["Haste II while held. Mined ores have", "a 20% chance to drop twice."]
+      active:
+        clawline:
+          type: CLAWLINE
+          name: "&cClawline"
+          trigger: SWAP
+          cooldown: 6
+          description: ["Shoot a hook at the block you look at", "(24 blocks) and get yanked to it.", "No fall damage right after."]
+          range: 24
+          power: 1.0
+        dive:
+          type: DIVE
+          name: "&f&lDive"
+          trigger: SHIFT_SWAP
+          cooldown: 30
+          description: ["Hop up and slam down, carving a 3x3", "shaft (up to 8 blocks). Landing sends", "a shockwave: 6 damage, 4 blocks around.", "Claims and protected areas are respected."]
+          depth: 8
+          max-hardness: 30
+          impact-damage: 6
+          impact-radius: 4
+    forge:
+      - { item: NETHERITE_PICKAXE, amount: 1 }
+      - { item: IRON_CHAIN, amount: 32 }
+      - { item: DIAMOND_BLOCK, amount: 4 }
+      - { item: TRIPWIRE_HOOK, amount: 16 }
+      - { item: "material:deepsteel_claw", amount: 1 }
+
+  silk_needle:
+    material: NETHERITE_SWORD
+    name: "&f&lSilk Needle"
+    lore:
+      - "&7Light, fast, and never alone - the thread follows."
+    custom-model-data: 1009
+    unbreakable: true
+    attack-damage: 7
+    attack-speed: 2.0
+    enchants:
+      sharpness: 5
+    abilities:
+      passive:
+        effects: { speed: 0 }
+        description: "Speed I"
+      on-hit:
+        - type: SILK_BIND
+          chance: 100
+          every: 3
+          bind-ticks: 25
+          slow-level: 4
+          description: ["Silk Bind: every 3rd charged hit wraps", "the target in silk (Slowness IV, 1.25s)."]
+      active:
+        dart:
+          type: SILK_DART
+          name: "&fSilk Dart"
+          trigger: SWAP
+          cooldown: 8
+          description: ["Throw the needle on a thread (16 blocks):", "it stabs the first enemy for 4 and pulls", "you to it - or to the block it hits."]
+          range: 16
+          damage: 4
+          power: 1.1
+        storm:
+          type: THREAD_STORM
+          name: "&c&lThread Storm"
+          trigger: SHIFT_SWAP
+          cooldown: 40
+          description: ["Spin in a storm of silk for 3s: 1.5", "damage to everyone within 3.5 blocks", "every 1/4 second. Floats you in the air."]
+          duration-ticks: 60
+          radius: 3.5
+          damage: 1.5
+          hit-every-ticks: 5
+    forge:
+      - { item: NETHERITE_SWORD, amount: 1 }
+      - { item: STRING, amount: 64 }
+      - { item: COBWEB, amount: 16 }
+      - { item: REDSTONE_BLOCK, amount: 8 }
+      - { item: "material:weavers_silk", amount: 1 }
+
+  knightfall:
+    material: MACE
+    name: "&6&lKnightfall"
+    lore:
+      - "&7Every fallen knight makes it heavier."
+    custom-model-data: 1010
+    unbreakable: true
+    attack-damage: 6
+    attack-speed: 0.6
+    abilities:
+      # upgrades with PLAYER kills (count-mobs: true to count every kill)
+      kills: { enabled: true, count-mobs: false }
+      # these enchantments can only be added (anvil / enchanting table) after enough kills
+      enchant-unlocks:
+        wind_burst: 2
+        density: 8
+        breach: 8
+      # Optional extra (off by default, it's strong): 10% on hit to become truly invisible for 3s
+      # on-hit:
+      #   - { type: CLOAK, chance: 10, seconds: 3, description: ["Cloak: truly invisible for 3s."] }
+      passive:
+        effects: { speed: 1 }
+        unlock-kills: 6
+        description: "Speed II"
+      active:
+        grapple:
+          type: GRAPPLE
+          name: "&6Grappling Hook"
+          trigger: SWAP
+          cooldown: 10
+          charges: 3
+          unlock-kills: 4
+          description: ["Hook onto a block (24 blocks) and pull", "yourself to it. Reach the end of the", "chain in time and you leap up."]
+          range: 24
+          power: 1.15
+          leap: 0.9
+          leap-window-ms: 1500
+        hammer:
+          type: HAMMER_THROW
+          name: "&e&lHammer Throw"
+          trigger: SHIFT_SWAP
+          cooldown: 30
+          unlock-kills: 10
+          description: ["Throw the hammer where you look: 12", "damage and it pulls the enemy to you,", "then it flies back."]
+          range: 24
+          damage: 12
+          knockback: 1.5
+    forge:
+      - { item: MACE, amount: 1 }
+      - { item: HEAVY_CORE, amount: 1 }
+      - { item: GOLD_BLOCK, amount: 16 }
+      - { item: IRON_CHAIN, amount: 16 }
+      - { item: "material:fallen_crest", amount: 1 }
+
+  rimebreaker:
+    material: NETHERITE_AXE
+    name: "&b&lRimebreaker"
+    lore:
+      - "&7Throw it. It always finds its way back."
+    custom-model-data: 1011
+    unbreakable: true
+    attack-damage: 12
+    attack-speed: 0.9
+    enchants:
+      sharpness: 5
+    abilities:
+      active:
+        throw:
+          type: AXE_THROW
+          name: "&bThrow / Recall"
+          trigger: SWAP
+          cooldown: 3
+          description: ["Throw the axe (30 blocks): 7 damage and", "freezes. It stays stuck in the block or", "enemy - press F again to recall it, it hits", "and freezes everything on the way back.", "While it's out you fight with your fists."]
+          range: 30
+          damage: 7
+          recall-damage: 6
+          max-out-seconds: 30
+          thrown-model-data: 1014
+          freeze-ticks: 160
+          slow-ticks: 50
+          slow-level: 3
+        frost:
+          type: FROST_WAVE
+          name: "&3&lFrost Runic"
+          trigger: SHIFT_SWAP
+          cooldown: 35
+          description: ["Slam the ground: a wave of ice rolls 12", "blocks forward, 6 damage, freezes and", "slows. Water it crosses freezes over."]
+          length: 12
+          damage: 6
+          freeze-ticks: 200
+          slow-ticks: 60
+          slow-level: 3
+    forge:
+      - { item: NETHERITE_AXE, amount: 1 }
+      - { item: BLUE_ICE, amount: 32 }
+      - { item: DIAMOND_BLOCK, amount: 4 }
+      - { item: PACKED_ICE, amount: 64 }
+      - { item: "material:rime_core", amount: 1 }
+
+  pinning_repeater:
+    material: CROSSBOW
+    name: "&7&lPinning Repeater"
+    lore:
+      - "&7Nobody walks away from this one."
+    custom-model-data: 1012
+    unbreakable: true
+    enchants:
+      quick_charge: 3
+      piercing: 2
+    abilities:
+      arrow-trail: CRIT
+      active:
+        pin:
+          type: PIN_BOLT
+          name: "&fPin Bolt"
+          trigger: SWAP
+          cooldown: 20
+          description: ["Your next bolt (10s) pins whatever it", "hits for 2s: no walking, no jumping."]
+          window: 10
+          pin-seconds: 2
+        volley:
+          type: VOLLEY
+          name: "&7&lVolley"
+          trigger: SHIFT_SWAP
+          cooldown: 25
+          description: ["Fire 5 bolts at once in a fan,", "no reload needed (4 damage each)."]
+          arrows: 5
+          spread-degrees: 24
+          arrow-damage: 4
+          speed: 3.0
+    forge:
+      - { item: CROSSBOW, amount: 1 }
+      - { item: IRON_CHAIN, amount: 32 }
+      - { item: IRON_BLOCK, amount: 16 }
+      - { item: TRIPWIRE_HOOK, amount: 16 }
+      - { item: "material:hunters_bolt", amount: 1 }
+
+  valkyries_lance:
+    material: NETHERITE_SPEAR
+    name: "&e&lValkyrie's Lance"
+    lore:
+      - "&7Thrown once, it never misses."
+    custom-model-data: 1013
+    unbreakable: true
+    attributes:
+      entity_interaction_range: 1
+    enchants:
+      sharpness: 5
+    abilities:
+      passive:
+        description: "+1 block reach"
+      active:
+        lunge:
+          type: LUNGE
+          name: "&eLunge"
+          trigger: SWAP
+          cooldown: 10
+          description: ["Dash forward, piercing everyone", "in your way for 7 damage."]
+          power: 1.8
+          damage: 7
+        javelin:
+          type: JAVELIN
+          name: "&6&lJavelin"
+          trigger: SHIFT_SWAP
+          cooldown: 30
+          description: ["Throw the lance: it homes in on the", "target you look at (32 blocks), 10", "damage and glowing, then flies back."]
+          lock-range: 32
+          range: 40
+          damage: 10
+          glow-ticks: 60
+    forge:
+      - { item: NETHERITE_SPEAR, amount: 1 }
+      - { item: FEATHER, amount: 64 }
+      - { item: GOLD_BLOCK, amount: 16 }
+      - { item: PHANTOM_MEMBRANE, amount: 16 }
+      - { item: "material:valkyrie_plume", amount: 1 }
+
+  # In memory of the King of the Great Sea.
+  great_sea_trident:
+    material: TRIDENT
+    name: "&9&lTrident of the Great Sea"
+    lore:
+      - "&7\"The law doesn't cover the Great Sea.\""
+      - "&8In memory of the King of the Great Sea."
+    custom-model-data: 1015
+    unbreakable: true
+    attack-damage: 10
+    attack-speed: 1.1
+    enchants:
+      loyalty: 3
+      impaling: 5
+    abilities:
+      on-hit:
+        - type: TIDE
+          chance: 100
+          bonus-percent: 40
+          slow-ticks: 40
+          description: ["Tide: +40% damage and Slowness II", "on hits in water or rain."]
+      active:
+        surge:
+          type: TIDAL_SURGE
+          name: "&9Tidal Surge"
+          trigger: SWAP
+          cooldown: 20
+          charges: 3
+          description: ["Riptide anywhere - no water or rain", "needed. Spinning hits deal 8 damage.", "3 charges, then the cooldown starts."]
+          power: 2.2
+          spin-ticks: 20
+          spin-damage: 8
+        tide:
+          type: GREAT_TIDE
+          name: "&3&lThe Great Sea"
+          trigger: SHIFT_SWAP
+          cooldown: 60
+          description: ["A tidal wave rolls out (8 blocks): 6", "damage, pushes back, slows. Then for 8s", "you rule the sea: Surge has no cooldown,", "Speed II, Dolphin's Grace, Conduit Power."]
+          radius: 8
+          damage: 6
+          push: 1.3
+          king-seconds: 8
+    forge:
+      - { item: TRIDENT, amount: 1 }
+      - { item: HEART_OF_THE_SEA, amount: 1 }
+      - { item: PRISMARINE_BRICKS, amount: 32 }
+      - { item: GOLD_BLOCK, amount: 8 }
+      - { item: "material:sea_kings_doubloon", amount: 1 }
+
 # Small visual effects for worn relics (wing feathers at the ankles, heartbeat, spores)
 relic-settings:
   particles: true
@@ -569,7 +928,7 @@ relic-settings:
 #  so you can wear one chestplate relic, one boots relic and hold one off-hand relic.
 #  (Thorn Plate and Heartsteel are both chestplates - pick one.)
 #
-#  relic.type: STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE
+#  relic.type: STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD
 #  attributes: stats that only count in the relic's slot (armor, armor_toughness,
 #              knockback_resistance, max_health, movement_speed, ...)
 #  equipment-model: how the armor looks when worn (from the resource pack)
@@ -705,6 +1064,61 @@ relics:
       - { item: ARMADILLO_SCUTE, amount: 16 }
       - { item: SLIME_BLOCK, amount: 16 }
       - { item: "material:behemoth_hide", amount: 1 }
+
+  soul_vessel_mask:
+    material: NETHERITE_HELMET
+    name: "&f&lSoul Vessel Mask"
+    lore:
+      - "&7Empty inside. It fills with every blow."
+    custom-model-data: 1207
+    unbreakable: true
+    # enchantment shimmer on the item AND on the worn helm
+    glow: true
+    equipment-model: "customcraft:soul_mask"
+    attributes:
+      armor: 3
+      armor_toughness: 3
+      knockback_resistance: 0.1
+    relic:
+      type: SOUL_VESSEL
+      slot: HEAD
+      soul-per-hit: 11
+      max-soul: 99
+      focus-cost: 33
+      focus-ticks: 30
+      focus-heal: 6
+      description: ["Charged hits fill your Soul (max 99).", "Hold Shift and stand still for 1.5s:", "33 Soul becomes 3 hearts. Getting hit", "breaks the focus. Soul is lost on death."]
+    forge:
+      - { item: NETHERITE_HELMET, amount: 1 }
+      - { item: BONE_BLOCK, amount: 32 }
+      - { item: GHAST_TEAR, amount: 8 }
+      - { item: QUARTZ_BLOCK, amount: 32 }
+      - { item: "material:pale_fragment", amount: 1 }
+
+  stitchguard:
+    material: SHIELD
+    name: "&e&lStitchguard"
+    lore:
+      - "&7Woven shell, needle-sharp answer."
+    custom-model-data: 1208
+    unbreakable: true
+    relic:
+      type: STITCHGUARD
+      slot: OFFHAND
+      parry-window-ms: 350
+      retry-ms: 900
+      counter-damage: 8
+      counter-range: 6
+      protect-ticks: 12
+      shell-hits: 3
+      shell-recharge: 20
+      description: ["Parry: raise the shield right before a hit", "(0.35s) - the hit is cancelled and you", "stitch through to the attacker's back", "for 8 damage. Shell: while blocking,", "3 hits from ANY side are absorbed", "(regrows 20s after cracking)."]
+    forge:
+      - { item: SHIELD, amount: 1 }
+      - { item: ARMADILLO_SCUTE, amount: 16 }
+      - { item: STRING, amount: 64 }
+      - { item: GOLD_BLOCK, amount: 8 }
+      - { item: "material:carapace_shard", amount: 1 }
 
 # ------------------------------------------------------------
 #  LEGENDARY MATERIALS
@@ -851,3 +1265,95 @@ materials:
     drops:
       - { mob: WARDEN, chance: 20 }
       - { loot-table: chests/woodland_mansion, chance: 6 }
+
+  pale_fragment:
+    material: QUARTZ
+    name: "&f&lPale Fragment"
+    lore: ["&7A shard of something that was never alive.", "&8Legendary material"]
+    custom-model-data: 1313
+    glow: true
+    drops:
+      - { mob: ENDERMAN, chance: 0.5 }
+      - { loot-table: chests/stronghold_library, chance: 8 }
+      - { loot-table: chests/stronghold_corridor, chance: 3 }
+
+  carapace_shard:
+    material: ARMADILLO_SCUTE
+    name: "&e&lCarapace Shard"
+    lore: ["&7Harder than it looks. It looks very hard.", "&8Legendary material"]
+    custom-model-data: 1314
+    glow: true
+    drops:
+      - { mob: SHULKER, chance: 3 }
+      - { loot-table: chests/end_city_treasure, chance: 5 }
+
+  deepsteel_claw:
+    material: IRON_NUGGET
+    name: "&c&lDeepsteel Claw"
+    lore: ["&7It still grips whatever it touches.", "&8Legendary material"]
+    custom-model-data: 1315
+    glow: true
+    drops:
+      - { loot-table: chests/simple_dungeon, chance: 6 }
+      - { loot-table: chests/trial_chambers/corridor, chance: 3 }
+
+  weavers_silk:
+    material: STRING
+    name: "&f&lWeaver's Silk"
+    lore: ["&7Sings faintly when pulled taut.", "&8Legendary material"]
+    custom-model-data: 1316
+    glow: true
+    drops:
+      - { mob: CAVE_SPIDER, chance: 2 }
+      - { mob: SPIDER, chance: 1 }
+      - { loot-table: chests/abandoned_mineshaft, chance: 4 }
+
+  fallen_crest:
+    material: IRON_INGOT
+    name: "&6&lFallen Crest"
+    lore: ["&7The crest of a knight nobody remembers.", "&8Legendary material"]
+    custom-model-data: 1317
+    glow: true
+    drops:
+      - { mob: VINDICATOR, chance: 3 }
+      - { loot-table: chests/bastion_treasure, chance: 6 }
+
+  rime_core:
+    material: SNOWBALL
+    name: "&b&lRime Core"
+    lore: ["&7Colder than anything should be.", "&8Legendary material"]
+    custom-model-data: 1318
+    glow: true
+    drops:
+      - { mob: STRAY, chance: 2 }
+      - { loot-table: chests/igloo_chest, chance: 12 }
+
+  hunters_bolt:
+    material: FLINT
+    name: "&7&lHunter's Bolt"
+    lore: ["&7Chipped from the last thing it pinned.", "&8Legendary material"]
+    custom-model-data: 1319
+    glow: true
+    drops:
+      - { mob: PILLAGER, chance: 2 }
+      - { loot-table: chests/pillager_outpost, chance: 6 }
+
+  valkyrie_plume:
+    material: FEATHER
+    name: "&e&lValkyrie Plume"
+    lore: ["&7It points toward the next fight.", "&8Legendary material"]
+    custom-model-data: 1320
+    glow: true
+    drops:
+      - { mob: VEX, chance: 2 }
+      - { loot-table: chests/village/village_weaponsmith, chance: 4 }
+
+  sea_kings_doubloon:
+    material: NAUTILUS_SHELL
+    name: "&9&lSea King's Doubloon"
+    lore: ["&7Stamped with a crown and a trident.", "&8Legendary material"]
+    custom-model-data: 1321
+    glow: true
+    drops:
+      - { loot-table: chests/buried_treasure, chance: 8 }
+      - { mob: GUARDIAN, chance: 1 }

@@ -16,6 +16,13 @@
           "type": "minecraft:model",
           "model": "customcraft:item/abyssal_maw"
         }
+      },
+      {
+        "threshold": 1009,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/silk_needle"
+        }
       }
     ],
     "fallback": {

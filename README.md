@@ -34,10 +34,11 @@
 
 ## Features
 
-- **7 legendary weapons** with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
-- **5 relics**, armor and off-hand items inspired by MOBA items (stasis, revive, thorns, a heart that keeps growing, grey health)
+- **14 legendary weapons and tools** (swords, axes, a mace, a bow, a crossbow, a spear, a trident, a pickaxe...) with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
+- **7 relics** for every slot: helmet, chestplate, leggings, boots and off-hand (stasis, revive, thorns,
+  a growing heart, grey health, soul focus, a parrying shield)
 - **Tank builds**: some abilities scale with your **max HP**, so they get stronger with Heartsteel Core
-- **12 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
+- **21 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
 - **Forge rituals**: forging takes 15 minutes on a crafting table and the location is revealed step by step
 - **One of each**: every weapon and relic can exist only once per server
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
@@ -116,7 +117,7 @@ On-hit effects need a **charged** hit (no spam-clicking).
 | | |
 |---|---|
 | Passive | Resistance I while held |
-| On hit | **Crushing Weight**: +1.5 damage per block you are above the target (max +8), airborne targets get slammed down |
+| On hit | **Crushing Weight**: fall onto the target for +1 damage per block fallen (max +20), and a mid-air hit cancels your fall damage like a mace. Standing above it gives +1.5 per block (max +8). Airborne targets get slammed down |
 | F | **Gravity Anchor** (35 s): a 7-block field for 6 s; enemies inside are slowed and yanked back if they try to leave |
 | Shift + F | **Upheaval** (45 s): lift every enemy around you and slam them down; the higher they fall, the more damage |
 
@@ -157,6 +158,69 @@ On-hit effects need a **charged** hit (no spam-clicking).
 | F | **Tongue Lash** (10 s): a tongue grabs the first enemy, deals 3 + 4 % of your max HP, slows it and **yanks it to you**. Reach is 8 blocks **+0.25 per HP above 20** (max 20), so it grows with Heartsteel |
 | Shift + F | **Devour** (45 s): swallow what you look at. **A player ally**: hidden and untouchable inside you for 4 s (they can sneak out). **An enemy with 3 Taste**: trapped and blinded for 2 s, then spat out far for 6 + 5 % of your max HP |
 
+### Clawline Pick (pickaxe)
+| | |
+|---|---|
+| Passive | Haste II while held; mined ores have a 20 % chance to drop twice (Efficiency V, Fortune III) |
+| F | **Clawline** (6 s): shoot a hook at the block you look at (24 blocks) and get yanked to it, no fall damage after |
+| Shift + F | **Dive** (30 s): hop up and slam down, carving a 3×3 shaft up to 8 blocks deep; landing sends a shockwave (6 damage, 4 blocks). Claims / protected regions are respected, containers are never broken |
+
+### Silk Needle (sword)
+| | |
+|---|---|
+| Passive | Speed I while held, very fast attacks |
+| On hit | **Silk Bind**: every 3rd charged hit wraps the target in silk (Slowness IV for 1.25 s) |
+| F | **Silk Dart** (8 s): throw the needle on a thread (16 blocks); it stabs the first enemy for 4 and pulls you to it, or to the block it hits |
+| Shift + F | **Thread Storm** (40 s): spin in a storm of silk for 3 s, 1.5 damage to everyone within 3.5 blocks every ¼ s; you float while in the air |
+
+### Knightfall (mace)
+> **Not obtainable yet:** it's ready in the config, but `craftable: false` keeps it out of the forge and its material
+> doesn't drop. Admins can hand it out with `/forge give <player> weapon:knightfall`.
+
+Levels up with every **player kill** (counted on the item, shown in the lore and the action bar).
+
+| Kills | Unlocks |
+|---|---|
+| 2 | **Wind Burst** can be added (anvil / enchanting table) |
+| 4 | **F – Grappling Hook** (3 charges, then 10 s): hook a block and pull yourself to it; reach the end of the chain in time and you leap |
+| 6 | **Speed II** while held |
+| 8 | **Density** or **Breach** can be added |
+| 10 | **Shift + F – Hammer Throw** (30 s): throw the hammer, 12 damage, and it pulls the enemy to you |
+
+6 attack damage, 0.6 attack speed, unbreakable. An optional `CLOAK` on-hit (10 % chance to turn truly invisible for 3 s)
+is in the config, commented out.
+
+### Rimebreaker (war axe)
+| | |
+|---|---|
+| F | **Throw / Recall** (3 s): throw the axe (30 blocks): 7 damage and a freeze. It stays stuck in the block or enemy; press **F** again to call it back, hitting and freezing everything on its way. While it's out you fight with your fists |
+| Shift + F | **Frost Runic** (35 s): a wave of ice rolls 12 blocks forward, 6 damage, freezes and slows; water it crosses freezes over |
+
+### Pinning Repeater (crossbow)
+| | |
+|---|---|
+| Passive | Quick Charge III, Piercing II |
+| F | **Pin Bolt** (20 s): your next bolt pins whatever it hits for 2 s (no walking, no jumping), a chain shows where |
+| Shift + F | **Volley** (25 s): 5 bolts at once in a fan, no reload needed |
+
+### Valkyrie's Lance (spear)
+| | |
+|---|---|
+| Passive | +1 block reach |
+| F | **Lunge** (10 s): dash forward, piercing everyone in the way for 7 damage |
+| Shift + F | **Javelin** (30 s): throw the lance; it homes in on the target you look at (10 damage + glowing) and flies back |
+
+### Trident of the Great Sea (trident)
+*In memory of the King of the Great Sea.*
+
+| | |
+|---|---|
+| On hit | **Tide**: +40 % damage and Slowness II on hits in water or rain (throws too) |
+| F | **Tidal Surge** (3 charges, then 20 s): riptide anywhere, no water or rain needed; spinning hits deal 8 |
+| Shift + F | **The Great Sea** (60 s): a tidal wave rolls out (8 blocks, 6 damage, pushback), then for 8 s Surge has no cooldown and you get Speed II, Dolphin's Grace and Conduit Power |
+
+Loyalty III and Impaling V.
+
 > **Max HP scaling.** Cleaver Toss, Bloodrush, Tongue Lash and Devour use your *max* health, so Heartsteel Core
 > (up to +10 hearts) and Health Boost make them stronger. Example for Tongue Lash: 20 HP → 8 blocks,
 > 40 HP (full Heartsteel) → 13 blocks.
@@ -167,8 +231,8 @@ On-hit effects need a **charged** hit (no spam-clicking).
 
 <p align="center"><img src="docs/relics.gif" alt="Relics"></p>
 
-Relics only work in their own slot. You can combine **one off-hand relic**, **one chestplate**, **one pair of leggings**
-and **one pair of boots**.
+Relics only work in their own slot. You can wear one relic per slot: **helmet**, **chestplate**, **leggings**, **boots**
+and **off-hand**.
 
 | Relic | Slot | Effect |
 |---|---|---|
@@ -176,6 +240,8 @@ and **one pair of boots**.
 | **Angel's Wings** | boots | When you would die, you come back with 50 % HP and 3 s of protection (600 s cooldown). Half fall damage |
 | **Thorn Plate** | chestplate | Reflects 2 + 25 % of melee damage; attackers get **Grievous Wounds** (no healing for 3 s) |
 | **Heartsteel Core** | chestplate | A charged hit on a player or big mob deals bonus damage and **permanently** adds max HP (up to +10 hearts, stored on the item) |
+| **Soul Vessel Mask** | helmet | Charged hits fill your **Soul** (max 99). Hold **Shift** and stand still for 1.5 s to turn 33 Soul into 3 hearts. Getting hit breaks the focus; Soul is lost on death |
+| **Stitchguard** | off-hand (shield) | **Parry**: raise the shield right before a hit (0.35 s window) and the hit is cancelled, then you stitch through to the attacker's back for 8 damage. **Shell**: while blocking, 3 hits from *any* side are absorbed (regrows 20 s after it cracks) |
 | **Thick Hide** | leggings | 40 % of the damage you take becomes **grey health** that is lost over ~3 s (up to 50 % of your max HP). **Double-tap Shift** to shrug the grey health off so you never lose it (20 s cooldown) |
 
 - Cooldowns and Heartsteel stacks are stored on the item itself.
@@ -207,6 +273,15 @@ Every weapon and relic needs one legendary material. **Nothing is guaranteed**: 
 | Ravenous Marrow | Zoglin 6 % · Hoglin 2 % · Bastion hoglin stable chests 6 % | Butcher's Cleaver |
 | Abyssal Lure | Drowned 1 % · big Underwater Ruin chests 5 % · Shipwreck treasure 4 % | Abyssal Maw |
 | Behemoth Hide | Warden 20 % · Woodland Mansion chests 6 % | Thick Hide |
+| Pale Fragment | Stronghold library chests 8 % · Stronghold corridor chests 3 % · Enderman 0.5 % | Soul Vessel Mask |
+| Carapace Shard | Shulker 3 % · End City chests 5 % | Stitchguard |
+| Deepsteel Claw | Dungeon chests 6 % · Trial Chamber corridor chests 3 % | Clawline Pick |
+| Weaver's Silk | Cave Spider 2 % · Spider 1 % · Mineshaft chests 4 % | Silk Needle |
+| Fallen Crest | Vindicator 3 % · Bastion treasure chests 6 % *(off until Knightfall is forgeable)* | Knightfall |
+| Rime Core | Stray 2 % · Igloo chests 12 % | Rimebreaker |
+| Hunter's Bolt | Pillager 2 % · Pillager Outpost chests 6 % | Pinning Repeater |
+| Valkyrie Plume | Vex 2 % · Village weaponsmith chests 4 % | Valkyrie's Lance |
+| Sea King's Doubloon | Buried treasure 8 % · Guardian 1 % | Trident of the Great Sea |
 
 - Mob drops only count when a **player** kills the mob (no farms). Looting helps a little, but the 45 % cap stays.
 - The material drops on the ground, glowing, and can't burn, blow up or despawn.
@@ -297,9 +372,9 @@ weapons:
 
 | | Types |
 |---|---|
-| Active abilities | `REWIND`, `RESONANCE`, `GRAVITY_ANCHOR`, `UPHEAVAL`, `MIRROR_SHOT`, `HEX_MARK`, `SOUL_LINK`, `HARVEST`, `CRESCENT`, `FRENZY`, `CLEAVER_TOSS`, `BLOODRUSH`, `TONGUE_LASH`, `DEVOUR` |
-| On-hit effects | `ECHO`, `CRUSH`, `RICOCHET`, `SOUL`, `LIFESTEAL`, `CLEAVE`, `BLUNT_FORCE`, `TASTE` |
-| Relic types | `STASIS`, `REVIVE`, `THORNS`, `HEARTSTEEL`, `THICK_HIDE` (slots: `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`) |
+| Active abilities | `REWIND`, `RESONANCE`, `GRAVITY_ANCHOR`, `UPHEAVAL`, `MIRROR_SHOT`, `HEX_MARK`, `SOUL_LINK`, `HARVEST`, `CRESCENT`, `FRENZY`, `CLEAVER_TOSS`, `BLOODRUSH`, `TONGUE_LASH`, `DEVOUR`, `CLAWLINE`, `DIVE`, `SILK_DART`, `THREAD_STORM`, `GRAPPLE`, `HAMMER_THROW`, `AXE_THROW`, `FROST_WAVE`, `PIN_BOLT`, `VOLLEY`, `LUNGE`, `JAVELIN`, `TIDAL_SURGE`, `GREAT_TIDE` (options: `charges`, `unlock-kills`) |
+| On-hit effects | `ECHO`, `CRUSH`, `RICOCHET`, `SOUL`, `LIFESTEAL`, `CLEAVE`, `BLUNT_FORCE`, `TASTE`, `SILK_BIND`, `TIDE`, `CLOAK` |
+| Relic types | `STASIS`, `REVIVE`, `THORNS`, `HEARTSTEEL`, `THICK_HIDE`, `SOUL_VESSEL`, `STITCHGUARD` (slots: `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`) |
 | Material drops | `{ mob: WARDEN, chance: 35 }`, `{ loot-table: chests/ancient_city, chance: 3 }`, optional `biomes`, `min-y`, `max-y` |
 
 ---
@@ -327,7 +402,7 @@ The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it 
 
 **Local testing:** drop the zip into `.minecraft/resourcepacks`, enable it in the game, and set `menu.resource-pack: true`.
 
-Custom model data used by the pack: weapons `1001-1004`, `1006`, `1007`, `1205`, relics `1201-1204` and `1206`, materials `1301-1312`, menu icons `9000-9021`.
+Custom model data used by the pack: weapons `1001-1004`, `1006-1015`, `1205`, relics `1201-1204`, `1206-1208`, materials `1301-1321`, menu icons `9000-9021`.
 
 ---
 

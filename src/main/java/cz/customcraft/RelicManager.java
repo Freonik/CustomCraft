@@ -48,7 +48,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Relic effects: Stasis Hourglass, Angel's Wings, Thorn Plate, Heartsteel Core, Thick Hide.
+ * Relic effects: Stasis Hourglass, Angel's Wings, Thorn Plate, Heartsteel Core, Thick Hide, Soul Vessel Mask,
+ * Stitchguard.
  * A relic only works in its own slot (off-hand, chestplate, boots...).
  * Cooldowns and Heartsteel stacks are stored on the item itself, so they survive restarts and trades.
  */
@@ -62,6 +63,11 @@ public final class RelicManager implements Listener {
     private static final Particle.DustOptions GOLD_SMALL = new Particle.DustOptions(Color.fromRGB(255, 210, 90), 0.55f);
     private static final Particle.DustOptions THORN_SMALL = new Particle.DustOptions(Color.fromRGB(60, 110, 40), 0.7f);
     private static final Particle.DustOptions SPIKE_SMALL = new Particle.DustOptions(Color.fromRGB(225, 230, 170), 0.8f);
+    private static final Particle.DustOptions SOUL_SMALL = new Particle.DustOptions(Color.fromRGB(225, 232, 255), 0.7f);
+    private static final Particle.DustOptions SOUL_BIG = new Particle.DustOptions(Color.fromRGB(235, 240, 255), 1.3f);
+    private static final Particle.DustOptions SILK = new Particle.DustOptions(Color.fromRGB(245, 240, 230), 0.9f);
+    private static final Particle.DustOptions NEEDLE = new Particle.DustOptions(Color.fromRGB(200, 30, 40), 1.1f);
+    private static final Particle.DustOptions SHELL = new Particle.DustOptions(Color.fromRGB(230, 225, 200), 1.0f);
     private static final Particle.DustOptions HIDE_GREY = new Particle.DustOptions(Color.fromRGB(150, 150, 140), 0.8f);
     private static final Particle.DustOptions HIDE_SHRUG = new Particle.DustOptions(Color.fromRGB(60, 200, 180), 1.2f);
     /** Damage Thick Hide never delays. */
@@ -89,6 +95,15 @@ public final class RelicManager implements Listener {
     private final Map<UUID, Long> lastSneak = new HashMap<>();
     /** true while Thick Hide itself deals the last bit of grey damage */
     private boolean draining;
+    /** Soul Vessel Mask: player -> soul (0-99), focus progress in ticks, last position */
+    private final Map<UUID, Integer> soul = new HashMap<>();
+    private final Map<UUID, Integer> focus = new HashMap<>();
+    private final Map<UUID, Location> focusAnchor = new HashMap<>();
+    /** Stitchguard: parry window end, last raise, shell hits left, shell broken until */
+    private final Map<UUID, Long> parryUntil = new HashMap<>();
+    private final Map<UUID, Long> lastRaise = new HashMap<>();
+    private final Map<UUID, Integer> shell = new HashMap<>();
+    private final Map<UUID, Long> shellBroken = new HashMap<>();
 
     public RelicManager(CustomCraft plugin, ItemManager items) {
         this.plugin = plugin;
@@ -118,10 +133,12 @@ public final class RelicManager implements Listener {
                     stasisVisual(p, ticks);
                     return false;
                 });
-                if (plugin.getConfig().getBoolean("relic-settings.particles", true)) {
-                    for (Player p : Bukkit.getOnlinePlayers()) {
+                boolean particles = plugin.getConfig().getBoolean("relic-settings.particles", true);
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (particles) {
                         ambient(p, ticks);
                     }
+                    focusTick(p);
                 }
                 if (ticks % 5 == 0) {
                     drainGrey();
@@ -212,6 +229,26 @@ public final class RelicManager implements Listener {
                     part = name + " " + (left <= 0 ? "&a✔" : "&c" + seconds(left));
                 }
                 case HEARTSTEEL -> part = "&c❤ &f+" + trim(heartBonus(stack));
+                case SOUL_VESSEL -> {
+                    int cost = Math.max(1, entry.relic.params().i("focus-cost", 33));
+                    int max = Math.max(cost, entry.relic.params().i("max-soul", 99));
+                    int have = soulOf(player);
+                    StringBuilder vessel = new StringBuilder("&f◉ ");
+                    for (int i = 0; i < max / cost; i++) {
+                        vessel.append(have >= (i + 1) * cost ? "&f◆" : have > i * cost ? "&7◈" : "&8◇");
+                    }
+                    if (focus.containsKey(player.getUniqueId())) {
+                        vessel.append(" &bfocusing...");
+                    }
+                    part = vessel.toString();
+                }
+                case STITCHGUARD -> {
+                    int max = Math.max(1, entry.relic.params().i("shell-hits", 3));
+                    int left = shellOf(player, entry.relic.params());
+                    Long broken = shellBroken.get(player.getUniqueId());
+                    part = "&e⛉ " + (left > 0 ? "&f" + "◆".repeat(left) + "&8" + "◇".repeat(Math.max(0, max - left))
+                            : "&c" + seconds(broken == null ? 0 : broken - System.currentTimeMillis()));
+                }
                 case THICK_HIDE -> {
                     long left = cooldownLeft(stack);
                     double pool = grey.getOrDefault(player.getUniqueId(), 0.0);
@@ -531,6 +568,11 @@ public final class RelicManager implements Listener {
             return;
         }
 
+        // Soul Vessel Mask: every charged hit fills the vessel
+        if (!(victim instanceof ArmorStand)) {
+            gainSoul(player);
+        }
+
         // Heartsteel Core: big hit on a worthy target, grows your max HP for good
         ItemManager.Entry heart = equipped(player, Relic.Type.HEARTSTEEL);
         if (heart != null && (victim instanceof Player || maxHealth(victim) >= 20)) {
@@ -596,6 +638,247 @@ public final class RelicManager implements Listener {
     public void onSmithing(org.bukkit.event.inventory.PrepareSmithingEvent event) {
         if (items.customOf(event.getInventory().getInputEquipment()) != null) {
             event.setResult(null);
+        }
+    }
+
+    // ================================================================ SOUL VESSEL MASK
+
+    private int soulOf(Player player) {
+        return soul.getOrDefault(player.getUniqueId(), 0);
+    }
+
+    /** Called every 2 ticks: sneaking still with enough soul slowly focuses it into health. */
+    private void focusTick(Player player) {
+        UUID id = player.getUniqueId();
+        ItemManager.Entry mask = equipped(player, Relic.Type.SOUL_VESSEL);
+        if (mask == null) {
+            focus.remove(id);
+            return;
+        }
+        WeaponAbilities.Params p = mask.relic.params();
+        int cost = Math.max(1, p.i("focus-cost", 33));
+        Location here = player.getLocation();
+        Location anchor = focusAnchor.get(id);
+        boolean still = anchor != null && anchor.getWorld() == here.getWorld()
+                && Math.abs(anchor.getX() - here.getX()) < 0.04 && Math.abs(anchor.getZ() - here.getZ()) < 0.04;
+        focusAnchor.put(id, here);
+        if (!player.isSneaking() || !player.isOnGround() || !still || soulOf(player) < cost
+                || player.getHealth() >= maxHealth(player) || inStasis(player)) {
+            focus.remove(id);
+            return;
+        }
+        int ticks = focus.merge(id, 2, Integer::sum);
+        int need = Math.max(2, p.i("focus-ticks", 30));
+        World world = player.getWorld();
+        Location chest = here.clone().add(0, 1, 0);
+        for (int i = 0; i < 3; i++) {
+            double a = ticks * 0.7 + i * 2.1;
+            double r = 1.1 * (1 - (double) ticks / need);
+            world.spawnParticle(Particle.DUST, chest.clone().add(Math.cos(a) * r, Math.sin(a * 0.5) * 0.4, Math.sin(a) * r),
+                    1, 0, 0, 0, 0, SOUL_SMALL);
+        }
+        if (ticks % 10 == 0) {
+            world.playSound(here, Sound.BLOCK_BEACON_AMBIENT, 0.8f, 1.8f);
+        }
+        if (ticks >= need) {
+            focus.remove(id);
+            soul.put(id, soulOf(player) - cost);
+            double max = maxHealth(player);
+            player.setHealth(Math.min(max, player.getHealth() + adjustHeal(player, p.d("focus-heal", 6))));
+            world.spawnParticle(Particle.DUST, chest, 25, 0.35, 0.5, 0.35, 0, SOUL_BIG);
+            world.spawnParticle(Particle.END_ROD, chest, 8, 0.3, 0.4, 0.3, 0.03);
+            world.playSound(here, Sound.BLOCK_AMETHYST_BLOCK_RESONATE, 1.2f, 1.6f);
+            world.playSound(here, Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.8f);
+        }
+    }
+
+    /** Charged hits fill the Soul Vessel. */
+    private void gainSoul(Player player) {
+        ItemManager.Entry mask = equipped(player, Relic.Type.SOUL_VESSEL);
+        if (mask == null) {
+            return;
+        }
+        WeaponAbilities.Params p = mask.relic.params();
+        int max = Math.max(1, p.i("max-soul", 99));
+        int before = soulOf(player);
+        int now = Math.min(max, before + p.i("soul-per-hit", 11));
+        soul.put(player.getUniqueId(), now);
+        int cost = Math.max(1, p.i("focus-cost", 33));
+        if (now / cost > before / cost) {
+            player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8f, 1.8f);
+        }
+    }
+
+    /** Soul is lost on death. */
+    @EventHandler
+    public void onSoulDeath(org.bukkit.event.entity.PlayerDeathEvent event) {
+        soul.remove(event.getPlayer().getUniqueId());
+        focus.remove(event.getPlayer().getUniqueId());
+    }
+
+    /** Getting hit breaks your focus. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onFocusHit(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player player) {
+            focus.remove(player.getUniqueId());
+        }
+    }
+
+    // ================================================================ STITCHGUARD
+
+    /** Raising the shield opens a short parry window (not again until retry-ms passed). */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRaise(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.OFF_HAND
+                || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) {
+            return;
+        }
+        Player player = event.getPlayer();
+        ItemManager.Entry guard = items.relicOf(event.getItem());
+        if (guard == null || guard.relic.type() != Relic.Type.STITCHGUARD) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        Long last = lastRaise.get(player.getUniqueId());
+        if (last != null && now - last < guard.relic.params().d("retry-ms", 900)) {
+            return;
+        }
+        lastRaise.put(player.getUniqueId(), now);
+        parryUntil.put(player.getUniqueId(), now + (long) guard.relic.params().d("parry-window-ms", 350));
+    }
+
+    /** Parry: a hit inside the window does nothing, and you stitch through to the attacker's back. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    public void onParry(EntityDamageByEntityEvent event) {
+        if (DamageGuard.active() || !(event.getEntity() instanceof Player player)) {
+            return;
+        }
+        Long until = parryUntil.get(player.getUniqueId());
+        if (until == null || until < System.currentTimeMillis()) {
+            return;
+        }
+        ItemManager.Entry guard = equipped(player, Relic.Type.STITCHGUARD);
+        if (guard == null) {
+            return;
+        }
+        LivingEntity attacker = null;
+        if (event.getDamager() instanceof LivingEntity living) {
+            attacker = living;
+        } else if (event.getDamager() instanceof Projectile projectile) {
+            projectile.remove();
+            if (projectile.getShooter() instanceof LivingEntity shooter) {
+                attacker = shooter;
+            }
+        } else {
+            return;
+        }
+        event.setCancelled(true);
+        parryUntil.remove(player.getUniqueId());
+        WeaponAbilities.Params p = guard.relic.params();
+        World world = player.getWorld();
+        Location at = player.getLocation().add(0, 1.2, 0);
+        world.playSound(at, Sound.ITEM_SHIELD_BLOCK, 1.5f, 1.6f);
+        world.playSound(at, Sound.BLOCK_ANVIL_LAND, 0.6f, 2f);
+        world.spawnParticle(Particle.FLASH, at, 1, 0, 0, 0, 0, Color.WHITE);
+        world.spawnParticle(Particle.DUST, at, 20, 0.4, 0.4, 0.4, 0, SILK);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, p.i("protect-ticks", 12), 4, false, false, true));
+        player.sendActionBar(plugin.raw("relic-parry", "&f✦ Parry!"));
+        if (attacker == null || attacker.equals(player) || attacker.getWorld() != world
+                || attacker.getLocation().distanceSquared(player.getLocation()) > p.d("counter-range", 6) * p.d("counter-range", 6)) {
+            return;
+        }
+        LivingEntity target = attacker;
+        double damage = p.d("counter-damage", 8);
+        Bukkit.getScheduler().runTask(plugin, () -> crossStitch(player, target, damage));
+    }
+
+    /** Dash through to the attacker's back with a silk slash. */
+    private void crossStitch(Player player, LivingEntity target, double damage) {
+        if (!player.isOnline() || player.isDead() || !target.isValid() || target.isDead()) {
+            return;
+        }
+        Location from = player.getLocation();
+        Location t = target.getLocation();
+        org.bukkit.util.Vector back = t.toVector().subtract(from.toVector()).setY(0);
+        if (back.lengthSquared() < 1.0E-4) {
+            back = t.getDirection().setY(0).multiply(-1);
+        }
+        back.normalize();
+        Location behind = t.clone().add(back.clone().multiply(1.3));
+        if (!behind.getBlock().isPassable() || !behind.clone().add(0, 1, 0).getBlock().isPassable()) {
+            behind = from.clone();
+        }
+        behind.setDirection(t.toVector().subtract(behind.toVector()));
+        World world = player.getWorld();
+        Location a = from.clone().add(0, 1, 0);
+        Location b = behind.clone().add(0, 1, 0);
+        org.bukkit.util.Vector d = b.toVector().subtract(a.toVector());
+        double len = d.length();
+        for (double s = 0; s <= len; s += 0.25) {
+            Location l = a.clone().add(d.clone().multiply(s / Math.max(0.01, len)));
+            world.spawnParticle(Particle.DUST, l.add(0, 0.25 * Math.sin(s * 3), 0), 1, 0, 0, 0, 0, SILK);
+        }
+        player.teleport(behind);
+        player.setFallDistance(0);
+        if (valid(player, target)) {
+            DamageGuard.run(() -> {
+                target.setNoDamageTicks(0);
+                target.damage(damage, player);
+            });
+        }
+        world.spawnParticle(Particle.SWEEP_ATTACK, t.clone().add(0, 1, 0), 3, 0.3, 0.2, 0.3, 0);
+        world.spawnParticle(Particle.DUST, t.clone().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0, NEEDLE);
+        world.playSound(t, Sound.ENTITY_PLAYER_ATTACK_CRIT, 1.2f, 1.4f);
+        world.playSound(t, Sound.ITEM_TRIDENT_RETURN, 1f, 1.8f);
+    }
+
+    private int shellOf(Player player, WeaponAbilities.Params p) {
+        UUID id = player.getUniqueId();
+        Long broken = shellBroken.get(id);
+        int max = Math.max(1, p.i("shell-hits", 3));
+        if (broken != null) {
+            if (broken > System.currentTimeMillis()) {
+                return 0;
+            }
+            shellBroken.remove(id);
+            shell.put(id, max);
+        }
+        return shell.getOrDefault(id, max);
+    }
+
+    /** The shell: while blocking, hits from the sides and back are absorbed too (a few, then it cracks). */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onShell(EntityDamageByEntityEvent event) {
+        if (DamageGuard.active() || !(event.getEntity() instanceof Player player) || !player.isBlocking()
+                || event.getFinalDamage() <= 0.01) {
+            return;
+        }
+        ItemManager.Entry guard = equipped(player, Relic.Type.STITCHGUARD);
+        if (guard == null) {
+            return;
+        }
+        WeaponAbilities.Params p = guard.relic.params();
+        int left = shellOf(player, p);
+        if (left <= 0) {
+            return;
+        }
+        event.setCancelled(true);
+        left--;
+        shell.put(player.getUniqueId(), left);
+        World world = player.getWorld();
+        Location at = player.getLocation().add(0, 1, 0);
+        for (int i = 0; i < 12; i++) {
+            double a = i * Math.PI / 6;
+            world.spawnParticle(Particle.DUST, at.clone().add(Math.cos(a) * 0.9, Math.sin(a * 2) * 0.3, Math.sin(a) * 0.9),
+                    1, 0, 0, 0, 0, SHELL);
+        }
+        world.playSound(at, Sound.ENTITY_TURTLE_EGG_CRACK, 1.2f, 1.2f);
+        if (left <= 0) {
+            shellBroken.put(player.getUniqueId(), System.currentTimeMillis() + (long) (p.d("shell-recharge", 20) * 1000));
+            world.playSound(at, Sound.ENTITY_TURTLE_EGG_BREAK, 1.4f, 0.8f);
+            world.spawnParticle(Particle.BLOCK, at, 25, 0.4, 0.5, 0.4, 0, org.bukkit.Material.WHITE_CONCRETE.createBlockData());
+            player.sendActionBar(plugin.raw("relic-shell-broken", "&7The shell cracked - it grows back in {time}",
+                    "time", seconds((long) (p.d("shell-recharge", 20) * 1000))));
         }
     }
 
@@ -731,6 +1014,13 @@ public final class RelicManager implements Listener {
             player.setHealth(Math.max(1, player.getHealth() - pool));
         }
         lastSneak.remove(id);
+        soul.remove(id);
+        focus.remove(id);
+        focusAnchor.remove(id);
+        parryUntil.remove(id);
+        lastRaise.remove(id);
+        shell.remove(id);
+        shellBroken.remove(id);
         stasis.remove(id);
         charge.remove(id);
         heartsteel.remove(id);

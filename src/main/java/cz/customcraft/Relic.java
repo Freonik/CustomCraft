@@ -12,7 +12,7 @@ import java.util.Locale;
  *
  * <pre>
  * relic:
- *   type: STASIS        # STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE
+ *   type: STASIS        # STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD
  *   slot: OFFHAND       # OFFHAND, HEAD, CHEST, LEGS, FEET - the relic only works in this slot
  *   cooldown: 120
  *   description: [...]
@@ -21,7 +21,7 @@ import java.util.Locale;
  */
 public record Relic(Type type, Slot slot, int cooldown, List<String> description, WeaponAbilities.Params params) {
 
-    public enum Type { STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE }
+    public enum Type { STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD }
 
     public enum Slot {
         OFFHAND(EquipmentSlot.OFF_HAND, EquipmentSlotGroup.OFFHAND, "Off-hand"),

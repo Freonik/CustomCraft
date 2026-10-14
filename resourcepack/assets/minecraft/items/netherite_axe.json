@@ -9,6 +9,20 @@
           "type": "minecraft:model",
           "model": "customcraft:item/butcher_cleaver"
         }
+      },
+      {
+        "threshold": 1011,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/rimebreaker"
+        }
+      },
+      {
+        "threshold": 1014,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/rimebreaker_thrown"
+        }
       }
     ],
     "fallback": {
