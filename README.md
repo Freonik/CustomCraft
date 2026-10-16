@@ -518,38 +518,6 @@ ability-settings:
 ```
 Every ability, relic and drop has its own numbers (damage, radius, cooldown, chance...) in its section.
 
-### Making your own items
-Weapons, relics and materials are defined in the config, so you can add your own and combine the existing ability types:
-
-```yaml
-weapons:
-  my_weapon:
-    material: DIAMOND_SWORD
-    name: "&cMy Weapon"
-    custom-model-data: 2001
-    attack-damage: 9
-    abilities:
-      on-hit:
-        - { type: LIFESTEAL, percent: 20, description: "Heals 20% of damage dealt" }
-      active:
-        anchor:
-          type: GRAVITY_ANCHOR
-          name: "&5Anchor"
-          trigger: SWAP          # SWAP = F, SHIFT_SWAP = Shift + F
-          cooldown: 30
-          radius: 6
-    forge:
-      - { item: DIAMOND_SWORD, amount: 1 }
-      - { item: "material:hydra_scale", amount: 1 }
-```
-
-| | Types |
-|---|---|
-| Active abilities | `REWIND`, `RESONANCE`, `GRAVITY_ANCHOR`, `UPHEAVAL`, `MIRROR_SHOT`, `HEX_MARK`, `SOUL_LINK`, `HARVEST`, `CRESCENT`, `FRENZY`, `CLEAVER_TOSS`, `BLOODRUSH`, `TONGUE_LASH`, `DEVOUR`, `CLAWLINE`, `DIVE`, `SILK_DART`, `THREAD_STORM`, `GRAPPLE`, `HAMMER_THROW`, `AXE_THROW`, `FROST_WAVE`, `PIN_BOLT`, `VOLLEY`, `LUNGE`, `JAVELIN`, `TIDAL_SURGE`, `GREAT_TIDE` (options: `charges`, `unlock-kills`) |
-| On-hit effects | `ECHO`, `CRUSH`, `RICOCHET`, `SOUL`, `LIFESTEAL`, `CLEAVE`, `BLUNT_FORCE`, `TASTE`, `SILK_BIND`, `TIDE`, `CLOAK` |
-| Relic types | `STASIS`, `REVIVE`, `THORNS`, `HEARTSTEEL`, `THICK_HIDE`, `SOUL_VESSEL`, `STITCHGUARD` (slots: `OFFHAND`, `HEAD`, `CHEST`, `LEGS`, `FEET`) |
-| Material drops | `{ mob: WARDEN, chance: 35 }`, `{ loot-table: chests/ancient_city, chance: 3 }`, optional `biomes`, `min-y`, `max-y` |
-
 ---
 
 ## Resource pack
