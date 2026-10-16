@@ -347,6 +347,11 @@ and **meteor caches** (2 to 5 tokens). Spend them in **`/shop`** (or right-click
 
 Send tokens to someone with **`/pay <player> <amount>`**.
 
+> **Bounty Tokens are an in-game currency only.** They give gameplay advantages, so the
+> [Minecraft EULA](https://www.minecraft.net/eula) and Mojang's
+> [usage guidelines](https://www.minecraft.net/usage-guidelines) don't allow selling them (or anything bought with them)
+> for real money, e.g. in a server webstore.
+
 Items, prices, limits and the rotation are under `economy:` in the config.
 **`economy.enabled: false` turns the whole economy off** (no `/shop`, no `/pay`, no tokens from the Warden or meteors);
 bounties and the Bounty Exchange keep working.
@@ -552,3 +557,5 @@ Custom model data used by the pack: weapons `1001-1004`, `1006-1009`, `1011-1015
 
 Copyright © 2026 Freonik. **All rights reserved.** You may run the released plugin and resource pack on your own server,
 but copying, modifying or redistributing the code or assets is not allowed. See [LICENSE](LICENSE).
+
+Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
