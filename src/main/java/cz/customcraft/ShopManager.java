@@ -45,8 +45,20 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
     private final YamlConfiguration data;
 
     /** One offer from the config. */
-    private record Offer(String id, Material material, int amount, int price, int limit, boolean rotating) {
+    private record Offer(String id, Material material, String special, int amount, int price, int limit, String group) {
+        boolean rotating() {
+            return group.equals("rotating");
+        }
+
+        boolean market() {
+            return group.equals("market");
+        }
     }
+
+    private static final int[] MARKET_SLOTS = {46, 47, 48, 49, 50, 51, 52};
+    /** This market's offers and what each player bought (reset when a new market opens). */
+    private List<Offer> market = List.of();
+    private final Map<String, Integer> marketBought = new HashMap<>();
 
     private static final class ShopHolder implements InventoryHolder {
         Inventory inventory;
@@ -119,9 +131,9 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         return data.getLong("anchor") + (rotation() + 1) * period();
     }
 
-    private List<Offer> offers(String section, boolean rotating) {
+    private List<Offer> offers(String path, String group) {
         List<Offer> list = new ArrayList<>();
-        ConfigurationSection sec = plugin.getConfig().getConfigurationSection("economy.shop." + section);
+        ConfigurationSection sec = plugin.getConfig().getConfigurationSection(path);
         if (sec == null) {
             return list;
         }
@@ -130,27 +142,73 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
             if (o == null || !o.getBoolean("enabled", true)) {
                 continue;
             }
-            Material material = Material.matchMaterial(o.getString("material", id));
-            if (material == null || !material.isItem() || material.isAir()) {
-                plugin.getLogger().warning("Shop: unknown material for " + section + "." + id);
+            String name = o.getString("material", id);
+            String special = name.equalsIgnoreCase("legendary_material") || name.equalsIgnoreCase("legend_tracker")
+                    ? name.toLowerCase(Locale.ROOT) : null;
+            Material material = special != null ? null : Material.matchMaterial(name);
+            if (special == null && (material == null || !material.isItem() || material.isAir())) {
+                plugin.getLogger().warning("Shop: unknown material for " + path + "." + id);
                 continue;
             }
-            list.add(new Offer(id, material, Math.max(1, Math.min(64, o.getInt("amount", 1))),
-                    Math.max(1, o.getInt("price", 1)), Math.max(0, o.getInt("limit", 0)), rotating));
+            list.add(new Offer(id, material, special, Math.max(1, Math.min(64, o.getInt("amount", 1))),
+                    Math.max(1, o.getInt("price", 1)), Math.max(0, o.getInt("limit", 0)), group));
         }
         return list;
     }
 
     /** This rotation's offers: the same for everyone, changes every rotation-days. */
     private List<Offer> rotatingNow() {
-        List<Offer> pool = offers("rotating", true);
+        List<Offer> pool = offers("economy.shop.rotating", "rotating");
         Collections.shuffle(pool, new Random(data.getLong("salt") * 31 + rotation()));
         int count = Math.max(0, Math.min(ROTATING_SLOTS.length, plugin.getConfig().getInt("economy.shop.rotating-count", 5)));
         return pool.subList(0, Math.min(count, pool.size()));
     }
 
     private String boughtPath(Player player, Offer offer) {
-        return "bought." + rotation() + "." + player.getUniqueId() + "." + (offer.rotating ? "r_" : "p_") + offer.id;
+        return "bought." + rotation() + "." + player.getUniqueId() + "." + (offer.rotating() ? "r_" : "p_") + offer.id;
+    }
+
+    private int bought(Player player, Offer offer) {
+        return offer.market() ? marketBought.getOrDefault(player.getUniqueId() + "|" + offer.id, 0)
+                : data.getInt(boughtPath(player, offer), 0);
+    }
+
+    /** Called when a Forge Market opens: picks its offers. */
+    public void newMarket() {
+        List<Offer> pool = offers("events.forge-market.offers", "market");
+        Collections.shuffle(pool);
+        int count = Math.max(1, Math.min(MARKET_SLOTS.length, plugin.getConfig().getInt("events.forge-market.count", 4)));
+        market = new ArrayList<>(pool.subList(0, Math.min(count, pool.size())));
+        marketBought.clear();
+    }
+
+    private ItemStack display(Offer offer) {
+        if ("legend_tracker".equals(offer.special)) {
+            ItemStack t = plugin.bounty().tracker();
+            t.setAmount(offer.amount);
+            return t;
+        }
+        if ("legendary_material".equals(offer.special)) {
+            ItemStack s = named(new ItemStack(Material.ENDER_EYE, offer.amount), "&d&lRandom legendary material");
+            return s;
+        }
+        return new ItemStack(offer.material, offer.amount);
+    }
+
+    private void deliver(Player player, Offer offer) {
+        for (int i = 0; i < offer.amount; i++) {
+            if ("legend_tracker".equals(offer.special)) {
+                plugin.bounty().give(player, plugin.bounty().tracker());
+            } else if ("legendary_material".equals(offer.special)) {
+                List<ItemManager.Entry> list = plugin.bounty().enabledMaterials();
+                if (!list.isEmpty()) {
+                    plugin.bounty().give(player, list.get(ThreadLocalRandom.current().nextInt(list.size())).item.clone());
+                }
+            }
+        }
+        if (offer.special == null) {
+            plugin.bounty().give(player, new ItemStack(offer.material, offer.amount));
+        }
     }
 
     private void cleanOldPurchases() {
@@ -205,7 +263,7 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
             inv.setItem(8, exchange);
         }
         inv.setItem(1, named(new ItemStack(Material.CHEST), "&a&lAlways available"));
-        List<Offer> permanent = offers("permanent", false);
+        List<Offer> permanent = offers("economy.shop.permanent", "permanent");
         for (int i = 0; i < permanent.size() && i < PERMANENT_SLOTS.length; i++) {
             put(holder, PERMANENT_SLOTS[i], permanent.get(i), player, tokens);
         }
@@ -222,18 +280,26 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         for (int i = 0; i < rotating.size(); i++) {
             put(holder, ROTATING_SLOTS[start + i], rotating.get(i), player, tokens);
         }
+        if (plugin.events() != null && plugin.events().marketOpen() && !market.isEmpty()) {
+            inv.setItem(45, named(new ItemStack(Material.BELL), "&6&lForge Market &7(limited time)"));
+            int mstart = (MARKET_SLOTS.length - market.size()) / 2;
+            for (int i = 0; i < market.size(); i++) {
+                put(holder, MARKET_SLOTS[mstart + i], market.get(i), player, tokens);
+            }
+        }
         player.openInventory(inv);
     }
 
     private void put(ShopHolder holder, int slot, Offer offer, Player player, int tokens) {
-        ItemStack stack = new ItemStack(offer.material, offer.amount);
+        ItemStack stack = display(offer);
         ItemMeta meta = stack.getItemMeta();
         List<Component> lore = new ArrayList<>(meta.lore() == null ? List.of() : meta.lore());
         lore.add(Component.empty());
         lore.add(ItemManager.color((tokens >= offer.price ? "&a" : "&c") + "Costs " + offer.price + " Bounty Tokens"));
         if (offer.limit > 0) {
-            int left = Math.max(0, offer.limit - data.getInt(boughtPath(player, offer), 0));
-            lore.add(ItemManager.color((left > 0 ? "&7" : "&c") + "Left for you this week: " + left + "/" + offer.limit));
+            int left = Math.max(0, offer.limit - bought(player, offer));
+            lore.add(ItemManager.color((left > 0 ? "&7" : "&c") + (offer.market() ? "Left for you: " : "Left for you this week: ")
+                    + left + "/" + offer.limit));
         }
         meta.lore(lore);
         stack.setItemMeta(meta);
@@ -267,13 +333,14 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
             return;
         }
         // the offer may have rotated away while the menu was open
-        if (offer.rotating && rotatingNow().stream().noneMatch(o -> o.id.equals(offer.id))) {
+        if (offer.rotating() && rotatingNow().stream().noneMatch(o -> o.id.equals(offer.id))
+                || offer.market() && (plugin.events() == null || !plugin.events().marketOpen())) {
             open(player);
             return;
         }
         String path = boughtPath(player, offer);
-        if (offer.limit > 0 && data.getInt(path, 0) >= offer.limit) {
-            player.sendMessage(plugin.msg("shop-limit", "&cYou've already bought this {limit}x this week.",
+        if (offer.limit > 0 && bought(player, offer) >= offer.limit) {
+            player.sendMessage(plugin.msg("shop-limit", "&cYou've reached the limit for this offer ({limit}x).",
                     "limit", String.valueOf(offer.limit)));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
             return;
@@ -284,11 +351,13 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
             return;
         }
-        if (offer.limit > 0) {
+        if (offer.market()) {
+            marketBought.merge(player.getUniqueId() + "|" + offer.id, 1, Integer::sum);
+        } else if (offer.limit > 0) {
             data.set(path, data.getInt(path, 0) + 1);
             save();
         }
-        plugin.bounty().give(player, new ItemStack(offer.material, offer.amount));
+        deliver(player, offer);
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1.2f);
         open(player);
     }

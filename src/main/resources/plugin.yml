@@ -8,7 +8,7 @@ authors: [ filip ]
 commands:
   forge:
     description: Forge info and admin tools (the menu opens from a crafting table)
-    usage: /<command> [reload|status|give|release|finish|meteor|warden|token|seal|tracker]
+    usage: /<command> [reload|status|give|release|finish|meteor|warden|event|token|seal|tracker]
     aliases: [recipes, recepty]
   legends:
     description: All legends on the server and your own stats with them
@@ -23,6 +23,10 @@ commands:
     description: The token shop (fixed offers + a weekly rotating offer)
     usage: /<command>
     aliases: [store]
+  events:
+    description: Which events are running right now
+    usage: /<command>
+    aliases: [event]
   pay:
     description: Send Bounty Tokens to another player
     usage: /<command> <player> <amount>

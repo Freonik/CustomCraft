@@ -77,6 +77,18 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                             "weapon", id));
                 }
             }
+            case "event" -> {
+                if (plugin.events() == null || args.length < 2) {
+                    sender.sendMessage(ItemManager.color("&7Usage: &e/forge event <" + String.join("|", EventManager.names()) + ">"));
+                } else if (args[1].equalsIgnoreCase("stop")) {
+                    plugin.events().stopAll();
+                    sender.sendMessage(ItemManager.color("&7All events stopped."));
+                } else {
+                    boolean ok = plugin.events().start(args[1], sender instanceof org.bukkit.entity.Player p ? p : null);
+                    sender.sendMessage(ItemManager.color(ok ? "&aStarted " + args[1] + "."
+                            : "&7Couldn't start " + args[1] + " (already running, turned off, or no good spot)."));
+                }
+            }
             case "meteor" -> {
                 boolean ok = plugin.meteor() != null && plugin.meteor().launch();
                 sender.sendMessage(ok ? ItemManager.color("&6☄ Meteor launched.")
@@ -180,7 +192,7 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             return result;
         }
         if (args.length == 1) {
-            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker"));
+            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "event"));
         } else if (args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) {
                 Bukkit.getOnlinePlayers().forEach(p -> result.add(p.getName()));
@@ -189,6 +201,8 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             } else if (args.length == 4) {
                 result.addAll(List.of("1", "8", "16", "64"));
             }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("event")) {
+            result.addAll(EventManager.names());
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("release") || args[0].equalsIgnoreCase("finish"))) {
             items.all(ItemManager.Kind.WEAPON).forEach(w -> result.add(w.id));
             items.all(ItemManager.Kind.RELIC).forEach(w -> result.add(w.id));

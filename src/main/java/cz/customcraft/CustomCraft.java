@@ -24,6 +24,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private MeteorManager meteor;
     private WardenManager warden;
     private ShopManager shop;
+    private EventManager events;
 
     @Override
     public void onEnable() {
@@ -84,6 +85,16 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         warden.start();
         meteor = new MeteorManager(this, items);
         meteor.start();
+        events = new EventManager(this);
+        RiftEvent rift = new RiftEvent(this, events);
+        events.setRift(rift);
+        getServer().getPluginManager().registerEvents(events, this);
+        getServer().getPluginManager().registerEvents(rift, this);
+        events.start();
+        PluginCommand eventsCommand = getCommand("events");
+        if (eventsCommand != null) {
+            eventsCommand.setExecutor(events);
+        }
 
         RecipesCommand command = new RecipesCommand(this, items, rituals, data);
         PluginCommand pluginCommand = getCommand("forge");
@@ -106,6 +117,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         }
         if (meteor != null) {
             meteor.shutdown();
+        }
+        if (events != null) {
+            events.shutdown();
         }
         if (warden != null) {
             warden.shutdown();
@@ -131,6 +145,10 @@ public final class CustomCraft extends JavaPlugin implements Listener {
 
     public BountyManager bounty() {
         return bounty;
+    }
+
+    public EventManager events() {
+        return events;
     }
 
     public ShopManager shop() {
@@ -181,7 +199,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private static final java.util.List<String> MERGED_SECTIONS = java.util.List.of("weapons", "relics", "materials",
             "craftable.weapons", "craftable.relics", "craftable.materials", "messages", "ability-settings", "relic-settings",
             "ritual", "bounty", "meteor", "warden", "economy", "economy.rewards",
-            "economy.shop.permanent", "economy.shop.rotating");
+            "economy.shop.permanent", "economy.shop.rotating",
+            "events", "events.blood-moon", "events.rift", "events.happy-hour", "events.happy-hour.types",
+            "events.forge-market", "events.forge-market.offers", "events.golden-shipment");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

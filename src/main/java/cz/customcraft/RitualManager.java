@@ -373,6 +373,11 @@ public final class RitualManager implements Listener {
             for (Running r : running.values()) {
                 r.endsAt += elapsed;                         // the clock stands still
             }
+        } else if (plugin.events() != null && plugin.events().ritualSpeed() > 1) {
+            long extra = (long) (elapsed * (plugin.events().ritualSpeed() - 1));
+            for (Running r : running.values()) {
+                r.endsAt -= extra;                           // Happy Hour: rituals run faster
+            }
         }
         if (paused != wasPaused) {
             for (Running r : running.values()) {

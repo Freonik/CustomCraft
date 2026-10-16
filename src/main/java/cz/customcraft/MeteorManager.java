@@ -95,6 +95,10 @@ public final class MeteorManager {
                 nextAt = now + 10 * 60_000L;                         // try again in 10 minutes
                 return;
             }
+            if (plugin.events() != null && plugin.events().bigActive()) {
+                nextAt = now + 5 * 60_000L;                          // a Rift or Blood Moon is on, wait
+                return;
+            }
             launch();
             return;
         }
@@ -133,6 +137,11 @@ public final class MeteorManager {
                     + plugin.getConfig().getInt("meteor.area-radius", 300) + ")";
             default -> " at " + t.getBlockX() + " " + t.getBlockY() + " " + t.getBlockZ();
         };
+    }
+
+    /** Is a meteor falling right now? */
+    public boolean active() {
+        return current != null;
     }
 
     /** Admin: start a meteor now. Returns false if one is already falling. */

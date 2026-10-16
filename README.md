@@ -27,6 +27,7 @@
 - [Legends](#legends)
 - [Bounties](#bounties)
 - [Token shop](#token-shop)
+- [Events](#events)
 - [Meteors](#meteors)
 - [The Forge Warden](#the-forge-warden)
 - [Advancements](#advancements)
@@ -50,6 +51,7 @@
 - **Bounties**: carrying a legend puts a price on your head, paid out in **Bounty Tokens**
 - **Token shop**: spend Bounty Tokens in `/shop` on diamonds, netherite, golden apples... with a weekly rotating offer
 - **Legend Tracker**: a compass that leads you to the nearest legend holder
+- **Events**: Blood Moon, Rifts, Happy Hour, Forge Market and Golden Shipments keep the server alive
 - **Meteors**: every few hours a meteor crashes somewhere with a cache of legendary loot
 - **The Forge Warden**: a three-phase boss you wake at a crafting table
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
@@ -350,6 +352,42 @@ bounties and the Bounty Exchange keep working.
 
 ---
 
+## Events
+`/events` shows what's happening right now. Events only start with at least **3 players online**,
+and two big ones never run at the same time.
+
+### ☾ Blood Moon
+Every night there's a **20 %** chance the Blood Moon rises. Until dawn:
+
+- monsters have **more health and hit harder**, and often come in pairs
+- some are **Blood-crazed elites**: bigger, glowing, with 3× XP and a few **Bounty Tokens**
+- legendary materials drop **more often**
+- **nobody can sleep**
+
+### ✷ Rift
+Every **1.5 to 3 hours** a Rift tears open near a random player. The coordinates are announced right away and it
+opens after 3 minutes. Then **5 waves** of monsters pour out, from zombies and skeletons up to blazes,
+wither skeletons and a final wave with a **Rift Ravager** and a **Rift Evoker**. More players nearby = bigger waves.
+
+When the last wave falls, everyone who helped is rewarded **by how much they did** (damage and kills):
+XP and a share of **15 Bounty Tokens**, and the best player also gets a **legendary material**.
+If everyone leaves, the Rift collapses and takes its monsters with it.
+
+### Small events
+One at a time, every 40 to 80 minutes:
+
+- **✦ Happy Hour** (45 min): **double XP**, **double legendary material drops** or **rituals twice as fast**
+- **⚖ Forge Market** (30 min): special offers in `/shop`, such as a cheap random legendary material,
+  a Legend Tracker, discounted netherite or totems. Each one can be bought once or twice per player.
+- **✉ Golden Shipment**: a crate floats down somewhere within 1500 blocks of spawn. Only the area (±150 blocks)
+  is announced, but a beam of light shows the exact spot up close. **First come, first served**: gold, diamonds,
+  golden apples, Bounty Tokens and sometimes a legendary material. It disappears after 20 minutes.
+
+Everything is under `events:` in the config: chances, intervals, durations, waves, rewards and offers.
+Every event can be switched off on its own, or all of them with `events.enabled: false`.
+
+---
+
 ## Meteors
 Every **2 to 4 hours** (with at least 3 players online) a meteor falls somewhere within 2500 blocks of spawn.
 A boss bar counts down five minutes and the impact site is revealed step by step:
@@ -423,6 +461,7 @@ Turn them all off with `advancements.enabled: false` in the config.
 | `/forge` | everyone | tells you how to open the forge |
 | `/legends` | everyone | all legends on the server and your own stats with them |
 | `/bounty` | everyone | your bounty, the most wanted players and the Bounty Token exchange |
+| `/events` | everyone | which events are running right now |
 | `/shop` | everyone | the token shop (alias `/store`) |
 | `/pay <player> <amount>` | everyone | send Bounty Tokens to another player |
 | `/forge status` | `customcraft.admin` | which weapons and relics exist or are being forged (with real names) |
@@ -431,6 +470,7 @@ Turn them all off with `advancements.enabled: false` in the config.
 | `/forge finish <id>` | `customcraft.admin` | finish a running ritual right now |
 | `/forge reload` | `customcraft.admin` | reload `config.yml` |
 | `/forge meteor` | `customcraft.admin` | drop a meteor now |
+| `/forge event <blood_moon\|rift\|happy_hour\|forge_market\|golden_shipment\|stop>` | `customcraft.admin` | start an event now (or stop them all) |
 | `/forge warden` | `customcraft.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `customcraft.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
 | | `customcraft.nocooldown` | abilities and relics without cooldowns (for testing) |

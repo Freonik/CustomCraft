@@ -104,11 +104,41 @@ messages:
   warden-left: "&7The Forge Warden went back to sleep."
   # token economy
   economy-disabled: "&7The token economy is turned off on this server."
-  shop-limit: "&cYou've already bought this {limit}x this week."
+  shop-limit: "&cYou've reached the limit for this offer ({limit}x)."
   pay-usage: "&7Usage: &e/pay <player> <amount>"
   pay-no-player: "&cThat player isn't online."
   pay-sent: "&aYou sent &6{amount} Bounty Tokens &ato &f{player}&a."
   pay-received: "&aYou received &6{amount} Bounty Tokens &afrom &f{player}&a."
+  # events (/events)
+  blood-moon-bossbar: "&4&l☾ Blood Moon &8• &7stronger monsters, better loot"
+  blood-moon-end: "&7☾ The Blood Moon sets. The night is quiet again."
+  blood-moon-no-sleep: "&cYou can't sleep under the Blood Moon."
+  blood-moon-start: "&4☾ &cThe &4&lBlood Moon &crises! &7Monsters are stronger and more numerous, but drop better loot. Nobody can sleep tonight."
+  events-header: "&6&lEvents"
+  events-none: "&7Nothing is happening right now."
+  happy-hour-bossbar: "&a✦ Happy Hour &8• &f{what} &8• &f{time}"
+  happy-hour-end: "&7✦ Happy Hour is over."
+  happy-hour-loot: "double legendary material drops"
+  happy-hour-ritual: "rituals run twice as fast"
+  happy-hour-start: "&a✦ &lHappy Hour! &7For &f{minutes} minutes&7: &a{what}&7!"
+  happy-hour-xp: "double XP"
+  market-bossbar: "&6⚖ Forge Market &8• &f{time} &7- /shop"
+  market-end: "&7⚖ The Forge Market has closed."
+  market-start: "&6⚖ The &lForge Market &6is open for &f{minutes} minutes&6! Special offers in &e/shop&6."
+  rift-bossbar-opening: "&5✷ Rift &8• &7opens in &f{time} &8• &f{x} {y} {z}"
+  rift-bossbar-pause: "&5✷ Rift &8• &7next wave in &f{time}"
+  rift-bossbar-wave: "&5✷ Rift &8• &dwave {wave}/{waves} &8• &f{left} monsters left"
+  rift-closed: "&5✷ The Rift has been closed! &7Heroes: &f{top}"
+  rift-collapsed: "&7✷ The Rift collapsed on its own. The monsters went with it."
+  rift-final-wave: "&5✷ The final wave is coming out of the Rift!"
+  rift-open: "&5✷ The Rift is open! Monsters are pouring out at &f{x} {y} {z}&5!"
+  rift-reward: "&5✷ &7Your share: &d{share}% &8• &6{tokens} tokens"
+  rift-start: "&5✷ A &d&lRift &5is tearing open at &f{x} {y} {z} &5in {world}! &7It opens in {time}. Close it together!"
+  rift-wave-cleared: "&dWave {wave} cleared! &7Next one in 10 seconds..."
+  shipment-bossbar: "&e✉ Golden Shipment &8• &7around &f{x} {z} &8(±{radius})"
+  shipment-found: "&e✉ &f{player} &efound the Golden Shipment!"
+  shipment-lost: "&7✉ Nobody found the Golden Shipment in time. It's gone."
+  shipment-start: "&e✉ A &6&lGolden Shipment &eis falling from the sky around &f{x} {z} &8(±{radius} blocks) &ein {world}&e! First come, first served."
   # weapon abilities (shown in the action bar)
   ability-cooldown: "&c{ability} &7is recharging: &c{time}s"
   ability-used: "&a» {ability}&a!"
@@ -1033,6 +1063,96 @@ economy:
       trident: { material: TRIDENT, amount: 1, price: 15, limit: 1 }
       heavy_core: { material: HEAVY_CORE, amount: 1, price: 25, limit: 1 }
       beacon: { material: BEACON, amount: 1, price: 50, limit: 1 }
+
+# ------------------------------------------------------------
+#  EVENTS (/events shows what's running; admins: /forge event <name|stop>)
+#  Blood Moon: a chance every night. Rift: every few hours.
+#  Small events (Happy Hour, Forge Market, Golden Shipment) come one at a time.
+#  Meteors (see "meteor") wait while a Rift or Blood Moon is on.
+# ------------------------------------------------------------
+events:
+  enabled: true
+  # Players online needed for an event to start
+  min-players: 3
+  # World for the Blood Moon, Rift and Golden Shipment ("" = the main world)
+  world: ""
+  small-interval-minutes-min: 40
+  small-interval-minutes-max: 80
+  blood-moon:
+    enabled: true
+    # Chance (%) each night
+    chance: 20
+    health-multiplier: 1.5
+    damage-multiplier: 1.3
+    # Chance (%) a naturally spawned monster brings a friend
+    extra-spawn-chance: 40
+    # Chance (%) of a glowing "Blood-crazed" elite (more HP, 3x XP, Bounty Tokens)
+    elite-chance: 8
+    elite-tokens-min: 1
+    elite-tokens-max: 2
+    # Legendary material drop chances are multiplied by this all night
+    loot-multiplier: 1.5
+  rift:
+    enabled: true
+    interval-minutes-min: 90
+    interval-minutes-max: 180
+    # How far from a random player it opens
+    distance-min: 150
+    distance-max: 350
+    warning-seconds: 180
+    # It collapses after this long (or when nobody is near for 2 minutes)
+    max-minutes: 25
+    # Each wave: MOB:count,MOB:count. Counts grow by this much per extra player nearby.
+    per-extra-player: 0.5
+    waves:
+      - "ZOMBIE:5,SKELETON:3"
+      - "HUSK:4,STRAY:3,SPIDER:3"
+      - "VINDICATOR:3,PILLAGER:3,WITCH:2"
+      - "BLAZE:3,WITHER_SKELETON:4"
+      - "RAVAGER:1,EVOKER:1,VINDICATOR:3"
+    # Rewards, split by how much each player helped (damage + kills)
+    token-pool: 15
+    xp: 300
+    min-share-percent: 5
+    # Chance (%) the top player also gets a legendary material
+    top-material-chance: 100
+  happy-hour:
+    enabled: true
+    weight: 1
+    duration-minutes: 45
+    multiplier: 2
+    # Which kinds can happen
+    types:
+      xp: true
+      loot: true
+      ritual: true
+  forge-market:
+    enabled: true
+    weight: 1
+    duration-minutes: 30
+    # How many of the offers below are in each market
+    count: 4
+    # Like the shop; "material" can also be legendary_material or legend_tracker. limit = per player per market.
+    offers:
+      legendary_material: { material: legendary_material, amount: 1, price: 3, limit: 1 }
+      legend_tracker: { material: legend_tracker, amount: 1, price: 1, limit: 1 }
+      netherite_ingot: { material: NETHERITE_INGOT, amount: 1, price: 12, limit: 1 }
+      diamonds: { material: DIAMOND, amount: 4, price: 4, limit: 2 }
+      enchanted_golden_apple: { material: ENCHANTED_GOLDEN_APPLE, amount: 1, price: 12, limit: 1 }
+      totem_of_undying: { material: TOTEM_OF_UNDYING, amount: 1, price: 8, limit: 1 }
+      trial_key: { material: OMINOUS_TRIAL_KEY, amount: 1, price: 6, limit: 1 }
+  golden-shipment:
+    enabled: true
+    weight: 1
+    # Lands up to this far from spawn; the hint is an area of ±area-radius blocks
+    radius: 1500
+    area-radius: 150
+    # Disappears if nobody finds it in time
+    despawn-minutes: 20
+    tokens-min: 1
+    tokens-max: 3
+    # Chance (%) of a legendary material inside
+    material-chance: 15
 
 # ------------------------------------------------------------
 #  METEOR

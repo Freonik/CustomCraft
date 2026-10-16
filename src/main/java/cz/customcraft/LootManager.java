@@ -112,7 +112,8 @@ public final class LootManager implements Listener {
     }
 
     private boolean roll(double chance) {
-        return ThreadLocalRandom.current().nextDouble(100) < Math.min(maxChance(), chance);
+        double boost = plugin.events() == null ? 1 : plugin.events().lootMultiplier();
+        return ThreadLocalRandom.current().nextDouble(100) < Math.min(maxChance(), chance * boost);
     }
 
     private void announce(Player player, ItemStack stack, boolean broadcast) {
