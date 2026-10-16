@@ -239,6 +239,7 @@ public final class RitualManager implements Listener {
         Location c = center(r);
         World world = c.getWorld();
         ItemStack forged = weapon.item.clone();
+        plugin.stamp(forged, weapon.ref());
         if (plugin.advancements() != null) {
             plugin.advancements().markForged(forged, r.player);
         }

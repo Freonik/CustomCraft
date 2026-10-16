@@ -348,7 +348,9 @@ public final class MenuManager implements Listener {
             return;
         }
         items.take(player.getInventory(), entry);
-        Map<Integer, ItemStack> leftover = player.getInventory().addItem(entry.item.clone());
+        ItemStack made = entry.item.clone();
+        plugin.stamp(made, entry.ref());
+        Map<Integer, ItemStack> leftover = player.getInventory().addItem(made);
         for (ItemStack rest : leftover.values()) {
             player.getWorld().dropItemNaturally(player.getLocation(), rest);
         }

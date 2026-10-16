@@ -61,6 +61,9 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                 String id = weaponId(sender, args);
                 if (id != null) {
                     boolean had = rituals.release(id);
+                    if (had && plugin.legends() != null) {
+                        plugin.legends().revoke(id);
+                    }
                     sender.sendMessage(plugin.msg(had ? "weapon-released" : "weapon-not-claimed",
                             had ? "&a{weapon} can be forged again." : "&7{weapon} wasn't claimed.", "weapon", id));
                 }

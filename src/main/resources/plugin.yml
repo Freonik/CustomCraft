@@ -10,6 +10,10 @@ commands:
     description: Forge info and admin tools (the menu opens from a crafting table)
     usage: /<command> [reload|status|give|release|finish]
     aliases: [recipes, recepty]
+  legends:
+    description: All legends on the server and your own stats with them
+    usage: /<command>
+    aliases: [legend]
 
 permissions:
   customcraft.use:

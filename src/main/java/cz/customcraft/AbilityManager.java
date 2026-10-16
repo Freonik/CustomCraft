@@ -480,6 +480,10 @@ public final class AbilityManager implements Listener {
                             .put(key, now + active.cooldown() * 1000L);
                 }
             }
+            if (plugin.legends() != null) {
+                plugin.legends().ability(player, weapon.ref(),
+                        trigger == Trigger.SHIFT_SWAP || trigger == Trigger.SHIFT_RIGHT_CLICK);
+            }
             player.sendActionBar(plugin.raw("ability-used", "&a» {ability}&a!",
                     "ability", ItemManager.color(active.name())));
         }

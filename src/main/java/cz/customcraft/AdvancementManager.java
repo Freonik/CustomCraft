@@ -267,7 +267,9 @@ public final class AdvancementManager implements Listener {
                     data.set("knightfall-awarded", true);
                     data.set("knightfall-player", player.getName());
                     save();
-                    give(player, knightfall.item.clone());
+                    ItemStack legend = knightfall.item.clone();
+                    plugin.stamp(legend, knightfall.ref());
+                    give(player, legend);
                     Bukkit.broadcast(ItemManager.color("&6⚔ &e" + player.getName()
                             + " &7was the first to carry five legends and claimed " ) .append(ItemManager.nameOf(knightfall.item))
                             .append(ItemManager.color("&7!")));

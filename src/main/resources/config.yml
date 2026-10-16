@@ -76,6 +76,8 @@ messages:
   weapon-not-claimed: "&7{weapon} wasn't claimed."
   # legendary materials
   material-found: "&5✦ &d{player} &7found {item}&7!"
+  legend-crumbled: "&7Your {item} &7crumbled to dust - it went back to the forge."
+  legend-abandoned: "&7{item} &7was abandoned for {days} days and returned to the forge. It can be forged again!"
   material-found-private: "&5✦ &7You found {item}&7!"
   # weapon abilities (shown in the action bar)
   ability-cooldown: "&c{ability} &7is recharging: &c{time}s"
@@ -916,6 +918,20 @@ weapons:
       - { item: PRISMARINE_BRICKS, amount: 32 }
       - { item: GOLD_BLOCK, amount: 8 }
       - { item: "material:sea_kings_doubloon", amount: 1 }
+
+# ------------------------------------------------------------
+#  LEGENDS
+#  Every forged weapon / relic copy has a hidden serial number, so only the real copy works.
+#  If the last player who carried a legend hasn't been online for "inactive-days",
+#  the legend returns to the forge (can be forged again) and the old copy crumbles to dust.
+#  0 = never. /legends shows all legends and your own stats with them.
+# ------------------------------------------------------------
+legends:
+  inactive-days: 7
+  title: "&8Legends"
+
+# A small finisher effect when a legendary weapon gets a kill
+kill-effects: true
 
 # CustomCraft advancement tab (toasts, chat messages, XP for challenges)
 advancements:

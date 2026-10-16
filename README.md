@@ -24,6 +24,7 @@
 - [Weapons](#weapons)
 - [Relics](#relics)
 - [Legendary materials](#legendary-materials)
+- [Legends](#legends)
 - [Advancements](#advancements)
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
@@ -40,6 +41,8 @@
 - **20 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
 - **Forge rituals**: forging takes 15 minutes on a crafting table and the location is revealed step by step
 - **One of each**: every weapon and relic can exist only once per server
+- **Living legends**: `/legends` shows every legend and your own stats with it; abandoned legends return to the forge
+- **Kill effects**: every legendary weapon has its own finisher
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
 - **Advancements**: a CustomCraft tab in the advancements screen, with toasts, chat messages and rewards
 - **Resource pack** with animated textures, custom worn armor, particles and a themed menu
@@ -271,6 +274,29 @@ Every weapon and relic needs one legendary material. **Nothing is guaranteed**: 
 
 ---
 
+## Legends
+
+### /legends
+Opens an overview of every weapon and relic on the server:
+
+- ✅ **can be forged**, ⚒ **being forged** (time left), or 🔒 **owned by Someone**
+- your **own stats** with each legend you've ever used: player kills, mob kills, damage dealt,
+  abilities used (F / Shift + F) and time in hand (time worn for relics). Nobody else sees your stats.
+- your totals across all legends on your head at the bottom
+
+### Abandoned legends
+If the last player who carried a legend hasn't been online for **7 days**, the legend returns to the forge and
+can be forged again. Every real copy carries a hidden serial number, so the old copy **crumbles to dust** the
+moment it shows up again (in an inventory or a chest), and there are never two of the same legend.
+Change the days with `legends.inactive-days` (0 = never).
+
+### Kill effects
+Every legendary weapon has its own finisher when it kills: the Echo Blade leaves a fading echo, the Graviton Hammer
+collapses into a tiny black hole, the Rimebreaker shatters its victim like ice, the Trident pulls them into a
+whirlpool... Turn them off with `kill-effects: false`.
+
+---
+
 ## Advancements
 
 CustomCraft adds its own tab to the advancements screen (**L**). They are real Minecraft advancements:
@@ -307,6 +333,7 @@ Turn them all off with `advancements.enabled: false` in the config.
 |---|---|---|
 | shift + right-click a crafting table | `customcraft.use` (everyone) | open the forge |
 | `/forge` | everyone | tells you how to open the forge |
+| `/legends` | everyone | all legends on the server and your own stats with them |
 | `/forge status` | `customcraft.admin` | which weapons and relics exist or are being forged (with real names) |
 | `/forge give <player> <weapon:id\|relic:id\|material:id> [amount]` | `customcraft.admin` | give an item (ignores uniqueness) |
 | `/forge release <id>` | `customcraft.admin` | make a weapon or relic forgeable again (stops its ritual) |

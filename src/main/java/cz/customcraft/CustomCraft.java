@@ -19,6 +19,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private RitualManager rituals;
     private AbilityManager abilities;
     private AdvancementManager advancements;
+    private LegendManager legends;
 
     @Override
     public void onEnable() {
@@ -47,6 +48,13 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(abilities, this);
         abilities.start();
         getServer().getPluginManager().registerEvents(this, this);
+        legends = new LegendManager(this, items);
+        getServer().getPluginManager().registerEvents(legends, this);
+        legends.start();
+        PluginCommand legendsCommand = getCommand("legends");
+        if (legendsCommand != null) {
+            legendsCommand.setExecutor(legends);
+        }
         advancements = new AdvancementManager(this, items);
         getServer().getPluginManager().registerEvents(advancements, this);
         advancements.register();
@@ -68,6 +76,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         if (abilities != null) {
             abilities.shutdown();
         }
+        if (legends != null) {
+            legends.shutdown();
+        }
         if (rituals != null) {
             rituals.shutdown();
         }
@@ -81,6 +92,17 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     public void award(org.bukkit.entity.Player player, String id) {
         if (advancements != null) {
             advancements.award(player, id);
+        }
+    }
+
+    public LegendManager legends() {
+        return legends;
+    }
+
+    /** Gives a freshly made legend its serial number (see LegendManager). */
+    public void stamp(org.bukkit.inventory.ItemStack stack, String ref) {
+        if (legends != null) {
+            legends.stamp(stack, ref);
         }
     }
 
