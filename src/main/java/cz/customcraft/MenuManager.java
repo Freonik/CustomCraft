@@ -337,6 +337,14 @@ public final class MenuManager implements Listener {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
                 return;
             }
+            if (!rituals.enoughPlayers()) {
+                player.sendMessage(plugin.msg("ritual-not-enough-players",
+                        "&cA forge ritual needs at least &e{min} &cplayers online &8({online}/{min})&c.",
+                        "min", String.valueOf(rituals.minPlayers()),
+                        "online", String.valueOf(Bukkit.getOnlinePlayers().size())));
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+                return;
+            }
             items.take(player.getInventory(), entry);
             Bukkit.getScheduler().runTask(plugin, () -> player.closeInventory());
             rituals.begin(player, entry, table);

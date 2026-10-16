@@ -9,6 +9,20 @@
           "type": "minecraft:model",
           "model": "customcraft:item/collectors_trophy"
         }
+      },
+      {
+        "threshold": 1402,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/bounty_token"
+        }
+      },
+      {
+        "threshold": 1403,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/wardens_seal"
+        }
       }
     ],
     "fallback": {

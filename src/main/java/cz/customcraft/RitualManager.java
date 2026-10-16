@@ -65,6 +65,10 @@ public final class RitualManager implements Listener {
         ItemDisplay display;
     }
 
+    /** Ritual timers stand still while too few players are online. */
+    private boolean paused;
+    private long lastTick;
+
     public RitualManager(CustomCraft plugin, ItemManager items, ForgeData data) {
         this.plugin = plugin;
         this.items = items;
@@ -335,15 +339,46 @@ public final class RitualManager implements Listener {
     private void updateBar(Running r) {
         ItemManager.Entry weapon = items.get(r.weapon);
         long left = Math.max(0, r.endsAt - System.currentTimeMillis());
+        if (paused) {
+            r.bar.name(plugin.raw("ritual-bossbar-paused",
+                    "&d⚒ {item} &8• &cpaused &7- waiting for {min} players online &8({online}/{min})",
+                    "item", weapon == null ? Component.text(r.weapon) : ItemManager.nameOf(weapon.item),
+                    "min", String.valueOf(minPlayers()), "online", String.valueOf(Bukkit.getOnlinePlayers().size())));
+            return;
+        }
         r.bar.name(plugin.raw("ritual-bossbar", "&d⚒ {player} &7is forging {item} &8• &f{time}{where}",
                 "player", publicName(r.name), "item", weapon == null ? Component.text(r.weapon) : ItemManager.nameOf(weapon.item),
                 "time", format(left), "where", where(r)));
         r.bar.progress((float) Math.max(0, Math.min(1, 1 - (double) left / Math.max(1, r.total))));
     }
 
+    /** Players needed online to start a ritual (and to keep its timer running). 0 = no limit. */
+    public int minPlayers() {
+        return Math.max(0, plugin.getConfig().getInt("ritual.min-players", 3));
+    }
+
+    public boolean enoughPlayers() {
+        return Bukkit.getOnlinePlayers().size() >= minPlayers();
+    }
+
     private void tick() {
         ticks++;
         long now = System.currentTimeMillis();
+        long elapsed = lastTick == 0 ? 0 : now - lastTick;
+        lastTick = now;
+        boolean wasPaused = paused;
+        paused = !running.isEmpty() && plugin.getConfig().getBoolean("ritual.pause-below-min-players", true)
+                && !enoughPlayers();
+        if (paused) {
+            for (Running r : running.values()) {
+                r.endsAt += elapsed;                         // the clock stands still
+            }
+        }
+        if (paused != wasPaused) {
+            for (Running r : running.values()) {
+                updateBar(r);
+            }
+        }
         for (Running r : new ArrayList<>(running.values())) {
             if (now >= r.endsAt) {
                 complete(r);

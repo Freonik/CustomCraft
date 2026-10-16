@@ -79,6 +79,36 @@ messages:
   legend-crumbled: "&7Your {item} &7crumbled to dust - it went back to the forge."
   legend-abandoned: "&7{item} &7was abandoned for {days} days and returned to the forge. It can be forged again!"
   material-found-private: "&5✦ &7You found {item}&7!"
+  ritual-weapon-busy: "&cThis item is already being forged somewhere."
+  ritual-not-enough-players: "&cA forge ritual needs at least &e{min} &cplayers online &8({online}/{min})&c."
+  ritual-bossbar-paused: "&d⚒ {item} &8• &cpaused &7- waiting for {min} players online &8({online}/{min})"
+  # bounties
+  bounty-raised: "&c☠ &f{player} &7now has a bounty of &6{tokens} Bounty Tokens&7!"
+  bounty-claimed: "&c☠ &f{killer} &7claimed the bounty on &f{victim}&7: &6{tokens} Bounty Tokens&7!"
+  bounty-not-enough: "&cYou need &6{price} Bounty Tokens&c."
+  bounty-tracked: "&8You feel like someone is tracking you..."
+  # meteor ({where} is filled in step by step)
+  meteor-start: "&6☄ A meteor is falling from the sky{where}&6! It lands in &e{time}&6."
+  meteor-area: "&6☄ The meteor's path narrows down{where}&6."
+  meteor-exact: "&6☄ The meteor will hit{where}&6!"
+  meteor-bossbar: "&6☄ Meteor &8• &f{time}{where}"
+  meteor-landed: "&6☄ The meteor has landed at &e{x} {y} {z}&6! Its cache is waiting..."
+  # Forge Warden
+  warden-summoning: "&4⚒ &c{player} &7is waking the &4&lForge Warden&7..."
+  warden-awake: "&4☠ The &lForge Warden &4has awoken at &c{x} {y} {z}&4!"
+  warden-already: "&cThe Forge Warden is already awake."
+  warden-need: "&cYou need {amount}x {item} to wake the Forge Warden."
+  warden-chained: "&7The Warden's chains drag you in!"
+  warden-enraged: "&4☠ The Forge Warden is enraged!"
+  warden-defeated: "&4☠ The Forge Warden has fallen! &7Top damage: &f{player}"
+  warden-left: "&7The Forge Warden went back to sleep."
+  # token economy
+  economy-disabled: "&7The token economy is turned off on this server."
+  shop-limit: "&cYou've already bought this {limit}x this week."
+  pay-usage: "&7Usage: &e/pay <player> <amount>"
+  pay-no-player: "&cThat player isn't online."
+  pay-sent: "&aYou sent &6{amount} Bounty Tokens &ato &f{player}&a."
+  pay-received: "&aYou received &6{amount} Bounty Tokens &afrom &f{player}&a."
   # weapon abilities (shown in the action bar)
   ability-cooldown: "&c{ability} &7is recharging: &c{time}s"
   ability-used: "&a» {ability}&a!"
@@ -177,6 +207,11 @@ ritual:
   hidden-player-name: "Someone"
   # Show the location at all (chat + boss bar). false = never show it.
   show-coordinates: true
+  # A ritual can only start with at least this many players online (0 = no limit),
+  # so nobody forges a legend alone at 3 am.
+  min-players: 3
+  # If players leave during a ritual and fewer than min-players are online, the timer pauses.
+  pause-below-min-players: true
   # Reveal the location step by step during the ritual (chat announcement + boss bar).
   # at-percent: how far into the ritual (0-100). radius: -1 = only the dimension,
   # n = an area of ±n blocks (randomly shifted, so its centre isn't the table), 0 = exact coordinates.
@@ -932,6 +967,110 @@ legends:
 
 # A small finisher effect when a legendary weapon gets a kill
 kill-effects: true
+
+# ------------------------------------------------------------
+#  BOUNTIES
+#  Carrying a legendary weapon or relic slowly raises your bounty (+1 token every
+#  "minutes-per-token" minutes, up to "max-tokens"). Whoever kills you gets your bounty
+#  as Bounty Tokens. Spend them with /bounty (or right-click a token).
+# ------------------------------------------------------------
+bounty:
+  enabled: true
+  minutes-per-token: 10
+  max-tokens: 20
+  # Bounties that are announced in chat
+  announce-at: [5, 10, 20]
+  # The same killer can't claim the same victim's bounty again for this long
+  same-target-cooldown-minutes: 30
+  # Legend Tracker: points near (± tracker-offset blocks) the closest legend holder
+  tracker-update-seconds: 30
+  tracker-offset: 50
+  # Prices in Bounty Tokens
+  exchange:
+    tracker: 3
+    random-material: 4
+    chosen-material: 10
+
+# ------------------------------------------------------------
+#  TOKEN ECONOMY
+#  Bounty Tokens as a currency: /shop (fixed offers + a weekly rotating offer)
+#  and /pay <player> <amount>. Tokens also come from the Forge Warden and meteor caches.
+#  enabled: false turns all of it off (no /shop, no /pay, no tokens from the Warden
+#  or meteors). Bounties and the Bounty Exchange keep working, see "bounty".
+# ------------------------------------------------------------
+economy:
+  enabled: true
+  # Allow /pay
+  pay: true
+  rewards:
+    warden-tokens: 10
+    meteor-tokens-min: 2
+    meteor-tokens-max: 5
+  shop:
+    title: "&8Token Shop"
+    # How often the rotating offer changes, and how many of the "rotating" items are in it (max 7)
+    rotation-days: 7
+    rotating-count: 5
+    # material, amount (per purchase), price (tokens), limit (purchases per player per week, 0 = no limit).
+    # Add "enabled: false" to an offer to hide it. Max 14 permanent offers.
+    permanent:
+      diamond: { material: DIAMOND, amount: 2, price: 3 }
+      golden_apple: { material: GOLDEN_APPLE, amount: 2, price: 2 }
+      netherite_scrap: { material: NETHERITE_SCRAP, amount: 1, price: 6 }
+      experience_bottle: { material: EXPERIENCE_BOTTLE, amount: 16, price: 2 }
+      ender_pearl: { material: ENDER_PEARL, amount: 8, price: 2 }
+      golden_carrot: { material: GOLDEN_CARROT, amount: 32, price: 1 }
+    rotating:
+      netherite_ingot: { material: NETHERITE_INGOT, amount: 1, price: 20, limit: 1 }
+      enchanted_golden_apple: { material: ENCHANTED_GOLDEN_APPLE, amount: 1, price: 20, limit: 1 }
+      totem_of_undying: { material: TOTEM_OF_UNDYING, amount: 1, price: 12, limit: 1 }
+      elytra: { material: ELYTRA, amount: 1, price: 40, limit: 1 }
+      shulker_shell: { material: SHULKER_SHELL, amount: 2, price: 8, limit: 2 }
+      diamond_block: { material: DIAMOND_BLOCK, amount: 1, price: 12, limit: 2 }
+      ancient_debris: { material: ANCIENT_DEBRIS, amount: 2, price: 10, limit: 2 }
+      netherite_upgrade: { material: NETHERITE_UPGRADE_SMITHING_TEMPLATE, amount: 1, price: 10, limit: 1 }
+      wither_skeleton_skull: { material: WITHER_SKELETON_SKULL, amount: 1, price: 8, limit: 3 }
+      trident: { material: TRIDENT, amount: 1, price: 15, limit: 1 }
+      heavy_core: { material: HEAVY_CORE, amount: 1, price: 25, limit: 1 }
+      beacon: { material: BEACON, amount: 1, price: 50, limit: 1 }
+
+# ------------------------------------------------------------
+#  METEOR
+#  Every few hours a meteor falls somewhere within "radius" blocks of spawn.
+#  Its location is revealed step by step; it carries a Meteor Cache with a legendary
+#  material. Admins: /forge meteor
+# ------------------------------------------------------------
+meteor:
+  enabled: true
+  interval-minutes-min: 120
+  interval-minutes-max: 240
+  min-players: 3
+  # World name ("" = the main world)
+  world: ""
+  radius: 2500
+  # How long before impact it is announced, and the size of the hinted area
+  warning-seconds: 300
+  area-radius: 300
+  # Chance (%) the cache contains a Legend Tracker / that the Forge Warden guards the crash site
+  tracker-chance: 25
+  warden-chance: 25
+
+# ------------------------------------------------------------
+#  FORGE WARDEN
+#  A boss. Sneak + right-click a crafting table holding the summon item.
+#  The top damage dealer gets a Warden's Seal (choose any legendary material).
+#  Admins: /forge warden
+# ------------------------------------------------------------
+warden:
+  enabled: true
+  summon-item: NETHER_STAR
+  summon-amount: 1
+  health: 500
+  scale: 1.8
+  attack-damage: 14
+  slam-damage: 10
+  fire-damage: 4
+  xp: 1000
 
 # CustomCraft advancement tab (toasts, chat messages, XP for challenges)
 advancements:

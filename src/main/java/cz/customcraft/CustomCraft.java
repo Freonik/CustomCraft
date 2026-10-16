@@ -20,6 +20,10 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private AbilityManager abilities;
     private AdvancementManager advancements;
     private LegendManager legends;
+    private BountyManager bounty;
+    private MeteorManager meteor;
+    private WardenManager warden;
+    private ShopManager shop;
 
     @Override
     public void onEnable() {
@@ -59,6 +63,27 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(advancements, this);
         advancements.register();
         advancements.start();
+        bounty = new BountyManager(this, items);
+        getServer().getPluginManager().registerEvents(bounty, this);
+        bounty.start();
+        PluginCommand bountyCommand = getCommand("bounty");
+        if (bountyCommand != null) {
+            bountyCommand.setExecutor(bounty);
+        }
+        shop = new ShopManager(this);
+        getServer().getPluginManager().registerEvents(shop, this);
+        for (String name : new String[] {"shop", "pay"}) {
+            PluginCommand c = getCommand(name);
+            if (c != null) {
+                c.setExecutor(shop);
+                c.setTabCompleter(shop);
+            }
+        }
+        warden = new WardenManager(this);
+        getServer().getPluginManager().registerEvents(warden, this);
+        warden.start();
+        meteor = new MeteorManager(this, items);
+        meteor.start();
 
         RecipesCommand command = new RecipesCommand(this, items, rituals, data);
         PluginCommand pluginCommand = getCommand("forge");
@@ -79,6 +104,15 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         if (legends != null) {
             legends.shutdown();
         }
+        if (meteor != null) {
+            meteor.shutdown();
+        }
+        if (warden != null) {
+            warden.shutdown();
+        }
+        if (bounty != null) {
+            bounty.shutdown();
+        }
         if (rituals != null) {
             rituals.shutdown();
         }
@@ -93,6 +127,26 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         if (advancements != null) {
             advancements.award(player, id);
         }
+    }
+
+    public BountyManager bounty() {
+        return bounty;
+    }
+
+    public ShopManager shop() {
+        return shop;
+    }
+
+    public MeteorManager meteor() {
+        return meteor;
+    }
+
+    public WardenManager warden() {
+        return warden;
+    }
+
+    public ItemManager items() {
+        return items;
     }
 
     public LegendManager legends() {
@@ -125,7 +179,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
 
     /** Sections where new default entries (new weapons, relics, materials, messages...) are added automatically. */
     private static final java.util.List<String> MERGED_SECTIONS = java.util.List.of("weapons", "relics", "materials",
-            "craftable.weapons", "craftable.relics", "craftable.materials", "messages", "ability-settings", "relic-settings");
+            "craftable.weapons", "craftable.relics", "craftable.materials", "messages", "ability-settings", "relic-settings",
+            "ritual", "bounty", "meteor", "warden", "economy", "economy.rewards",
+            "economy.shop.permanent", "economy.shop.rotating");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

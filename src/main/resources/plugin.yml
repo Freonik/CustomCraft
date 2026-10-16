@@ -8,12 +8,24 @@ authors: [ filip ]
 commands:
   forge:
     description: Forge info and admin tools (the menu opens from a crafting table)
-    usage: /<command> [reload|status|give|release|finish]
+    usage: /<command> [reload|status|give|release|finish|meteor|warden|token|seal|tracker]
     aliases: [recipes, recepty]
   legends:
     description: All legends on the server and your own stats with them
     usage: /<command>
     aliases: [legend]
+  bounty:
+    description: Your bounty, the most wanted legend holders and the Bounty Token exchange
+    usage: /<command>
+    aliases: [bounties, wanted]
+
+  shop:
+    description: The token shop (fixed offers + a weekly rotating offer)
+    usage: /<command>
+    aliases: [store]
+  pay:
+    description: Send Bounty Tokens to another player
+    usage: /<command> <player> <amount>
 
 permissions:
   customcraft.use:

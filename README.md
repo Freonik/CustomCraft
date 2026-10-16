@@ -25,6 +25,10 @@
 - [Relics](#relics)
 - [Legendary materials](#legendary-materials)
 - [Legends](#legends)
+- [Bounties](#bounties)
+- [Token shop](#token-shop)
+- [Meteors](#meteors)
+- [The Forge Warden](#the-forge-warden)
 - [Advancements](#advancements)
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
@@ -43,6 +47,11 @@
 - **One of each**: every weapon and relic can exist only once per server
 - **Living legends**: `/legends` shows every legend and your own stats with it; abandoned legends return to the forge
 - **Kill effects**: every legendary weapon has its own finisher
+- **Bounties**: carrying a legend puts a price on your head, paid out in **Bounty Tokens**
+- **Token shop**: spend Bounty Tokens in `/shop` on diamonds, netherite, golden apples... with a weekly rotating offer
+- **Legend Tracker**: a compass that leads you to the nearest legend holder
+- **Meteors**: every few hours a meteor crashes somewhere with a cache of legendary loot
+- **The Forge Warden**: a three-phase boss you wake at a crafting table
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
 - **Advancements**: a CustomCraft tab in the advancements screen, with toasts, chat messages and rewards
 - **Resource pack** with animated textures, custom worn armor, particles and a themed menu
@@ -97,6 +106,9 @@ Press **FORGE** when you have everything.
 - The item floats and spins above the table. The table can't be broken, burned, blown up or moved while the ritual runs.
 - When the time is up, lightning strikes and the item **drops on the table**. Whoever picks it up owns it, so defend it.
 - The timer only runs while the server is online and survives restarts.
+- A ritual needs at least **3 players online** to start, so nobody forges a legend alone at 3 am.
+  If players leave and fewer than 3 are online, the timer **pauses** until they're back.
+  Change it with `ritual.min-players` (0 = no limit) and `ritual.pause-below-min-players`.
 
 ### One of each
 Every weapon and relic can exist **only once**. As soon as its ritual starts, nobody else can forge it.
@@ -297,6 +309,82 @@ whirlpool... Turn them off with `kill-effects: false`.
 
 ---
 
+## Bounties
+
+### <img src="docs/items/bounty_token.png" width="48" alt="" align="center"> Bounty Tokens
+Carrying a legendary weapon or relic puts a price on your head: **+1 Bounty Token every 10 minutes**, up to **20**.
+At 5, 10 and 20 the whole server is told. Whoever kills you claims your whole bounty as Bounty Tokens.
+The same killer can't claim the same player again for 30 minutes, so no farming with a friend.
+
+### The exchange
+`/bounty` (or the compass in `/shop`) shows your own bounty, the five most wanted players, and what you can buy:
+
+| Price | Item |
+|---|---|
+| 3 tokens | **Legend Tracker** |
+| 4 tokens | a random legendary material |
+| 10 tokens | a legendary material **of your choice** |
+
+### 🧭 Legend Tracker
+A compass that points to the **nearest legend holder** (roughly, within ±50 blocks) and shows how far away they are.
+It updates every 30 seconds. The hunted player gets a quiet warning that someone is tracking them.
+
+Prices and timings are under `bounty:` in the config.
+
+---
+
+## Token shop
+Bounty Tokens are the server's currency. You get them from **bounties**, the **Forge Warden** (10 tokens)
+and **meteor caches** (2 to 5 tokens). Spend them in **`/shop`** (or right-click a token):
+
+- **Always available**: diamonds, golden apples, netherite scrap, bottles o' enchanting, ender pearls, golden carrots
+- **This week's offer**: 5 items that change **every 7 days** for everyone, e.g. a netherite ingot,
+  an enchanted golden apple, a totem, elytra, a heavy core or a beacon. Rare items can only be bought once or
+  twice per player per week.
+
+Send tokens to someone with **`/pay <player> <amount>`**.
+
+Items, prices, limits and the rotation are under `economy:` in the config.
+**`economy.enabled: false` turns the whole economy off** (no `/shop`, no `/pay`, no tokens from the Warden or meteors);
+bounties and the Bounty Exchange keep working.
+
+---
+
+## Meteors
+Every **2 to 4 hours** (with at least 3 players online) a meteor falls somewhere within 2500 blocks of spawn.
+A boss bar counts down five minutes and the impact site is revealed step by step:
+first the world, then an area of ±300 blocks, then the exact spot.
+
+A burning rock crashes down and leaves a scorched crater with a **Meteor Cache**:
+
+- one **legendary material** (always)
+- diamonds, gold, bottles o' enchanting, sometimes netherite scrap
+- a few **Bounty Tokens**
+- a 25 % chance of a **Legend Tracker**
+
+Sometimes (25 %) the **Forge Warden** guards the crash site. Settings are under `meteor:` in the config.
+
+---
+
+## The Forge Warden
+
+**Sneak + right-click a crafting table holding a Nether Star** to wake the Forge Warden. After a short ritual a giant
+in netherite armour rises with **500 HP**:
+
+- **Slam**: hits everyone close and throws them back
+- **Chains**: drags whoever keeps their distance right back to it
+- **Thralls**: calls Forge Thralls to help it
+- **Below 50 %**: rings of fire burst out around it
+- **Below 25 %**: it gets enraged (faster and stronger)
+
+If everyone runs away it goes back to sleep. When it falls it drops **1000 XP**, **10 Bounty Tokens** and a
+<img src="docs/items/wardens_seal.png" width="24" alt="" align="center"> **Warden's Seal** that only the player
+with the **most damage** can pick up. Right-click the seal to choose **any legendary material**.
+
+Health, damage and the summon item are under `warden:` in the config.
+
+---
+
 ## Advancements
 
 CustomCraft adds its own tab to the advancements screen (**L**). They are real Minecraft advancements:
@@ -334,11 +422,17 @@ Turn them all off with `advancements.enabled: false` in the config.
 | shift + right-click a crafting table | `customcraft.use` (everyone) | open the forge |
 | `/forge` | everyone | tells you how to open the forge |
 | `/legends` | everyone | all legends on the server and your own stats with them |
+| `/bounty` | everyone | your bounty, the most wanted players and the Bounty Token exchange |
+| `/shop` | everyone | the token shop (alias `/store`) |
+| `/pay <player> <amount>` | everyone | send Bounty Tokens to another player |
 | `/forge status` | `customcraft.admin` | which weapons and relics exist or are being forged (with real names) |
 | `/forge give <player> <weapon:id\|relic:id\|material:id> [amount]` | `customcraft.admin` | give an item (ignores uniqueness) |
 | `/forge release <id>` | `customcraft.admin` | make a weapon or relic forgeable again (stops its ritual) |
 | `/forge finish <id>` | `customcraft.admin` | finish a running ritual right now |
 | `/forge reload` | `customcraft.admin` | reload `config.yml` |
+| `/forge meteor` | `customcraft.admin` | drop a meteor now |
+| `/forge warden` | `customcraft.admin` | wake the Forge Warden where you stand |
+| `/forge token\|seal\|tracker [amount]` | `customcraft.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
 | | `customcraft.nocooldown` | abilities and relics without cooldowns (for testing) |
 
 Aliases: `/recipes`, `/recepty`.
@@ -363,6 +457,8 @@ craftable:
 ```yaml
 ritual:
   duration-minutes: 15
+  min-players: 3          # players online needed to start (0 = no limit)
+  pause-below-min-players: true
   bossbar: ALL            # ALL, NEARBY or NONE
   show-player: false      # hide who is forging
   location-reveal:

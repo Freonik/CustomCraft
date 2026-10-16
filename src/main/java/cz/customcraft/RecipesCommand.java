@@ -77,6 +77,30 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                             "weapon", id));
                 }
             }
+            case "meteor" -> {
+                boolean ok = plugin.meteor() != null && plugin.meteor().launch();
+                sender.sendMessage(ok ? ItemManager.color("&6☄ Meteor launched.")
+                        : ItemManager.color("&7A meteor is already falling (or no landing spot was found)."));
+            }
+            case "warden" -> {
+                if (!(sender instanceof org.bukkit.entity.Player player)) {
+                    sender.sendMessage(ItemManager.color("&cOnly players can spawn the Warden."));
+                } else if (plugin.warden() == null || plugin.warden().alive()) {
+                    sender.sendMessage(ItemManager.color("&7The Forge Warden is already awake."));
+                } else {
+                    plugin.warden().spawnAt(player);
+                }
+            }
+            case "token", "seal", "tracker" -> {
+                if (!(sender instanceof org.bukkit.entity.Player player) || plugin.bounty() == null) {
+                    sender.sendMessage(ItemManager.color("&cOnly players can do that."));
+                } else {
+                    String what = args[0].toLowerCase(Locale.ROOT);
+                    int n = args.length > 1 ? Math.max(1, Math.min(64, parseInt(args[1]))) : 1;
+                    plugin.bounty().give(player, what.equals("token") ? plugin.bounty().token(n)
+                            : what.equals("seal") ? plugin.warden().seal() : plugin.bounty().tracker());
+                }
+            }
             default -> sender.sendMessage(plugin.msg("usage", "&7Usage: &e/forge"));
         }
         return true;
@@ -156,7 +180,7 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             return result;
         }
         if (args.length == 1) {
-            result.addAll(List.of("reload", "give", "status", "release", "finish"));
+            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker"));
         } else if (args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) {
                 Bukkit.getOnlinePlayers().forEach(p -> result.add(p.getName()));
@@ -172,5 +196,13 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
         String current = args[args.length - 1].toLowerCase(Locale.ROOT);
         result.removeIf(s -> !s.toLowerCase(Locale.ROOT).startsWith(current));
         return result;
+    }
+
+    private static int parseInt(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException ex) {
+            return 1;
+        }
     }
 }
