@@ -1,0 +1,20 @@
+Copyright (c) 2026 Freonik. All rights reserved.
+
+This repository, including its source code, configuration, textures, models, resource pack
+and documentation (together "the Software"), is the property of the copyright holder.
+
+You MAY:
+  - download the released plugin (CustomCraft.jar) and resource pack (CustomCraft-pack.zip)
+    and run them on your own Minecraft server;
+  - change the settings in config.yml for your own server.
+
+You MAY NOT, without prior written permission from the copyright holder:
+  - copy, modify, adapt, translate or create derivative works of the Software or any part of it;
+  - redistribute, publish, sublicense, sell or rent the Software or any modified version of it;
+  - reuse the source code, textures, models or other assets in other projects;
+  - remove or alter this notice or any copyright notices.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.

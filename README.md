@@ -34,6 +34,7 @@
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
 - [Resource pack](#resource-pack)
+- [License](#license)
 
 ---
 
@@ -544,3 +545,10 @@ The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it 
 **Local testing:** drop the zip into `.minecraft/resourcepacks`, enable it in the game, and set `menu.resource-pack: true`.
 
 Custom model data used by the pack: weapons `1001-1004`, `1006-1009`, `1011-1015`, `1205`, relics `1201-1204`, `1206-1208`, materials `1301-1321`, menu icons `9000-9021`.
+
+---
+
+## License
+
+Copyright © 2026 Freonik. **All rights reserved.** You may run the released plugin and resource pack on your own server,
+but copying, modifying or redistributing the code or assets is not allowed. See [LICENSE](LICENSE).
