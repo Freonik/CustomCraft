@@ -58,6 +58,7 @@
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
 - **Advancements**: a CustomCraft tab in the advancements screen, with toasts, chat messages and rewards
 - **Resource pack** with animated textures, custom worn armor, particles and a themed menu
+- **Live MOTD**: the server list shows what's happening right now (a Rift, the Blood Moon, a ritual...)
 - **Fully configurable**: numbers, cooldowns, drop chances, ritual length, messages, on/off switches
 
 <p align="center"><img src="docs/weapons.gif" alt="Weapons"></p>
@@ -514,6 +515,17 @@ ritual:
       - { at-percent: 66, radius: 100 }
       - { at-percent: 87, radius: 0 }     # exact coordinates
 ```
+
+### Live MOTD
+The second line of your server-list MOTD shows what's going on, so people see it before they even join:
+
+```
+⚒ CUSTOMCRAFT ⚒ | Paper 1.21.11
+✷ A Rift is open! Wave 3/5
+```
+
+With nothing going on it shows how many legends are still unclaimed. Change the texts under `motd:`, or set
+`motd.enabled: false` to use the motd from `server.properties`.
 
 ### Abilities and balance
 ```yaml

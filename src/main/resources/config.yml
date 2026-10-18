@@ -1065,6 +1065,28 @@ economy:
       beacon: { material: BEACON, amount: 1, price: 50, limit: 1 }
 
 # ------------------------------------------------------------
+#  LIVE MOTD (the server list)
+#  line1 always stays. The second line shows what's happening right now, in this order:
+#  Rift > Blood Moon > meteor > Forge Warden > a forge ritual > Happy Hour > Forge Market >
+#  Golden Shipment > how many legends are still unclaimed.
+#  enabled: false = the motd from server.properties is used instead.
+# ------------------------------------------------------------
+motd:
+  enabled: true
+  line1: "&6&l⚒ &e&lCUSTOMCRAFT &6&l⚒ &8| &7Paper 1.21.11"
+  rift-opening: "&5✷ A Rift is tearing the sky open..."
+  rift: "&5✷ A Rift is open! &7Wave &d{wave}&7/&d{waves}"
+  blood-moon: "&4☾ The Blood Moon has risen... &7({online} online)"
+  meteor: "&6☄ A meteor is falling! &7Its cache is up for grabs."
+  warden: "&4⚒ The Forge Warden is awake!"
+  ritual: "&d⚒ Someone is forging {item}&d... &7{time} left"
+  happy-hour: "&a✦ Happy Hour: &f{what}"
+  forge-market: "&6⚖ The Forge Market is open! &7Special offers in /shop"
+  golden-shipment: "&e✉ A Golden Shipment is waiting to be found!"
+  idle: "&7Forge a &dlegend&7. &f{free}&7/&f{total} &7are still unclaimed."
+  all-claimed: "&7Every legend has an owner. &cTake one from them."
+
+# ------------------------------------------------------------
 #  EVENTS (/events shows what's running; admins: /forge event <name|stop>)
 #  Blood Moon: a chance every night. Rift: every few hours.
 #  Small events (Happy Hour, Forge Market, Golden Shipment) come one at a time.

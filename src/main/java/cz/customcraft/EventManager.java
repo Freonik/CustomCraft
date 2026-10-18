@@ -516,6 +516,52 @@ public final class EventManager implements Listener, CommandExecutor {
 
     // ================================================================ Forge Market
 
+    /** The running Happy Hour type, or null. */
+    public HappyType happyHour() {
+        return happy;
+    }
+
+    /** Is a Golden Shipment out there that nobody has found yet? */
+    public boolean shipmentWaiting() {
+        return shipment != null && !shipmentFound;
+    }
+
+    public RiftEvent rift() {
+        return rift;
+    }
+
+    public boolean riftActive() {
+        return rift != null && rift.active();
+    }
+
+    public boolean riftOpening() {
+        return rift != null && rift.opening();
+    }
+
+    public int riftWave() {
+        return rift == null ? 0 : rift.wave();
+    }
+
+    public int riftWaves() {
+        return rift == null ? 0 : rift.waveTotal();
+    }
+
+    public HappyType happyType() {
+        return happy;
+    }
+
+    /** What the current Happy Hour does, as text. */
+    public Component happyWhat() {
+        if (happy == null) {
+            return Component.empty();
+        }
+        return ItemManager.color(switch (happy) {
+            case XP -> plugin.getConfig().getString("messages.happy-hour-xp", "double XP");
+            case LOOT -> plugin.getConfig().getString("messages.happy-hour-loot", "double legendary material drops");
+            case RITUAL -> plugin.getConfig().getString("messages.happy-hour-ritual", "rituals run twice as fast");
+        });
+    }
+
     public boolean marketOpen() {
         return marketEndsAt > System.currentTimeMillis();
     }

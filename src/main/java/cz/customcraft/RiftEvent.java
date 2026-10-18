@@ -456,6 +456,18 @@ public final class RiftEvent implements Listener {
         collapse(true);
     }
 
+    public boolean opening() {
+        return phase == Phase.OPENING;
+    }
+
+    public int wave() {
+        return wave;
+    }
+
+    public int waveTotal() {
+        return waveTotal;
+    }
+
     public Component statusLine() {
         if (portal == null) {
             return Component.empty();

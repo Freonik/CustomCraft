@@ -85,6 +85,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         warden.start();
         meteor = new MeteorManager(this, items);
         meteor.start();
+        getServer().getPluginManager().registerEvents(new MotdManager(this, items), this);
         events = new EventManager(this);
         RiftEvent rift = new RiftEvent(this, events);
         events.setRift(rift);
@@ -201,7 +202,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
             "ritual", "bounty", "meteor", "warden", "economy", "economy.rewards",
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.happy-hour", "events.happy-hour.types",
-            "events.forge-market", "events.forge-market.offers", "events.golden-shipment");
+            "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,
