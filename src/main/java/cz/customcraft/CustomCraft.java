@@ -148,6 +148,10 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         return bounty;
     }
 
+    public MenuManager menus() {
+        return menus;
+    }
+
     public EventManager events() {
         return events;
     }

@@ -348,6 +348,8 @@ and **meteor caches** (2 to 5 tokens). Spend them in **`/shop`** (or right-click
 
 Send tokens to someone with **`/pay <player> <amount>`**.
 
+With the resource pack, `/shop`, `/bounty` and the material picker get their own forge-style look, just like the forge menu.
+
 > **Bounty Tokens are an in-game currency only.** They give gameplay advantages, so the
 > [Minecraft EULA](https://www.minecraft.net/eula) and Mojang's
 > [usage guidelines](https://www.minecraft.net/usage-guidelines) don't allow selling them (or anything bought with them)

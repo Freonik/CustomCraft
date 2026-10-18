@@ -23,6 +23,87 @@
       "chars": [
         "\ue001"
       ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/shop.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue002"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/shop_market.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue003"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/bounty_exchange.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue004"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/picker_1.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue005"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/picker_2.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue006"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/picker_3.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue007"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/picker_4.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue008"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/picker_5.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue009"
+      ]
+    },
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/picker_6.png",
+      "ascent": 13,
+      "height": 256,
+      "chars": [
+        "\ue00a"
+      ]
     }
   ]
 }

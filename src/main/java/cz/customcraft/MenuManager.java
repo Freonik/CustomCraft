@@ -415,7 +415,7 @@ public final class MenuManager implements Listener {
      *                     false = never,
      *                     auto  = only for players who loaded the server resource pack.
      */
-    private boolean usesPack(Player player) {
+    public boolean usesPack(Player player) {
         String mode = String.valueOf(plugin.getConfig().get("menu.resource-pack", "auto")).toLowerCase(java.util.Locale.ROOT);
         return switch (mode) {
             case "true" -> true;
@@ -474,6 +474,23 @@ public final class MenuManager implements Listener {
             meta.setCustomModelData(cmd);
             stack.setItemMeta(meta);
         }
+        return stack;
+    }
+
+    /** Background-glyph title for the other menus (shop, exchange, picker), see font customcraft:menu. */
+    public static Component glyphTitle(char glyph) {
+        return Component.text("\uf808" + glyph)
+                .font(Key.key("customcraft", "menu"))
+                .color(NamedTextColor.WHITE);
+    }
+
+    /** An invisible tile: the pack's background shows through (custom model data 9000). */
+    public static ItemStack clearTile() {
+        ItemStack stack = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = stack.getItemMeta();
+        meta.displayName(Component.text(" "));
+        meta.setCustomModelData(9000);
+        stack.setItemMeta(meta);
         return stack;
     }
 

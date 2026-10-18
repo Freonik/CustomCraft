@@ -383,9 +383,11 @@ public final class BountyManager implements Listener, CommandExecutor {
 
     public void openExchange(Player player) {
         ExchangeHolder holder = new ExchangeHolder();
-        holder.inventory = Bukkit.createInventory(holder, 27, ItemManager.color("&8Bounty Exchange"));
+        boolean pack = plugin.menus() != null && plugin.menus().usesPack(player);
+        holder.inventory = Bukkit.createInventory(holder, 27,
+                pack ? MenuManager.glyphTitle('\ue004') : ItemManager.color("&8Bounty Exchange"));
         Inventory inv = holder.inventory;
-        ItemStack filler = named(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), " ");
+        ItemStack filler = pack ? MenuManager.clearTile() : named(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), " ");
         for (int i = 0; i < 27; i++) {
             inv.setItem(i, filler);
         }
@@ -448,7 +450,9 @@ public final class BountyManager implements Listener, CommandExecutor {
         holder.options = enabledMaterials();
         holder.onPick = onPick;
         int size = Math.max(9, Math.min(54, ((holder.options.size() + 8) / 9) * 9));
-        holder.inventory = Bukkit.createInventory(holder, size, ItemManager.color(title));
+        boolean pack = plugin.menus() != null && plugin.menus().usesPack(player);
+        holder.inventory = Bukkit.createInventory(holder, size,
+                pack ? MenuManager.glyphTitle((char) (0xe004 + size / 9)) : ItemManager.color(title));
         for (int i = 0; i < holder.options.size() && i < size; i++) {
             holder.inventory.setItem(i, holder.options.get(i).item.clone());
         }

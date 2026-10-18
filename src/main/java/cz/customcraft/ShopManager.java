@@ -240,10 +240,13 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         BountyManager bounty = plugin.bounty();
         int tokens = bounty.countTokens(player);
         ShopHolder holder = new ShopHolder();
-        holder.inventory = Bukkit.createInventory(holder, 54,
-                ItemManager.color(plugin.getConfig().getString("economy.shop.title", "&8Token Shop")));
+        boolean pack = plugin.menus() != null && plugin.menus().usesPack(player);
+        boolean marketOn = plugin.events() != null && plugin.events().marketOpen() && !market.isEmpty();
+        holder.inventory = Bukkit.createInventory(holder, 54, pack
+                ? MenuManager.glyphTitle(marketOn ? '\ue003' : '\ue002')
+                : ItemManager.color(plugin.getConfig().getString("economy.shop.title", "&8Token Shop")));
         Inventory inv = holder.inventory;
-        ItemStack filler = named(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), " ");
+        ItemStack filler = pack ? MenuManager.clearTile() : named(new ItemStack(Material.BLACK_STAINED_GLASS_PANE), " ");
         for (int i = 0; i < 54; i++) {
             inv.setItem(i, filler);
         }
@@ -253,7 +256,7 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         im.lore(List.of(ItemManager.color("&7Earn them from bounties, the Forge Warden"),
                 ItemManager.color("&7and meteor caches. &e/pay <player> <amount>")));
         info.setItemMeta(im);
-        inv.setItem(4, info);
+        inv.setItem(pack ? 0 : 4, info);
         if (plugin.getConfig().getBoolean("bounty.enabled", true)) {
             ItemStack exchange = named(new ItemStack(Material.COMPASS), "&c&lBounty Exchange");
             ItemMeta em = exchange.getItemMeta();
@@ -262,7 +265,9 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
             exchange.setItemMeta(em);
             inv.setItem(8, exchange);
         }
-        inv.setItem(1, named(new ItemStack(Material.CHEST), "&a&lAlways available"));
+        if (!pack) {
+            inv.setItem(1, named(new ItemStack(Material.CHEST), "&a&lAlways available"));
+        }
         List<Offer> permanent = offers("economy.shop.permanent", "permanent");
         for (int i = 0; i < permanent.size() && i < PERMANENT_SLOTS.length; i++) {
             put(holder, PERMANENT_SLOTS[i], permanent.get(i), player, tokens);
@@ -271,16 +276,18 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         ItemMeta cm = clock.getItemMeta();
         cm.lore(List.of(ItemManager.color("&7Changes in &f" + RitualManager.format(nextRotationAt() - System.currentTimeMillis()))));
         clock.setItemMeta(cm);
-        for (int i = 27; i < 36; i++) {
-            inv.setItem(i, named(new ItemStack(Material.ORANGE_STAINED_GLASS_PANE), " "));
+        if (!pack) {
+            for (int i = 27; i < 36; i++) {
+                inv.setItem(i, named(new ItemStack(Material.ORANGE_STAINED_GLASS_PANE), " "));
+            }
         }
-        inv.setItem(31, clock);
+        inv.setItem(pack ? 35 : 31, clock);
         List<Offer> rotating = rotatingNow();
         int start = (ROTATING_SLOTS.length - rotating.size()) / 2;
         for (int i = 0; i < rotating.size(); i++) {
             put(holder, ROTATING_SLOTS[start + i], rotating.get(i), player, tokens);
         }
-        if (plugin.events() != null && plugin.events().marketOpen() && !market.isEmpty()) {
+        if (marketOn) {
             inv.setItem(45, named(new ItemStack(Material.BELL), "&6&lForge Market &7(limited time)"));
             int mstart = (MARKET_SLOTS.length - market.size()) / 2;
             for (int i = 0; i < market.size(); i++) {
