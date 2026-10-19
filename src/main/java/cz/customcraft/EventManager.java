@@ -574,6 +574,9 @@ public final class EventManager implements Listener, CommandExecutor {
         if (hunt != null && hunt.active()) {
             return "&cHunt: &f" + hunt.targetName();
         }
+        if (plugin.ghost() != null && plugin.ghost().active()) {
+            return "&8&k??&r &7Something is here";
+        }
         if (bloodMoon) {
             return "&4Blood Moon";
         }

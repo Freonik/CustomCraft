@@ -89,6 +89,23 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                             : "&7Couldn't start " + args[1] + " (already running, turned off, or no good spot)."));
                 }
             }
+            case "ghost" -> {
+                if (plugin.ghost() == null) {
+                    return true;
+                }
+                if (args.length > 1 && args[1].equalsIgnoreCase("stop")) {
+                    plugin.ghost().leave(true);
+                    sender.sendMessage(ItemManager.color("&7The Doppelganger is gone."));
+                    return true;
+                }
+                org.bukkit.entity.Player victim = args.length > 1 ? Bukkit.getPlayerExact(args[1])
+                        : sender instanceof org.bukkit.entity.Player p ? p : null;
+                if (victim == null) {
+                    sender.sendMessage(ItemManager.color("&7Usage: &e/forge ghost [player|stop]"));
+                } else if (!plugin.ghost().forceSpawn(victim)) {
+                    sender.sendMessage(ItemManager.color("&7The Doppelganger is already here."));
+                }
+            }
             case "meteor" -> {
                 boolean ok = plugin.meteor() != null && plugin.meteor().launch();
                 sender.sendMessage(ok ? ItemManager.color("&6☄ Meteor launched.")
@@ -192,7 +209,7 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             return result;
         }
         if (args.length == 1) {
-            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "event"));
+            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "event", "ghost"));
         } else if (args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) {
                 Bukkit.getOnlinePlayers().forEach(p -> result.add(p.getName()));

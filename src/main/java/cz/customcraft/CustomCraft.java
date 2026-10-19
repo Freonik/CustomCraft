@@ -26,6 +26,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private ShopManager shop;
     private EventManager events;
     private TopManager top;
+    private GhostManager ghost;
     private Placeholders placeholders;
     private HudManager hud;
     private boolean papi;
@@ -104,6 +105,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
             eventsCommand.setExecutor(events);
         }
 
+        ghost = new GhostManager(this);
+        getServer().getPluginManager().registerEvents(ghost, this);
+        ghost.start();
         placeholders = new Placeholders(this);
         top = new TopManager(this);
         top.start();
@@ -163,6 +167,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         if (hud != null) {
             hud.shutdown();
         }
+        if (ghost != null) {
+            ghost.shutdown();
+        }
         if (warden != null) {
             warden.shutdown();
         }
@@ -187,6 +194,10 @@ public final class CustomCraft extends JavaPlugin implements Listener {
 
     public BountyManager bounty() {
         return bounty;
+    }
+
+    public GhostManager ghost() {
+        return ghost;
     }
 
     public TopManager top() {
@@ -261,7 +272,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
-            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top");
+            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

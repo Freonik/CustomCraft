@@ -117,6 +117,8 @@ messages:
   hud-shown: "&aSidebar shown."
   codex-given: "&6📖 You got the &lForge Codex&6. Read it, or open it any time with &e/codex&6."
   codex-off: "&7The Forge Codex is turned off on this server."
+  ghost-killed: "&8☠ &7The copy of &f{copy} &7is gone. &f{player} &7ended it."
+  ghost-stole: "&8☠ &7The copy of &f{copy} &7took &r{item}&7. It will be back. Kill it to get it back."
   # events (/events)
   hunt-start: "&c☠ &4&lLegend Hunt! &f{player} &cis marked for &f{minutes} minutes&c. Their bounty counts &6double&c. Hunt them down!"
   hunt-you: "&c☠ You are being hunted! &7Survive for {minutes} minutes and you get &6{tokens} Bounty Tokens&7. Your abilities recharge faster until then."
@@ -1159,6 +1161,47 @@ top:
   update-seconds: 60
 
 # ------------------------------------------------------------
+#  DOPPELGANGER
+#  When someone stays top 1 on the bounty board for "hours-as-top-bounty" (offline time counts too),
+#  "they" join the server: a glitched copy of that player in legendary gear that hunts them.
+#  If it kills them, it takes one of their legends and keeps coming back with it (every
+#  "return-minutes") until somebody kills it. The stolen legends are kept in ghost.yml, never lost.
+#  Admins: /forge ghost [player|stop]
+# ------------------------------------------------------------
+doppelganger:
+  enabled: true
+  hours-as-top-bounty: 3
+  # Bounty needed to count as top 1
+  min-bounty: 5
+  min-players: 1
+  health: 600
+  # Damage it takes is multiplied by this (lower = tankier)
+  damage-taken-multiplier: 0.6
+  attack-damage: 9
+  ability-damage: 6
+  arrow-damage: 3
+  ability-seconds: 5
+  speed: 0.3
+  # It leaves after this long if nobody wins
+  hunt-minutes: 30
+  steal-legend: true
+  max-stolen: 3
+  return-minutes: 30
+  reward-tokens: 25
+  reward-material: true
+  xp: 500
+  # What it says in chat now and then ({target} = whose copy it is)
+  chat-lines:
+    - "i can see you, {target}"
+    - "why do you run, {target}"
+    - "that legend was never yours"
+    - "do you hear the forge? it remembers you"
+    - "behind you"
+    - "{target}. {target}. {target}."
+    - "we are the same, {target}. only one of us stays"
+    - "you made me"
+
+# ------------------------------------------------------------
 #  LIVE MOTD (the server list)
 #  line1 always stays. The second line shows what's happening right now, in this order:
 #  Rift > Legend Hunt > Blood Moon > meteor > Forge Warden > a forge ritual > Happy Hour > Forge Market >
@@ -1170,6 +1213,7 @@ motd:
   line1: "&6&l⚒ &e&lCUSTOMCRAFT &6&l⚒ &8| &7Paper 1.21.11"
   rift-opening: "&5✷ A Rift is tearing the sky open..."
   rift: "&5✷ A Rift is open! &7Wave &d{wave}&7/&d{waves}"
+  doppelganger: "&8&k|||&r &7Someone is hunting &f{player}&7... &8&k|||"
   legend-hunt: "&c☠ Legend Hunt! &f{player} &cis being hunted... &7{time} left"
   blood-moon: "&4☾ The Blood Moon has risen... &7({online} online)"
   meteor: "&6☄ A meteor is falling! &7Its cache is up for grabs."

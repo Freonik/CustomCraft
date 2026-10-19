@@ -58,6 +58,10 @@ public final class MotdManager implements Listener {
             return text("legend-hunt", "&c☠ Legend Hunt! &f{player} &cis being hunted... &7{time} left",
                     "player", events.hunt().targetName(), "time", RitualManager.format(events.hunt().remaining()));
         }
+        if (plugin.ghost() != null && plugin.ghost().active()) {
+            return text("doppelganger", "&8&k|||&r &7Someone is hunting &f{player}&7... &8&k|||",
+                    "player", plugin.ghost().targetName());
+        }
         if (events != null && events.bloodMoon()) {
             return text("blood-moon", "&4☾ The Blood Moon has risen... &7({online} online)",
                     "online", Bukkit.getOnlinePlayers().size());
