@@ -1190,6 +1190,13 @@ doppelganger:
   reward-tokens: 25
   reward-material: true
   xp: 500
+  # Armor trim on its netherite armor. Patterns: silence, eye, rib, ward, snout, spire, vex, wild, coast, dune,
+  # sentry, tide, wayfinder, raiser, shaper, host, flow, bolt. Materials: quartz, iron, netherite, redstone,
+  # copper, gold, emerald, diamond, lapis, amethyst, resin.
+  trim:
+    enabled: true
+    pattern: silence
+    material: quartz
   # What it says in chat now and then ({target} = whose copy it is)
   chat-lines:
     - "i can see you, {target}"

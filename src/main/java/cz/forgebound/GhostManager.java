@@ -297,10 +297,10 @@ public final class GhostManager implements Listener {
                 kb.setBaseValue(1);
             }
             EntityEquipment eq = m.getEquipment();
-            eq.setHelmet(new ItemStack(Material.NETHERITE_HELMET));
-            eq.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
-            eq.setLeggings(new ItemStack(Material.NETHERITE_LEGGINGS));
-            eq.setBoots(new ItemStack(Material.NETHERITE_BOOTS));
+            eq.setHelmet(trimmed(Material.NETHERITE_HELMET));
+            eq.setChestplate(trimmed(Material.NETHERITE_CHESTPLATE));
+            eq.setLeggings(trimmed(Material.NETHERITE_LEGGINGS));
+            eq.setBoots(trimmed(Material.NETHERITE_BOOTS));
             eq.setItemInMainHand(handItem(stolen));
         });
         bar = BossBar.bossBar(glitched.color(NamedTextColor.WHITE), 1f, BossBar.Color.WHITE, BossBar.Overlay.NOTCHED_20);
@@ -312,6 +312,31 @@ public final class GhostManager implements Listener {
         }
         plugin.getLogger().info("Doppelganger of " + copyOf + " is hunting " + victim.getName());
         return true;
+    }
+
+    /** Netherite with the armor trim from the config (doppelganger.trim). */
+    private ItemStack trimmed(Material piece) {
+        ItemStack stack = new ItemStack(piece);
+        if (!plugin.getConfig().getBoolean("doppelganger.trim.enabled", true)) {
+            return stack;
+        }
+        try {
+            var access = io.papermc.paper.registry.RegistryAccess.registryAccess();
+            org.bukkit.inventory.meta.trim.TrimPattern pattern = access
+                    .getRegistry(io.papermc.paper.registry.RegistryKey.TRIM_PATTERN)
+                    .get(NamespacedKey.minecraft(plugin.getConfig().getString("doppelganger.trim.pattern", "silence")));
+            org.bukkit.inventory.meta.trim.TrimMaterial material = access
+                    .getRegistry(io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL)
+                    .get(NamespacedKey.minecraft(plugin.getConfig().getString("doppelganger.trim.material", "quartz")));
+            if (pattern != null && material != null
+                    && stack.getItemMeta() instanceof org.bukkit.inventory.meta.ArmorMeta meta) {
+                meta.setTrim(new org.bukkit.inventory.meta.trim.ArmorTrim(material, pattern));
+                stack.setItemMeta(meta);
+            }
+        } catch (RuntimeException ex) {
+            plugin.getLogger().warning("Doppelganger: bad armor trim in the config (" + ex.getMessage() + ")");
+        }
+        return stack;
     }
 
     private static String plain(ItemStack stack) {
