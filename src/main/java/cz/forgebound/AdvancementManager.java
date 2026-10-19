@@ -140,7 +140,7 @@ public final class AdvancementManager implements Listener {
     private JsonObject json(Def def) {
         JsonObject root = new JsonObject();
         if (def.parent() != null) {
-            root.addProperty("parent", plugin.getName().toLowerCase() + ":" + def.parent());
+            root.addProperty("parent", Forgebound.key(def.parent()).toString());
         }
         JsonObject display = new JsonObject();
         display.add("icon", icon(def.icon()));
