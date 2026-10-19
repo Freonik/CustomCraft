@@ -196,6 +196,7 @@ gif(frames, '/tmp/claude-0/maw.gif')
 HIDE = [(24, 22, 16), (44, 40, 28), (68, 62, 42), (96, 88, 60), (128, 118, 82), (162, 150, 110)]
 STITCH = [(150, 120, 80), (206, 180, 130)]
 TEAL = [(18, 90, 90), (40, 150, 140), (110, 220, 200)]
+BELT = [(78, 50, 30), (104, 70, 42)]
 
 
 def recolor(img, palette):
@@ -262,21 +263,22 @@ def face_of(x, y):
 
 def hide_style(part, face, lx, ly, w, h, l):
     noise = ((lx * 5 + ly * 7) % 6) / 10
-    col = ramp(HIDE, 0.38 + 0.3 * l + noise * 0.2)
+    base = 0.45 + 0.25 * l + noise * 0.15                   # HIDE[2..4]: never the near-black shades
+    col = ramp(HIDE, base)
     if part == 'body':
         if face in ('front', 'back', 'right', 'left') and ly in (7, 8):
-            col = ramp(HIDE, 0.1)                            # thick belt
+            col = BELT[1] if ly == 7 else BELT[0]           # leather belt, brown not black
             if face == 'front' and lx in (3, 4):
                 col = ramp(TEAL, 0.85 if ly == 7 else 0.5)    # buckle
         return col
     if ly % 3 == 2 and face != 'bottom':
-        col = ramp(HIDE, 0.22)                               # overlapping hide plates
+        col = ramp(HIDE, base - 0.12)                        # overlapping hide plates: one shade darker
     if (lx == 0 or lx == w - 1) and face in ('front', 'back'):
-        col = ramp(HIDE, 0.28)
+        col = ramp(HIDE, base - 0.08)                        # soft edge, not a black line
     if face in ('right', 'left') and lx == w // 2 and ly % 2 == 0:
         col = ramp(STITCH, 1)                                # side seam stitches
     if face == 'front' and ly in (5, 6) and 0 < lx < w - 1:
-        col = ramp(HIDE, 0.75)                               # knee plate
+        col = ramp(HIDE, 0.8)                                # knee plate
         if lx == 1 and ly == 5:
             col = ramp(TEAL, 0.7)
     return col
