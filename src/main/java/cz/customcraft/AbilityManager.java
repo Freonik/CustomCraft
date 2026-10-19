@@ -477,7 +477,8 @@ public final class AbilityManager implements Listener {
                 }
                 if (start) {
                     cooldowns.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
-                            .put(key, now + active.cooldown() * 1000L);
+                            .put(key, now + (long) (active.cooldown() * 1000L
+                                    * (plugin.events() == null ? 1 : plugin.events().cooldownMultiplier(player))));
                 }
             }
             if (plugin.legends() != null) {

@@ -60,6 +60,8 @@ public final class EventManager implements Listener, CommandExecutor {
     private final CustomCraft plugin;
     private final NamespacedKey eliteKey;
     private RiftEvent rift;
+    private LegendHunt hunt;
+    private long nextHuntAt;
 
     private long nextSmallAt;
     private long nextRiftAt;
@@ -91,6 +93,20 @@ public final class EventManager implements Listener, CommandExecutor {
 
     public void setRift(RiftEvent rift) {
         this.rift = rift;
+    }
+
+    public void setHunt(LegendHunt hunt) {
+        this.hunt = hunt;
+    }
+
+    public LegendHunt hunt() {
+        return hunt;
+    }
+
+    /** Ability cooldowns are shorter for the player being hunted. */
+    public double cooldownMultiplier(Player player) {
+        return hunt != null && hunt.isTarget(player)
+                ? Math.max(0.05, plugin.getConfig().getDouble("events.legend-hunt.cooldown-multiplier", 0.5)) : 1;
     }
 
     private boolean on(String event) {
@@ -126,6 +142,7 @@ public final class EventManager implements Listener, CommandExecutor {
         long now = System.currentTimeMillis();
         nextSmallAt = now + randomMinutes("events.small-interval-minutes-min", 40, "events.small-interval-minutes-max", 80);
         nextRiftAt = now + randomMinutes("events.rift.interval-minutes-min", 90, "events.rift.interval-minutes-max", 180);
+        nextHuntAt = now + randomMinutes("events.legend-hunt.interval-minutes-min", 120, "events.legend-hunt.interval-minutes-max", 240);
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -141,6 +158,9 @@ public final class EventManager implements Listener, CommandExecutor {
         endShipment(false, !shipmentFound);
         if (rift != null) {
             rift.shutdown();
+        }
+        if (hunt != null) {
+            hunt.end();
         }
     }
 
@@ -179,6 +199,16 @@ public final class EventManager implements Listener, CommandExecutor {
                     && (plugin.meteor() == null || !plugin.meteor().active())) {
                 rift.begin(null);
             }
+        }
+        // Legend Hunt
+        if (now >= nextHuntAt) {
+            nextHuntAt = now + randomMinutes("events.legend-hunt.interval-minutes-min", 120, "events.legend-hunt.interval-minutes-max", 240);
+            if (hunt != null && on("legend-hunt") && enoughPlayers() && !hunt.active() && (rift == null || !rift.active())) {
+                hunt.begin(null);
+            }
+        }
+        if (hunt != null) {
+            hunt.tick();
         }
         // small events
         if (now >= nextSmallAt && !smallActive()) {
@@ -282,6 +312,9 @@ public final class EventManager implements Listener, CommandExecutor {
             case "rift" -> {
                 return rift != null && rift.begin(admin == null ? null : admin.getLocation());
             }
+            case "legend-hunt" -> {
+                return hunt != null && hunt.begin(null);
+            }
             case "happy-hour" -> {
                 if (happy != null) {
                     return false;
@@ -314,10 +347,13 @@ public final class EventManager implements Listener, CommandExecutor {
         if (rift != null) {
             rift.collapse(false);
         }
+        if (hunt != null && hunt.active()) {
+            hunt.end();
+        }
     }
 
     public static List<String> names() {
-        return List.of("blood_moon", "rift", "happy_hour", "forge_market", "golden_shipment", "stop");
+        return List.of("blood_moon", "rift", "legend_hunt", "happy_hour", "forge_market", "golden_shipment", "stop");
     }
 
     // ================================================================ Blood Moon
@@ -823,6 +859,10 @@ public final class EventManager implements Listener, CommandExecutor {
         }
         if (rift != null && rift.active()) {
             lines.add(rift.statusLine());
+        }
+        if (hunt != null && hunt.active()) {
+            lines.add(ItemManager.color("&c☠ Legend Hunt on &f" + hunt.targetName() + " &7- "
+                    + RitualManager.format(hunt.remaining()) + " left"));
         }
         if (plugin.meteor() != null && plugin.meteor().active()) {
             lines.add(ItemManager.color("&6☄ A meteor is falling"));

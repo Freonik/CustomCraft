@@ -100,6 +100,13 @@ public final class BountyManager implements Listener, CommandExecutor {
         }.runTaskTimer(plugin, 100L, Math.max(100L, plugin.getConfig().getLong("bounty.tracker-update-seconds", 30) * 20));
     }
 
+    /** Adds to a player's bounty (e.g. for fleeing a Legend Hunt). */
+    public void addBounty(Player player, int amount) {
+        data.set("bounty." + player.getUniqueId(), bountyOf(player.getUniqueId()) + amount);
+        data.set("names." + player.getUniqueId(), player.getName());
+        save();
+    }
+
     public void shutdown() {
         save();
     }
@@ -110,7 +117,7 @@ public final class BountyManager implements Listener, CommandExecutor {
         return data.getInt("bounty." + player, 0);
     }
 
-    private boolean carriesLegend(Player player) {
+    public boolean carriesLegend(Player player) {
         for (ItemStack stack : player.getInventory().getContents()) {
             ItemManager.Entry entry = items.customOf(stack);
             if (entry != null && entry.kind != ItemManager.Kind.MATERIAL) {

@@ -110,6 +110,14 @@ messages:
   pay-sent: "&aYou sent &6{amount} Bounty Tokens &ato &f{player}&a."
   pay-received: "&aYou received &6{amount} Bounty Tokens &afrom &f{player}&a."
   # events (/events)
+  hunt-start: "&c☠ &4&lLegend Hunt! &f{player} &cis marked for &f{minutes} minutes&c. Their bounty counts &6double&c. Hunt them down!"
+  hunt-you: "&c☠ You are being hunted! &7Survive for {minutes} minutes and you get &6{tokens} Bounty Tokens&7. Your abilities recharge faster until then."
+  hunt-reveal: "&c☠ {player} &7was last seen around &f{area}&7."
+  hunt-bossbar: "&c☠ Hunt: &f{player} &8• &f{time} &8• &7around &f{area}"
+  hunt-survived: "&6☠ {player} survived the Legend Hunt! &7Reward: &6{tokens} Bounty Tokens"
+  hunt-killed: "&c☠ &f{killer} &cended the Legend Hunt on &f{player}&c! &7Bonus: &6{tokens} Bounty Tokens"
+  hunt-fled: "&7☠ {player} fled the Legend Hunt. &c+{penalty} bounty for cowardice."
+  hunt-hid: "&7☠ {player} hid their legend. The hunt is off."
   blood-moon-bossbar: "&4&l☾ Blood Moon &8• &7stronger monsters, better loot"
   blood-moon-end: "&7☾ The Blood Moon sets. The night is quiet again."
   blood-moon-no-sleep: "&cYou can't sleep under the Blood Moon."
@@ -1067,7 +1075,7 @@ economy:
 # ------------------------------------------------------------
 #  LIVE MOTD (the server list)
 #  line1 always stays. The second line shows what's happening right now, in this order:
-#  Rift > Blood Moon > meteor > Forge Warden > a forge ritual > Happy Hour > Forge Market >
+#  Rift > Legend Hunt > Blood Moon > meteor > Forge Warden > a forge ritual > Happy Hour > Forge Market >
 #  Golden Shipment > how many legends are still unclaimed.
 #  enabled: false = the motd from server.properties is used instead.
 # ------------------------------------------------------------
@@ -1076,6 +1084,7 @@ motd:
   line1: "&6&l⚒ &e&lCUSTOMCRAFT &6&l⚒ &8| &7Paper 1.21.11"
   rift-opening: "&5✷ A Rift is tearing the sky open..."
   rift: "&5✷ A Rift is open! &7Wave &d{wave}&7/&d{waves}"
+  legend-hunt: "&c☠ Legend Hunt! &f{player} &cis being hunted... &7{time} left"
   blood-moon: "&4☾ The Blood Moon has risen... &7({online} online)"
   meteor: "&6☄ A meteor is falling! &7Its cache is up for grabs."
   warden: "&4⚒ The Forge Warden is awake!"
@@ -1138,6 +1147,23 @@ events:
     min-share-percent: 5
     # Chance (%) the top player also gets a legendary material
     top-material-chance: 100
+  # A random online legend holder is hunted: they glow, their area is revealed every few minutes and
+  # their bounty counts double, but their abilities recharge faster. Survive = tokens.
+  legend-hunt:
+    enabled: true
+    interval-minutes-min: 120
+    interval-minutes-max: 240
+    duration-minutes: 60
+    reveal-minutes: 5
+    reveal-radius: 100
+    # The target's ability cooldowns are multiplied by this (0.5 = twice as fast)
+    cooldown-multiplier: 0.5
+    # The killer gets the bounty x this (the normal bounty + the extra), plus a bonus
+    bounty-multiplier: 2
+    kill-bonus-tokens: 5
+    survive-tokens: 8
+    # Logging out during the hunt adds this to the target's bounty
+    flee-penalty-bounty: 5
   happy-hour:
     enabled: true
     weight: 1

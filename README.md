@@ -52,7 +52,7 @@
 - **Bounties**: carrying a legend puts a price on your head, paid out in **Bounty Tokens**
 - **Token shop**: spend Bounty Tokens in `/shop` on diamonds, netherite, golden apples... with a weekly rotating offer
 - **Legend Tracker**: a compass that leads you to the nearest legend holder
-- **Events**: Blood Moon, Rifts, Happy Hour, Forge Market and Golden Shipments keep the server alive
+- **Events**: Blood Moon, Rifts, Legend Hunts, Happy Hour, Forge Market and Golden Shipments keep the server alive
 - **Meteors**: every few hours a meteor crashes somewhere with a cache of legendary loot
 - **The Forge Warden**: a three-phase boss you wake at a crafting table
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
@@ -382,6 +382,15 @@ When the last wave falls, everyone who helped is rewarded **by how much they did
 XP and a share of **15 Bounty Tokens**, and the best player also gets a **legendary material**.
 If everyone leaves, the Rift collapses and takes its monsters with it.
 
+### ☠ Legend Hunt
+Every **2 to 4 hours** a random online legend holder is **hunted for an hour**:
+
+- they **glow**, and their rough area (±100 blocks) is announced every 5 minutes
+- their **bounty counts double**, and whoever kills them also gets **5 bonus tokens**
+- in return their **abilities recharge twice as fast**
+- **survive** the hour and they get **8 Bounty Tokens**. Logging out adds +5 to their bounty, and hiding the
+  legend in a chest calls the hunt off without a reward.
+
 ### Small events
 One at a time, every 40 to 80 minutes:
 
@@ -479,7 +488,7 @@ Turn them all off with `advancements.enabled: false` in the config.
 | `/forge finish <id>` | `customcraft.admin` | finish a running ritual right now |
 | `/forge reload` | `customcraft.admin` | reload `config.yml` |
 | `/forge meteor` | `customcraft.admin` | drop a meteor now |
-| `/forge event <blood_moon\|rift\|happy_hour\|forge_market\|golden_shipment\|stop>` | `customcraft.admin` | start an event now (or stop them all) |
+| `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `customcraft.admin` | start an event now (or stop them all) |
 | `/forge warden` | `customcraft.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `customcraft.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
 | | `customcraft.nocooldown` | abilities and relics without cooldowns (for testing) |

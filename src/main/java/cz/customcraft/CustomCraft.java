@@ -89,6 +89,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         events = new EventManager(this);
         RiftEvent rift = new RiftEvent(this, events);
         events.setRift(rift);
+        LegendHunt hunt = new LegendHunt(this);
+        events.setHunt(hunt);
+        getServer().getPluginManager().registerEvents(hunt, this);
         getServer().getPluginManager().registerEvents(events, this);
         getServer().getPluginManager().registerEvents(rift, this);
         events.start();
@@ -205,7 +208,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
             "craftable.weapons", "craftable.relics", "craftable.materials", "messages", "ability-settings", "relic-settings",
             "ritual", "bounty", "meteor", "warden", "economy", "economy.rewards",
             "economy.shop.permanent", "economy.shop.rotating",
-            "events", "events.blood-moon", "events.rift", "events.happy-hour", "events.happy-hour.types",
+            "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd");
 
     /**
