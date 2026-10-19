@@ -1182,6 +1182,9 @@ doppelganger:
   arrow-damage: 3
   ability-seconds: 5
   speed: 0.3
+  # It carries wind charges: jumps up to you, chases you when you run, or blows you away
+  wind-charges: true
+  wind-charge-seconds: 4
   # It leaves after this long if nobody wins
   hunt-minutes: 30
   steal-legend: true

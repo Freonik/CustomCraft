@@ -92,6 +92,8 @@ public final class GhostManager implements Listener {
     private Location lastPos;
     private int stuckTicks;
     private int blockedTicks;
+    private long nextWindAt;
+    private long flyingUntil;
     private BossBar bar;
     private final java.util.Map<UUID, Double> damage = new java.util.HashMap<>();
 
@@ -303,6 +305,9 @@ public final class GhostManager implements Listener {
             eq.setLeggings(trimmed(Material.NETHERITE_LEGGINGS));
             eq.setBoots(trimmed(Material.NETHERITE_BOOTS));
             eq.setItemInMainHand(handItem(stolen));
+            if (plugin.getConfig().getBoolean("doppelganger.wind-charges", true)) {
+                eq.setItemInOffHand(new ItemStack(Material.WIND_CHARGE, 16));
+            }
         });
         bar = BossBar.bossBar(glitched.color(NamedTextColor.WHITE), 1f, BossBar.Color.WHITE, BossBar.Overlay.NOTCHED_20);
         // a perfectly normal join message
@@ -408,7 +413,7 @@ public final class GhostManager implements Listener {
         body.setRotation(yaw, pitch);
         body.setBodyYaw(yaw);
         // walk / sprint / jump
-        if (dist > 2.2) {
+        if (dist > 2.2 && now >= flyingUntil) {
             Vector flat = to.clone().setY(0);
             if (flat.lengthSquared() > 1.0E-4) {
                 flat.normalize();
@@ -483,6 +488,10 @@ public final class GhostManager implements Listener {
                     break;
                 }
             }
+        }
+        // wind charges: jump up to the victim, chase, or blow them away
+        if (now >= nextWindAt && plugin.getConfig().getBoolean("doppelganger.wind-charges", true)) {
+            wind(victim, dist, now);
         }
         // abilities
         if (now >= nextAbilityAt) {
@@ -579,6 +588,41 @@ public final class GhostManager implements Listener {
         } else {
             blinkBehind(victim);
         }
+    }
+
+    private void wind(Player victim, double dist, long now) {
+        Location me = body.getLocation();
+        double up = victim.getLocation().getY() - me.getY();
+        boolean grounded = body.isOnGround() || me.clone().add(0, -0.05, 0).getBlock().getType().isSolid();
+        long cooldown = (long) (cfg("wind-charge-seconds", 4) * 1000);
+        Vector toward = victim.getLocation().toVector().subtract(me.toVector()).setY(0);
+        if (toward.lengthSquared() > 1.0E-4) {
+            toward.normalize();
+        }
+        if (grounded && (up > 2.5 && dist < 14 || dist > 18 && dist < 40)) {
+            // a wind charge at its own feet: launches it up and forward
+            burst(me);
+            double lift = up > 2.5 ? Math.min(1.6, 0.9 + up * 0.12) : 0.9;
+            body.setVelocity(toward.clone().multiply(up > 2.5 ? 0.6 : 1.3).setY(lift));
+            flyingUntil = now + 900;
+            nextWindAt = now + cooldown;
+        } else if (dist > 4 && dist < 20 && body.hasLineOfSight(victim) && ThreadLocalRandom.current().nextInt(3) == 0) {
+            // thrown at the victim
+            Vector aim = victim.getLocation().add(0, 0.8, 0).toVector().subtract(body.getEyeLocation().toVector()).normalize();
+            body.swingOffHand();
+            body.launchProjectile(org.bukkit.entity.WindCharge.class, aim.multiply(1.5));
+            me.getWorld().playSound(me, Sound.ENTITY_WIND_CHARGE_THROW, 1f, 0.8f);
+            nextWindAt = now + cooldown;
+        } else {
+            nextWindAt = now + 500;
+        }
+    }
+
+    private void burst(Location at) {
+        World w = at.getWorld();
+        w.spawnParticle(Particle.GUST_EMITTER_SMALL, at, 1, 0, 0, 0, 0);
+        w.playSound(at, Sound.ENTITY_WIND_CHARGE_WIND_BURST, 1f, 1f);
+        body.swingOffHand();
     }
 
     /** Teleport right behind the victim. */
