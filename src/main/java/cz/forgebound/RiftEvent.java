@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -57,7 +57,7 @@ public final class RiftEvent implements Listener {
 
     private enum Phase { OPENING, FIGHT, PAUSE }
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final EventManager events;
     private final NamespacedKey mobKey;
 
@@ -73,10 +73,10 @@ public final class RiftEvent implements Listener {
     private final List<LivingEntity> mobs = new ArrayList<>();
     private final Map<UUID, Double> score = new HashMap<>();
 
-    public RiftEvent(CustomCraft plugin, EventManager events) {
+    public RiftEvent(Forgebound plugin, EventManager events) {
         this.plugin = plugin;
         this.events = events;
-        this.mobKey = new NamespacedKey(plugin, "rift_mob");
+        this.mobKey = Forgebound.key("rift_mob");
     }
 
     public boolean active() {

@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -23,12 +23,12 @@ import java.util.Map;
  */
 public final class RecipesCommand implements CommandExecutor, TabCompleter {
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final RitualManager rituals;
     private final ForgeData data;
 
-    public RecipesCommand(CustomCraft plugin, ItemManager items, RitualManager rituals, ForgeData data) {
+    public RecipesCommand(Forgebound plugin, ItemManager items, RitualManager rituals, ForgeData data) {
         this.plugin = plugin;
         this.items = items;
         this.rituals = rituals;
@@ -39,12 +39,12 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             sender.sendMessage(plugin.msg("forge-open-hint", "&7Shift + right-click a &fcrafting table &7with an empty hand to open the forge."));
-            if (sender.hasPermission("customcraft.admin")) {
+            if (sender.hasPermission("forgebound.admin")) {
                 sender.sendMessage(plugin.msg("usage", "&7Usage: &e/forge"));
             }
             return true;
         }
-        if (!sender.hasPermission("customcraft.admin")) {
+        if (!sender.hasPermission("forgebound.admin")) {
             sender.sendMessage(plugin.msg("no-permission", "&cYou don't have permission to do that."));
             return true;
         }
@@ -205,7 +205,7 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> result = new ArrayList<>();
-        if (!sender.hasPermission("customcraft.admin")) {
+        if (!sender.hasPermission("forgebound.admin")) {
             return result;
         }
         if (args.length == 1) {

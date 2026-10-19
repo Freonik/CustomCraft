@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.Component;
@@ -37,12 +37,12 @@ import java.util.UUID;
  */
 public final class HudManager implements Listener, CommandExecutor {
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
     private final Set<UUID> hidden = new HashSet<>();
     private final File file;
 
-    public HudManager(CustomCraft plugin) {
+    public HudManager(Forgebound plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "hud.yml");
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
@@ -130,7 +130,7 @@ public final class HudManager implements Listener, CommandExecutor {
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.numberFormat(NumberFormat.blank());
         }
-        obj.displayName(line(p, plugin.getConfig().getString("hud.scoreboard.title", "&6&l⚒ CUSTOMCRAFT")));
+        obj.displayName(line(p, plugin.getConfig().getString("hud.scoreboard.title", "&6&l⚒ FORGEBOUND")));
         List<String> lines = plugin.getConfig().getStringList("hud.scoreboard.lines");
         int n = Math.min(15, lines.size());
         for (int i = 0; i < 15; i++) {

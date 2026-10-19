@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -15,10 +15,10 @@ import java.util.Map;
  */
 public final class MotdManager implements Listener {
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
 
-    public MotdManager(CustomCraft plugin, ItemManager items) {
+    public MotdManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
     }
@@ -42,7 +42,7 @@ public final class MotdManager implements Listener {
         if (!plugin.getConfig().getBoolean("motd.enabled", true)) {
             return;
         }
-        Component first = text("line1", "&6&l⚒ &e&lCUSTOMCRAFT &6&l⚒ &8| &7Paper 1.21.11");
+        Component first = text("line1", "&6&l⚒ &e&lFORGEBOUND &6&l⚒ &8| &7Paper 1.21.11");
         event.motd(first.append(Component.newline()).append(second()));
     }
 

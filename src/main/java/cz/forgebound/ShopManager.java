@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -40,7 +40,7 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
     private static final int[] PERMANENT_SLOTS = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
     private static final int[] ROTATING_SLOTS = {37, 38, 39, 40, 41, 42, 43};
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final File file;
     private final YamlConfiguration data;
 
@@ -70,7 +70,7 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         }
     }
 
-    public ShopManager(CustomCraft plugin) {
+    public ShopManager(Forgebound plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "shop.yml");
         this.data = YamlConfiguration.loadConfiguration(file);

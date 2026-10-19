@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -6,19 +6,19 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 /**
- * PlaceholderAPI expansion: %customcraft_<placeholder>%. Only loaded when PlaceholderAPI is installed.
+ * PlaceholderAPI expansion: %forgebound_<placeholder>%. Only loaded when PlaceholderAPI is installed.
  */
 public final class PapiExpansion extends PlaceholderExpansion {
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
 
-    public PapiExpansion(CustomCraft plugin) {
+    public PapiExpansion(Forgebound plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public String getIdentifier() {
-        return "customcraft";
+        return "forgebound";
     }
 
     @Override

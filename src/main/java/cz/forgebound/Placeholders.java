@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -11,8 +11,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * All CustomCraft placeholders in one place. Used by the sidebar, tab list and join title as {name},
- * and by PlaceholderAPI as %customcraft_name% (for TAB, holograms, other plugins).
+ * All Forgebound placeholders in one place. Used by the sidebar, tab list and join title as {name},
+ * and by PlaceholderAPI as %forgebound_name% (for TAB, holograms, other plugins).
  *
  * tokens, bounty, legends_held, event, free_legends, total_legends, online, max_players, rotation, player,
  * top_<category>_<1-100>_name, top_<category>_<1-100>_value, top_<category>_rank
@@ -21,9 +21,9 @@ public final class Placeholders {
 
     private static final Pattern BRACES = Pattern.compile("\\{([a-z0-9_]+)}");
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
 
-    public Placeholders(CustomCraft plugin) {
+    public Placeholders(Forgebound plugin) {
         this.plugin = plugin;
     }
 

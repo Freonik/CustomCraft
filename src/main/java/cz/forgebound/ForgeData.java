@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Persistent server-wide state in plugins/CustomCraft/data.yml:
+ * Persistent server-wide state in plugins/Forgebound/data.yml:
  * which unique weapons already exist (or are being forged) and running rituals.
  */
 public final class ForgeData {
@@ -27,12 +27,12 @@ public final class ForgeData {
     public record SavedRitual(String weapon, String world, int x, int y, int z,
                               long remaining, long total, UUID player, String name) { }
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final File file;
     private final Map<String, Claim> claims = new LinkedHashMap<>();
     private final List<SavedRitual> rituals = new ArrayList<>();
 
-    public ForgeData(CustomCraft plugin) {
+    public ForgeData(Forgebound plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "data.yml");
     }

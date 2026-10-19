@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -45,7 +45,7 @@ public final class AdvancementManager implements Listener {
                        String frame, boolean hidden, int xp) { }
 
     private static final List<Def> DEFS = List.of(
-            new Def("root", null, "weapon:echo_blade", "CustomCraft",
+            new Def("root", null, "weapon:echo_blade", "Forgebound",
                     "Shift + right-click a crafting table to open the forge", "task", false, 0),
             // materials
             new Def("legendary_find", "root", "material:crimson_heart", "Legendary Find",
@@ -88,7 +88,7 @@ public final class AdvancementManager implements Listener {
 
     private static final int TROPHY_MODEL = 1401;
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final NamespacedKey foundKey;
     private final NamespacedKey parryKey;
@@ -97,13 +97,13 @@ public final class AdvancementManager implements Listener {
     private final File file;
     private final YamlConfiguration data;
 
-    public AdvancementManager(CustomCraft plugin, ItemManager items) {
+    public AdvancementManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
-        this.foundKey = new NamespacedKey(plugin, "found_materials");
-        this.parryKey = new NamespacedKey(plugin, "parries");
-        this.forgedByKey = new NamespacedKey(plugin, "forged_by");
-        this.trophyKey = new NamespacedKey(plugin, "trophy");
+        this.foundKey = Forgebound.key("found_materials");
+        this.parryKey = Forgebound.key("parries");
+        this.forgedByKey = Forgebound.key("forged_by");
+        this.trophyKey = Forgebound.key("trophy");
         this.file = new File(plugin.getDataFolder(), "advancements.yml");
         this.data = YamlConfiguration.loadConfiguration(file);
     }
@@ -119,7 +119,7 @@ public final class AdvancementManager implements Listener {
             return;
         }
         for (Def def : DEFS) {
-            NamespacedKey key = new NamespacedKey(plugin, def.id());
+            NamespacedKey key = Forgebound.key(def.id());
             if (Bukkit.getAdvancement(key) != null) {
                 continue;
             }
@@ -202,7 +202,7 @@ public final class AdvancementManager implements Listener {
         if (!enabled() || player == null || !player.isOnline()) {
             return false;
         }
-        Advancement adv = Bukkit.getAdvancement(new NamespacedKey(plugin, id));
+        Advancement adv = Bukkit.getAdvancement(Forgebound.key(id));
         if (adv == null) {
             return false;
         }

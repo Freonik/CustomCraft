@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -9,7 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class CustomCraft extends JavaPlugin implements Listener {
+public final class Forgebound extends JavaPlugin implements Listener {
 
     private ItemManager items;
     private MenuManager menus;
@@ -31,8 +31,41 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private HudManager hud;
     private boolean papi;
 
+    /**
+     * Keys for data stored on items, players and advancements. They keep the old "customcraft" namespace,
+     * so everything made before the rename still works.
+     */
+    public static org.bukkit.NamespacedKey key(String key) {
+        return new org.bukkit.NamespacedKey("customcraft", key);
+    }
+
+    /** First start after the rename: copy plugins/CustomCraft/ into plugins/Forgebound/. */
+    private void migrateOldFolder() {
+        java.io.File old = new java.io.File(getDataFolder().getParentFile(), "CustomCraft");
+        if (!old.isDirectory() || new java.io.File(getDataFolder(), "config.yml").exists()) {
+            return;
+        }
+        java.nio.file.Path from = old.toPath();
+        java.nio.file.Path to = getDataFolder().toPath();
+        try (java.util.stream.Stream<java.nio.file.Path> walk = java.nio.file.Files.walk(from)) {
+            for (java.nio.file.Path src : (Iterable<java.nio.file.Path>) walk::iterator) {
+                java.nio.file.Path dst = to.resolve(from.relativize(src).toString());
+                if (java.nio.file.Files.isDirectory(src)) {
+                    java.nio.file.Files.createDirectories(dst);
+                } else {
+                    java.nio.file.Files.copy(src, dst, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            getLogger().info("Copied your old plugins/CustomCraft/ data to plugins/Forgebound/. "
+                    + "You can delete plugins/CustomCraft/ once everything works.");
+        } catch (java.io.IOException ex) {
+            getLogger().severe("Could not copy plugins/CustomCraft/: " + ex.getMessage());
+        }
+    }
+
     @Override
     public void onEnable() {
+        migrateOldFolder();
         saveDefaultConfig();
         mergeNewDefaults();
 
@@ -133,7 +166,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             try {
                 papi = new PapiExpansion(this).register();
-                getLogger().info("PlaceholderAPI found: %customcraft_...% placeholders are available.");
+                getLogger().info("PlaceholderAPI found: %forgebound_...% placeholders are available.");
             } catch (Throwable ex) {
                 getLogger().warning("Could not hook into PlaceholderAPI: " + ex.getMessage());
             }
@@ -317,7 +350,7 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         }
         if (seenChanged || firstRun) {
             seenYaml.options().setHeader(java.util.List.of(
-                    "CustomCraft remembers which default config entries it already added to config.yml,",
+                    "Forgebound remembers which default config entries it already added to config.yml,",
                     "so entries you delete on purpose are not added back. Don't edit this file."));
             seenYaml.set("seen", new java.util.ArrayList<>(seen));
             try {

@@ -1,5 +1,5 @@
 # ============================================================
-#  CustomCraft - configuration
+#  Forgebound - configuration
 #  After editing, just run /forge reload (no restart needed).
 #
 #  The forge menu opens ONLY from a crafting table:
@@ -23,7 +23,7 @@
 discover-recipes-on-join: true
 
 menu:
-  # Forge menu look with the CustomCraft-pack resource pack (background, buttons, icons):
+  # Forge menu look with the Forgebound-pack resource pack (background, buttons, icons):
   #   auto  = only for players who loaded the SERVER resource pack (server.properties resource-pack)
   #   true  = always (use this when testing with the pack installed locally in .minecraft/resourcepacks)
   #   false = never (plain menu with glass panes)
@@ -34,7 +34,7 @@ menu:
   title-loot: "&8Possible Loot"
 
 messages:
-  prefix: "&8[&6CustomCraft&8] &7"
+  prefix: "&8[&6Forgebound&8] &7"
   no-permission: "&cYou don't have permission to do that."
   player-only: "&cOnly players can use this command."
   reloaded: "&aConfig reloaded (&e{weapons} &aweapons, &e{relics} &arelics)."
@@ -1086,7 +1086,7 @@ economy:
 #  HUD: sidebar, tab list and a title when you join
 #  Placeholders: {tokens} {bounty} {legends_held} {event} {free_legends} {total_legends}
 #  {online} {max_players} {rotation} {player}, {top_<category>_<n>_name} / {top_<category>_<n>_value} /
-#  {top_<category>_rank}. With PlaceholderAPI the same exist as %customcraft_tokens% etc.
+#  {top_<category>_rank}. With PlaceholderAPI the same exist as %forgebound_tokens% etc.
 #  (for the TAB plugin, holograms...), and %other_plugin% placeholders work in these lines too.
 #  Players can hide their own sidebar with /hud.
 # ------------------------------------------------------------
@@ -1094,9 +1094,9 @@ hud:
   update-ticks: 40
   scoreboard:
     enabled: true
-    # If the TAB plugin is installed, leave the sidebar to it (use %customcraft_...% there)
+    # If the TAB plugin is installed, leave the sidebar to it (use %forgebound_...% there)
     disable-with-tab-plugin: true
-    title: "&6&l⚒ CUSTOMCRAFT"
+    title: "&6&l⚒ FORGEBOUND"
     lines:
       - "&8&m              "
       - "&6Tokens: &f{tokens}"
@@ -1112,7 +1112,7 @@ hud:
     disable-with-tab-plugin: true
     header:
       - ""
-      - "&6&l⚒ CUSTOMCRAFT ⚒"
+      - "&6&l⚒ FORGEBOUND ⚒"
       - "&7{online}/{max_players} online"
       - ""
     footer:
@@ -1124,7 +1124,7 @@ hud:
   join-title:
     enabled: true
     delay-ticks: 30
-    title: "&6&l⚒ CUSTOMCRAFT"
+    title: "&6&l⚒ FORGEBOUND"
     subtitle: "&7Welcome back, &f{player}&7! &d{free_legends} &7legends still unclaimed"
     # For players joining for the first time
     first-title: "&6&lWelcome, &f{player}"
@@ -1154,7 +1154,7 @@ codex:
 
 # ------------------------------------------------------------
 #  LEADERBOARDS: /top <bounty|kills|mobkills|damage|wardens|rifts|hunts>
-#  For holograms: %customcraft_top_kills_1_name% and %customcraft_top_kills_1_value% (PlaceholderAPI)
+#  For holograms: %forgebound_top_kills_1_name% and %forgebound_top_kills_1_value% (PlaceholderAPI)
 # ------------------------------------------------------------
 top:
   enabled: true
@@ -1210,7 +1210,7 @@ doppelganger:
 # ------------------------------------------------------------
 motd:
   enabled: true
-  line1: "&6&l⚒ &e&lCUSTOMCRAFT &6&l⚒ &8| &7Paper 1.21.11"
+  line1: "&6&l⚒ &e&lFORGEBOUND &6&l⚒ &8| &7Paper 1.21.11"
   rift-opening: "&5✷ A Rift is tearing the sky open..."
   rift: "&5✷ A Rift is open! &7Wave &d{wave}&7/&d{waves}"
   doppelganger: "&8&k|||&r &7Someone is hunting &f{player}&7... &8&k|||"
@@ -1370,7 +1370,7 @@ warden:
   fire-damage: 4
   xp: 1000
 
-# CustomCraft advancement tab (toasts, chat messages, XP for challenges)
+# Forgebound advancement tab (toasts, chat messages, XP for challenges)
 advancements:
   enabled: true
 

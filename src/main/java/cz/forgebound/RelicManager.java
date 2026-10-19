@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import org.bukkit.Bukkit;
@@ -75,7 +75,7 @@ public final class RelicManager implements Listener {
             EntityDamageEvent.DamageCause.KILL, EntityDamageEvent.DamageCause.SUICIDE,
             EntityDamageEvent.DamageCause.WORLD_BORDER, EntityDamageEvent.DamageCause.STARVATION);
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final NamespacedKey readyKey;
     private final NamespacedKey stacksKey;
@@ -105,12 +105,12 @@ public final class RelicManager implements Listener {
     private final Map<UUID, Integer> shell = new HashMap<>();
     private final Map<UUID, Long> shellBroken = new HashMap<>();
 
-    public RelicManager(CustomCraft plugin, ItemManager items) {
+    public RelicManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
-        this.readyKey = new NamespacedKey(plugin, "relic_ready_at");
-        this.stacksKey = new NamespacedKey(plugin, "heartsteel_stacks");
-        this.heartKey = new NamespacedKey(plugin, "heartsteel_health");
+        this.readyKey = Forgebound.key("relic_ready_at");
+        this.stacksKey = Forgebound.key("heartsteel_stacks");
+        this.heartKey = Forgebound.key("heartsteel_health");
     }
 
     public void start() {
@@ -180,7 +180,7 @@ public final class RelicManager implements Listener {
     }
 
     private void startCooldown(Player player, ItemManager.Entry entry) {
-        if (entry.relic.cooldown() <= 0 || player.hasPermission("customcraft.nocooldown")) {
+        if (entry.relic.cooldown() <= 0 || player.hasPermission("forgebound.nocooldown")) {
             return;
         }
         EquipmentSlot slot = entry.relic.slot().equipment;
@@ -621,7 +621,7 @@ public final class RelicManager implements Listener {
         meta.getPersistentDataContainer().set(stacksKey, PersistentDataType.INTEGER, stacks);
         meta.getPersistentDataContainer().set(heartKey, PersistentDataType.DOUBLE, bonus);
         meta.removeAttributeModifier(Attribute.MAX_HEALTH);
-        meta.addAttributeModifier(Attribute.MAX_HEALTH, new AttributeModifier(new NamespacedKey(plugin, "heartsteel_bonus"),
+        meta.addAttributeModifier(Attribute.MAX_HEALTH, new AttributeModifier(Forgebound.key("heartsteel_bonus"),
                 bonus, AttributeModifier.Operation.ADD_NUMBER, entry.relic.slot().group));
         java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>(
                 entry.item.getItemMeta().lore() == null ? java.util.List.of() : entry.item.getItemMeta().lore());

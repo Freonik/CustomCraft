@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -45,12 +45,12 @@ public final class TopManager implements CommandExecutor, TabCompleter {
     public record Entry(UUID uuid, String name, double value) {
     }
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final File file;
     private final YamlConfiguration records;
     private final Map<String, List<Entry>> boards = new HashMap<>();
 
-    public TopManager(CustomCraft plugin) {
+    public TopManager(Forgebound plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "records.yml");
         this.records = YamlConfiguration.loadConfiguration(file);

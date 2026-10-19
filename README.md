@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="CustomCraft" width="100%">
+  <img src="docs/banner.png" alt="Forgebound" width="100%">
 </p>
 
 <p align="center">
@@ -57,7 +57,7 @@
 - **Meteors**: every few hours a meteor crashes somewhere with a cache of legendary loot
 - **The Forge Warden**: a three-phase boss you wake at a crafting table
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
-- **Advancements**: a CustomCraft tab in the advancements screen, with toasts, chat messages and rewards
+- **Advancements**: a Forgebound tab in the advancements screen, with toasts, chat messages and rewards
 - **Resource pack** with animated textures, custom worn armor, particles and a themed menu
 - **HUD**: a sidebar, tab list and join title with your tokens, bounty and the current event (works with the TAB plugin)
 - **Forge Codex**: a book for new players that explains everything (`/codex`)
@@ -71,16 +71,23 @@
 
 ## Installation
 
-1. Download `CustomCraft.jar` from the [**latest release**](../../releases/latest) (or build it yourself, see below).
+1. Download `Forgebound.jar` from the [**latest release**](../../releases/latest) (or build it yourself, see below).
 2. Put it into your server's `plugins/` folder and start the server (Paper **1.21.11**, Java **21**).
 3. *(Optional, recommended)* Add the resource pack to `server.properties`. The release notes contain the exact two lines
    to copy (link + SHA1), see [Resource pack](#resource-pack). Then set `menu.resource-pack: true` in
-   `plugins/CustomCraft/config.yml`.
+   `plugins/Forgebound/config.yml`.
 4. Run `/forge reload` after any config change. No restart needed.
 
 > **Updating:** just replace the jar. New weapons, relics, materials and messages are added to your existing `config.yml`
 > automatically (your own changes stay). Entries you delete on purpose are remembered and not added back.
 > Your forged items and running rituals are kept in `data.yml`.
+
+
+> **Coming from CustomCraft?** Forgebound is the same plugin with a new name. Remove `CustomCraft.jar`, add
+> `Forgebound.jar` and restart: your `plugins/CustomCraft/` folder is copied to `plugins/Forgebound/`
+> automatically, and all existing legends, tokens and advancements keep working. Change the permissions
+> (`customcraft.*` → `forgebound.*`), the placeholders (`%customcraft_…%` → `%forgebound_…%`) and the
+> resource pack link (`Forgebound-pack.zip`).
 
 ---
 
@@ -447,12 +454,12 @@ Health, damage and the summon item are under `warden:` in the config.
 
 ## Advancements
 
-CustomCraft adds its own tab to the advancements screen (**L**). They are real Minecraft advancements:
+Forgebound adds its own tab to the advancements screen (**L**). They are real Minecraft advancements:
 a toast pops up, the chat announces it, and progress is saved with the player. Challenges give XP like vanilla ones.
 
 | | Advancement | How to get it |
 |---|---|---|
-| <img src="docs/items/echo_blade.png" width="40" alt=""> | **CustomCraft** | open the forge |
+| <img src="docs/items/echo_blade.png" width="40" alt=""> | **Forgebound** | open the forge |
 | <img src="docs/items/crimson_heart.png" width="40" alt=""> | **Legendary Find** | find a legendary material |
 | <img src="docs/items/chrono_sand.png" width="40" alt=""> | **Hoarder** | find 5 different legendary materials |
 | <img src="docs/items/seraph_feather.png" width="40" alt=""> | **Dragon's Gift** | find a Seraph Feather |
@@ -499,17 +506,17 @@ With [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) i
 
 | Placeholder | Shows |
 |---|---|
-| `%customcraft_tokens%` | Bounty Tokens in the player's inventory |
-| `%customcraft_bounty%` | the player's bounty |
-| `%customcraft_legends_held%` | legends the player carries |
-| `%customcraft_event%` | the current event (colored) |
-| `%customcraft_free_legends%` / `%customcraft_total_legends%` | unclaimed / all legends |
-| `%customcraft_rotation%` | time until the shop rotates |
-| `%customcraft_top_<category>_<1-100>_name%` | name at that place, e.g. `%customcraft_top_kills_1_name%` |
-| `%customcraft_top_<category>_<1-100>_value%` | value at that place |
-| `%customcraft_top_<category>_rank%` | the player's own rank |
+| `%forgebound_tokens%` | Bounty Tokens in the player's inventory |
+| `%forgebound_bounty%` | the player's bounty |
+| `%forgebound_legends_held%` | legends the player carries |
+| `%forgebound_event%` | the current event (colored) |
+| `%forgebound_free_legends%` / `%forgebound_total_legends%` | unclaimed / all legends |
+| `%forgebound_rotation%` | time until the shop rotates |
+| `%forgebound_top_<category>_<1-100>_name%` | name at that place, e.g. `%forgebound_top_kills_1_name%` |
+| `%forgebound_top_<category>_<1-100>_value%` | value at that place |
+| `%forgebound_top_<category>_rank%` | the player's own rank |
 
-A top-10 hologram is just ten lines like `&6#1 %customcraft_top_kills_1_name% &7- &e%customcraft_top_kills_1_value%`.
+A top-10 hologram is just ten lines like `&6#1 %forgebound_top_kills_1_name% &7- &e%forgebound_top_kills_1_value%`.
 
 ---
 
@@ -517,7 +524,7 @@ A top-10 hologram is just ten lines like `&6#1 %customcraft_top_kills_1_name% &7
 
 | Command | Permission | Description |
 |---|---|---|
-| shift + right-click a crafting table | `customcraft.use` (everyone) | open the forge |
+| shift + right-click a crafting table | `forgebound.use` (everyone) | open the forge |
 | `/forge` | everyone | tells you how to open the forge |
 | `/legends` | everyone | all legends on the server and your own stats with them |
 | `/bounty` | everyone | your bounty, the most wanted players and the Bounty Token exchange |
@@ -527,16 +534,16 @@ A top-10 hologram is just ten lines like `&6#1 %customcraft_top_kills_1_name% &7
 | `/events` | everyone | which events are running right now |
 | `/shop` | everyone | the token shop (alias `/store`) |
 | `/pay <player> <amount>` | everyone | send Bounty Tokens to another player |
-| `/forge status` | `customcraft.admin` | which weapons and relics exist or are being forged (with real names) |
-| `/forge give <player> <weapon:id\|relic:id\|material:id> [amount]` | `customcraft.admin` | give an item (ignores uniqueness) |
-| `/forge release <id>` | `customcraft.admin` | make a weapon or relic forgeable again (stops its ritual) |
-| `/forge finish <id>` | `customcraft.admin` | finish a running ritual right now |
-| `/forge reload` | `customcraft.admin` | reload `config.yml` |
-| `/forge meteor` | `customcraft.admin` | drop a meteor now |
-| `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `customcraft.admin` | start an event now (or stop them all) |
-| `/forge warden` | `customcraft.admin` | wake the Forge Warden where you stand |
-| `/forge token\|seal\|tracker [amount]` | `customcraft.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
-| | `customcraft.nocooldown` | abilities and relics without cooldowns (for testing) |
+| `/forge status` | `forgebound.admin` | which weapons and relics exist or are being forged (with real names) |
+| `/forge give <player> <weapon:id\|relic:id\|material:id> [amount]` | `forgebound.admin` | give an item (ignores uniqueness) |
+| `/forge release <id>` | `forgebound.admin` | make a weapon or relic forgeable again (stops its ritual) |
+| `/forge finish <id>` | `forgebound.admin` | finish a running ritual right now |
+| `/forge reload` | `forgebound.admin` | reload `config.yml` |
+| `/forge meteor` | `forgebound.admin` | drop a meteor now |
+| `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
+| `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
+| `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
+| | `forgebound.nocooldown` | abilities and relics without cooldowns (for testing) |
 
 Aliases: `/recipes`, `/recepty`.
 
@@ -544,7 +551,7 @@ Aliases: `/recipes`, `/recepty`.
 
 ## Configuration
 
-Everything lives in `plugins/CustomCraft/config.yml` and is documented inside the file. The most useful parts:
+Everything lives in `plugins/Forgebound/config.yml` and is documented inside the file. The most useful parts:
 
 ### Switch items on and off
 ```yaml
@@ -576,7 +583,7 @@ ritual:
 The second line of your server-list MOTD shows what's going on, so people see it before they even join:
 
 ```
-⚒ CUSTOMCRAFT ⚒ | Paper 1.21.11
+⚒ FORGEBOUND ⚒ | Paper 1.21.11
 ✷ A Rift is open! Wave 3/5
 ```
 
@@ -608,7 +615,7 @@ The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it 
 **Setup on a server**
 1. Copy the two lines from the release notes into `server.properties`:
    ```properties
-   resource-pack=https://github.com/<owner>/<repo>/releases/latest/download/CustomCraft-pack.zip
+   resource-pack=https://github.com/<owner>/<repo>/releases/latest/download/Forgebound-pack.zip
    resource-pack-sha1=<sha1 from the release notes>
    ```
    This link never changes, it always points to the newest release. Only update the SHA1 when the pack itself changed (the release notes always show the current one).

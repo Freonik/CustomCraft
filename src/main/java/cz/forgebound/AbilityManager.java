@@ -1,12 +1,12 @@
-package cz.customcraft;
+package cz.forgebound;
 
-import cz.customcraft.WeaponAbilities.Active;
-import cz.customcraft.WeaponAbilities.ActiveType;
-import cz.customcraft.WeaponAbilities.HitType;
-import cz.customcraft.WeaponAbilities.OnHit;
-import cz.customcraft.WeaponAbilities.Params;
-import cz.customcraft.WeaponAbilities.Passive;
-import cz.customcraft.WeaponAbilities.Trigger;
+import cz.forgebound.WeaponAbilities.Active;
+import cz.forgebound.WeaponAbilities.ActiveType;
+import cz.forgebound.WeaponAbilities.HitType;
+import cz.forgebound.WeaponAbilities.OnHit;
+import cz.forgebound.WeaponAbilities.Params;
+import cz.forgebound.WeaponAbilities.Passive;
+import cz.forgebound.WeaponAbilities.Trigger;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -113,7 +113,7 @@ public final class AbilityManager implements Listener {
             PotionEffectType.SLOWNESS, PotionEffectType.WEAKNESS, PotionEffectType.BLINDNESS, PotionEffectType.NAUSEA,
             PotionEffectType.MINING_FATIGUE, PotionEffectType.HUNGER, PotionEffectType.DARKNESS);
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final NamespacedKey arrowKey;
     private final NamespacedKey mirrorKey;
@@ -212,14 +212,14 @@ public final class AbilityManager implements Listener {
         return relics == null ? amount : relics.adjustHeal(entity, amount);
     }
 
-    public AbilityManager(CustomCraft plugin, ItemManager items) {
+    public AbilityManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
-        this.arrowKey = new NamespacedKey(plugin, "weapon");
-        this.mirrorKey = new NamespacedKey(plugin, "mirror_shot");
-        this.killsKey = new NamespacedKey(plugin, "weapon_kills");
-        this.pinKey = new NamespacedKey(plugin, "pinned");
-        this.pinShotKey = new NamespacedKey(plugin, "pin_shot");
+        this.arrowKey = Forgebound.key("weapon");
+        this.mirrorKey = Forgebound.key("mirror_shot");
+        this.killsKey = Forgebound.key("weapon_kills");
+        this.pinKey = Forgebound.key("pinned");
+        this.pinShotKey = Forgebound.key("pin_shot");
     }
 
     /** Starts the repeating task: history, HUD, passive effects, marks. */
@@ -463,7 +463,7 @@ public final class AbilityManager implements Listener {
             used = false;
         }
         if (used) {
-            if (!free && !player.hasPermission("customcraft.nocooldown")) {
+            if (!free && !player.hasPermission("forgebound.nocooldown")) {
                 String key = weapon.ref() + ":" + active.key();
                 int charges = active.params().i("charges", 1);
                 boolean start = true;

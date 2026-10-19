@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -80,14 +80,14 @@ public final class ItemManager {
 
     private static final Pattern VALID_ID = Pattern.compile("[a-z0-9_]+");
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final NamespacedKey idKey;
     private final Map<String, Entry> entries = new LinkedHashMap<>();
     private final List<NamespacedKey> registered = new ArrayList<>();
 
-    public ItemManager(CustomCraft plugin) {
+    public ItemManager(Forgebound plugin) {
         this.plugin = plugin;
-        this.idKey = new NamespacedKey(plugin, "item_id");
+        this.idKey = Forgebound.key("item_id");
     }
 
     // ---------------------------------------------------------------- loading
@@ -227,10 +227,10 @@ public final class ItemManager {
             double damage = s.getDouble("attack-damage", 7.0);
             double speed = s.getDouble("attack-speed", 1.6);
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
-                    new NamespacedKey(plugin, id + "_damage"), damage - 1.0,
+                    Forgebound.key(id + "_damage"), damage - 1.0,
                     AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
             meta.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(
-                    new NamespacedKey(plugin, id + "_speed"), speed - 4.0,
+                    Forgebound.key(id + "_speed"), speed - 4.0,
                     AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
         }
 
@@ -244,7 +244,7 @@ public final class ItemManager {
                     throw new IllegalArgumentException("unknown attribute '" + name + "'");
                 }
                 meta.addAttributeModifier(attribute, new AttributeModifier(
-                        new NamespacedKey(plugin, id + "_" + name.toLowerCase(Locale.ROOT)), attributes.getDouble(name),
+                        Forgebound.key(id + "_" + name.toLowerCase(Locale.ROOT)), attributes.getDouble(name),
                         AttributeModifier.Operation.ADD_NUMBER, group));
             }
         }
@@ -294,7 +294,7 @@ public final class ItemManager {
         String[] shape = rows.stream().map(r -> String.format("%-" + width + "s", r)).toArray(String[]::new);
 
         ConfigurationSection ingredients = recipeSection.getConfigurationSection("ingredients");
-        NamespacedKey key = new NamespacedKey(plugin, entry.kind.name().toLowerCase(Locale.ROOT) + "_" + entry.id);
+        NamespacedKey key = Forgebound.key(entry.kind.name().toLowerCase(Locale.ROOT) + "_" + entry.id);
         ShapedRecipe recipe = new ShapedRecipe(key, entry.item.clone());
         recipe.shape(shape);
 

@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;

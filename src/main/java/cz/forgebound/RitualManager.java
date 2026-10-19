@@ -1,8 +1,8 @@
-package cz.customcraft;
+package cz.forgebound;
 
-import cz.customcraft.ForgeData.Claim;
-import cz.customcraft.ForgeData.SavedRitual;
-import cz.customcraft.ForgeData.State;
+import cz.forgebound.ForgeData.Claim;
+import cz.forgebound.ForgeData.SavedRitual;
+import cz.forgebound.ForgeData.State;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -47,7 +47,7 @@ public final class RitualManager implements Listener {
     private static final Particle.DustOptions RUNE = new Particle.DustOptions(Color.fromRGB(170, 90, 255), 1.3f);
     private static final Particle.DustOptions EMBER = new Particle.DustOptions(Color.fromRGB(255, 150, 50), 1.1f);
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final ForgeData data;
     private final Map<String, Running> running = new LinkedHashMap<>();
@@ -69,7 +69,7 @@ public final class RitualManager implements Listener {
     private boolean paused;
     private long lastTick;
 
-    public RitualManager(CustomCraft plugin, ItemManager items, ForgeData data) {
+    public RitualManager(Forgebound plugin, ItemManager items, ForgeData data) {
         this.plugin = plugin;
         this.items = items;
         this.data = data;

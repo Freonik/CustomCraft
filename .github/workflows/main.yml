@@ -44,7 +44,7 @@ jobs:
           # fixed timestamps + sorted order = the same SHA1 as long as the pack doesn't change
           find "$PACK_DIR" -exec touch -h -t 202001010000 {} +
           mkdir -p target
-          OUT="$PWD/target/CustomCraft-pack.zip"
+          OUT="$PWD/target/Forgebound-pack.zip"
           rm -f "$OUT"
           (cd "$PACK_DIR" && find . -type f ! -name '.*' | sed 's|^\./||' | sort | zip -X -D "$OUT" -@)
 
@@ -63,10 +63,10 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CustomCraft-${{ env.VERSION }}
+          name: Forgebound-${{ env.VERSION }}
           path: |
-            target/CustomCraft.jar
-            target/CustomCraft-pack.zip
+            target/Forgebound.jar
+            target/Forgebound-pack.zip
 
       - name: Pick the release tag
         shell: bash
@@ -82,14 +82,14 @@ jobs:
       - name: Write release notes
         run: |
           cat > notes.md <<NOTES
-          **CustomCraft ${VERSION}** for Paper 1.21.11 (Java 21)
+          **Forgebound ${VERSION}** for Paper 1.21.11 (Java 21)
 
-          - \`CustomCraft.jar\` - put it into \`plugins/\`
-          - \`CustomCraft-pack.zip\` - the resource pack
+          - \`Forgebound.jar\` - put it into \`plugins/\`
+          - \`Forgebound-pack.zip\` - the resource pack
 
           For \`server.properties\` (this link always points to the newest release):
           \`\`\`
-          resource-pack=https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/CustomCraft-pack.zip
+          resource-pack=https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/Forgebound-pack.zip
           resource-pack-sha1=${PACK_SHA1}
           \`\`\`
           Only the SHA1 changes when the textures change.
@@ -102,13 +102,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then
-            TITLE="CustomCraft $RELEASE_TAG"
+            TITLE="Forgebound $RELEASE_TAG"
             EXTRA="--generate-notes"
           else
-            TITLE="CustomCraft ${VERSION} (build ${GITHUB_RUN_NUMBER})"
+            TITLE="Forgebound ${VERSION} (build ${GITHUB_RUN_NUMBER})"
             EXTRA="--target $GITHUB_SHA"
           fi
-          gh release create "$RELEASE_TAG" target/CustomCraft.jar target/CustomCraft-pack.zip \
+          gh release create "$RELEASE_TAG" target/Forgebound.jar target/Forgebound-pack.zip \
             --title "$TITLE" \
             --notes-file notes.md \
             --latest \

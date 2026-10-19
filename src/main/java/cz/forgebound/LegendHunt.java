@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public final class LegendHunt implements Listener {
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private UUID target;
     private String targetName;
     private long endsAt;
@@ -32,7 +32,7 @@ public final class LegendHunt implements Listener {
     private BossBar bar;
     private String area = "";
 
-    public LegendHunt(CustomCraft plugin) {
+    public LegendHunt(Forgebound plugin) {
         this.plugin = plugin;
     }
 

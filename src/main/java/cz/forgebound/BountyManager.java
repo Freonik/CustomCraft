@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -51,7 +51,7 @@ public final class BountyManager implements Listener, CommandExecutor {
 
     private static final int TOKEN_MODEL = 1402;
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final NamespacedKey tokenKey;
     private final NamespacedKey trackerKey;
@@ -64,11 +64,11 @@ public final class BountyManager implements Listener, CommandExecutor {
     /** player -> last "you're being tracked" warning */
     private final Map<UUID, Long> warned = new HashMap<>();
 
-    public BountyManager(CustomCraft plugin, ItemManager items) {
+    public BountyManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
-        this.tokenKey = new NamespacedKey(plugin, "bounty_token");
-        this.trackerKey = new NamespacedKey(plugin, "legend_tracker");
+        this.tokenKey = Forgebound.key("bounty_token");
+        this.trackerKey = Forgebound.key("legend_tracker");
         this.file = new File(plugin.getDataFolder(), "bounties.yml");
         this.data = YamlConfiguration.loadConfiguration(file);
     }

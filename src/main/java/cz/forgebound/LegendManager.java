@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -48,7 +48,7 @@ public final class LegendManager implements Listener, CommandExecutor {
 
     private static final String[] STATS = {"kills", "mob-kills", "damage", "ability-f", "ability-shift-f", "seconds"};
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final NamespacedKey instanceKey;
     private final NamespacedKey weaponKey;
@@ -58,11 +58,11 @@ public final class LegendManager implements Listener, CommandExecutor {
     private final YamlConfiguration stats;
     private boolean statsDirty;
 
-    public LegendManager(CustomCraft plugin, ItemManager items) {
+    public LegendManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
-        this.instanceKey = new NamespacedKey(plugin, "legend_instance");
-        this.weaponKey = new NamespacedKey(plugin, "weapon");
+        this.instanceKey = Forgebound.key("legend_instance");
+        this.weaponKey = Forgebound.key("weapon");
         this.legendsFile = new File(plugin.getDataFolder(), "legends.yml");
         this.statsFile = new File(plugin.getDataFolder(), "stats.yml");
         this.legends = YamlConfiguration.loadConfiguration(legendsFile);

@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -47,7 +47,7 @@ public final class LootManager implements Listener {
             InventoryType.STONECUTTER, InventoryType.SMITHING, InventoryType.FURNACE, InventoryType.BLAST_FURNACE,
             InventoryType.SMOKER, InventoryType.BEACON, InventoryType.COMPOSTER, InventoryType.CRAFTER);
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
 
     private record MobDrop(String material, String entity, double chance, List<String> biomes,
@@ -58,7 +58,7 @@ public final class LootManager implements Listener {
     private final List<MobDrop> mobDrops = new ArrayList<>();
     private final List<ChestDrop> chestDrops = new ArrayList<>();
 
-    public LootManager(CustomCraft plugin, ItemManager items) {
+    public LootManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
     }

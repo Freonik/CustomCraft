@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
@@ -54,7 +54,7 @@ public final class WardenManager implements Listener {
     private static final Particle.DustOptions CHAIN = new Particle.DustOptions(Color.fromRGB(110, 110, 120), 1f);
     private static final Particle.DustOptions EMBER = new Particle.DustOptions(Color.fromRGB(255, 110, 30), 1.4f);
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final NamespacedKey wardenKey;
     private final NamespacedKey thrallKey;
     private final NamespacedKey sealKey;
@@ -69,11 +69,11 @@ public final class WardenManager implements Listener {
     private boolean enraged;
     private boolean summoning;
 
-    public WardenManager(CustomCraft plugin) {
+    public WardenManager(Forgebound plugin) {
         this.plugin = plugin;
-        this.wardenKey = new NamespacedKey(plugin, "forge_warden");
-        this.thrallKey = new NamespacedKey(plugin, "warden_thrall");
-        this.sealKey = new NamespacedKey(plugin, "warden_seal");
+        this.wardenKey = Forgebound.key("forge_warden");
+        this.thrallKey = Forgebound.key("warden_thrall");
+        this.sealKey = Forgebound.key("warden_seal");
     }
 
     private double cfg(String key, double def) {

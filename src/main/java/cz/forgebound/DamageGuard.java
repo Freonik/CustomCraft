@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 /**
  * Marks damage dealt by the plugin itself (abilities, Hydra splash, Thorns reflect),

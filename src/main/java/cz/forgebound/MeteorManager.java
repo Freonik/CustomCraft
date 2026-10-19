@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
@@ -36,7 +36,7 @@ public final class MeteorManager {
             Material.DEEPSLATE, Material.TUFF, Material.MUD, Material.CLAY, Material.SANDSTONE, Material.MOSS_BLOCK);
     private static final Particle.DustOptions EMBER = new Particle.DustOptions(Color.fromRGB(255, 120, 30), 2f);
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private long nextAt;
     private Meteor current;
@@ -51,7 +51,7 @@ public final class MeteorManager {
         BossBar bar;
     }
 
-    public MeteorManager(CustomCraft plugin, ItemManager items) {
+    public MeteorManager(Forgebound plugin, ItemManager items) {
         this.plugin = plugin;
         this.items = items;
     }

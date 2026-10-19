@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.bossbar.BossBar;
@@ -70,7 +70,7 @@ public final class GhostManager implements Listener {
             "we are the same, {target}. only one of us stays",
             "you made me");
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final NamespacedKey ghostKey;
     private final File file;
     private final YamlConfiguration data;
@@ -94,9 +94,9 @@ public final class GhostManager implements Listener {
     private BossBar bar;
     private final java.util.Map<UUID, Double> damage = new java.util.HashMap<>();
 
-    public GhostManager(CustomCraft plugin) {
+    public GhostManager(Forgebound plugin) {
         this.plugin = plugin;
-        this.ghostKey = new NamespacedKey(plugin, "doppelganger");
+        this.ghostKey = Forgebound.key("doppelganger");
         this.file = new File(plugin.getDataFolder(), "ghost.yml");
         this.data = YamlConfiguration.loadConfiguration(file);
     }

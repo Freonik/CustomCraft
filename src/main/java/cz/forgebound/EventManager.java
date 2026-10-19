@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -57,7 +57,7 @@ public final class EventManager implements Listener, CommandExecutor {
     private static final Particle.DustOptions BLOOD = new Particle.DustOptions(Color.fromRGB(170, 10, 20), 1.6f);
     private static final Particle.DustOptions GOLD = new Particle.DustOptions(Color.fromRGB(255, 210, 60), 2f);
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final NamespacedKey eliteKey;
     private RiftEvent rift;
     private LegendHunt hunt;
@@ -86,9 +86,9 @@ public final class EventManager implements Listener, CommandExecutor {
     private long shipmentExpiresAt;
     private BossBar shipmentBar;
 
-    public EventManager(CustomCraft plugin) {
+    public EventManager(Forgebound plugin) {
         this.plugin = plugin;
-        this.eliteKey = new NamespacedKey(plugin, "blood_elite");
+        this.eliteKey = Forgebound.key("blood_elite");
     }
 
     public void setRift(RiftEvent rift) {

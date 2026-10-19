@@ -1,6 +1,6 @@
-name: CustomCraft
+name: Forgebound
 version: ${project.version}
-main: cz.customcraft.CustomCraft
+main: cz.forgebound.Forgebound
 api-version: '1.21'
 description: Legendary one-of-a-kind weapons and relics with abilities, legendary materials and forge rituals
 authors: [ filip ]
@@ -45,12 +45,12 @@ commands:
     usage: /<command> <player> <amount>
 
 permissions:
-  customcraft.use:
+  forgebound.use:
     description: Use the forge at a crafting table and open mystery crates
     default: true
-  customcraft.nocooldown:
+  forgebound.nocooldown:
     description: Weapon abilities without cooldowns (for testing)
     default: false
-  customcraft.admin:
+  forgebound.admin:
     description: /forge reload, give, status, release and finish
     default: op

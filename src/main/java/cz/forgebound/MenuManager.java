@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -50,7 +50,7 @@ public final class MenuManager implements Listener {
     private static final int PROCEED_A = 52;
     private static final int PROCEED_B = 53;
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final ItemManager items;
     private final RitualManager rituals;
     /** Players who loaded the server resource pack (for menu.resource-pack: auto). */
@@ -58,7 +58,7 @@ public final class MenuManager implements Listener {
     /** Whether the menu currently being built uses the resource-pack style. */
     private boolean style;
 
-    public MenuManager(CustomCraft plugin, ItemManager items, RitualManager rituals) {
+    public MenuManager(Forgebound plugin, ItemManager items, RitualManager rituals) {
         this.plugin = plugin;
         this.items = items;
         this.rituals = rituals;
@@ -386,7 +386,7 @@ public final class MenuManager implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        if (!player.isSneaking() || event.getItem() != null || !player.hasPermission("customcraft.use")) {
+        if (!player.isSneaking() || event.getItem() != null || !player.hasPermission("forgebound.use")) {
             return;
         }
         event.setUseInteractedBlock(Event.Result.DENY);

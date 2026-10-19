@@ -1,4 +1,4 @@
-package cz.customcraft;
+package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -41,14 +41,14 @@ public final class CodexManager implements Listener, CommandExecutor {
             "&6&lForge Warden\n\n&0Sneak + right-click a crafting table holding a &lNether Star&r&0 to wake the Warden.\n\nThe best fighter gets a &4Warden's Seal&0: any legendary material.",
             "&6&lCommands\n\n&e/legends /bounty\n/shop /pay /events\n/top /hud /codex\n\n&0Good luck, and may your legend outlive you.");
 
-    private final CustomCraft plugin;
+    private final Forgebound plugin;
     private final NamespacedKey codexKey;
     private final File file;
     private final Set<String> received = new HashSet<>();
 
-    public CodexManager(CustomCraft plugin) {
+    public CodexManager(Forgebound plugin) {
         this.plugin = plugin;
-        this.codexKey = new NamespacedKey(plugin, "forge_codex");
+        this.codexKey = Forgebound.key("forge_codex");
         this.file = new File(plugin.getDataFolder(), "codex.yml");
         received.addAll(YamlConfiguration.loadConfiguration(file).getStringList("received"));
     }
