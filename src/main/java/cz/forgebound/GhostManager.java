@@ -91,6 +91,7 @@ public final class GhostManager implements Listener {
     private int healsUsed;
     private Location lastPos;
     private int stuckTicks;
+    private int blockedTicks;
     private BossBar bar;
     private final java.util.Map<UUID, Double> damage = new java.util.HashMap<>();
 
@@ -419,12 +420,30 @@ public final class GhostManager implements Listener {
                 flat.add(side).normalize();
             }
             Vector v = body.getVelocity();
-            Vector move = flat.multiply(speed);
+            Vector move = flat.clone().multiply(speed);
             double vy = v.getY();
+            // a one-block step right in front of it?
             Block ahead = me.clone().add(flat.clone().multiply(0.8)).getBlock();
-            if (body.isOnGround() && ahead.getType().isSolid() && ahead.getRelative(0, 1, 0).isPassable()
-                    && me.clone().add(0, 2, 0).getBlock().isPassable()) {
-                vy = 0.45;
+            boolean wall = ahead.getType().isSolid() && ahead.getRelative(0, 1, 0).isPassable()
+                    && ahead.getRelative(0, 2, 0).isPassable() && me.clone().add(0, 2, 0).getBlock().isPassable();
+            boolean grounded = body.isOnGround()
+                    || me.clone().add(0, -0.05, 0).getBlock().getType().isSolid() && Math.abs(vy) < 0.1;
+            if (wall) {
+                blockedTicks++;
+                if (grounded) {
+                    vy = 0.5;
+                }
+                if (blockedTicks > 8) {
+                    // the jump didn't work: just step up onto the block
+                    blockedTicks = 0;
+                    Location up = ahead.getLocation().add(0.5, 1, 0.5);
+                    up.setYaw(me.getYaw());
+                    up.setPitch(me.getPitch());
+                    body.teleport(up);
+                    return;
+                }
+            } else {
+                blockedTicks = 0;
             }
             if (body.isInWater() || me.getBlock().isLiquid()) {
                 vy = 0.12;
