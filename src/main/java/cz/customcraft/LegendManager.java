@@ -274,6 +274,29 @@ public final class LegendManager implements Listener, CommandExecutor {
 
     // ================================================================ stats
 
+    /** One stat (kills, mob-kills, damage...) summed over all legends, per player. */
+    public java.util.Map<java.util.UUID, Double> totals(String stat) {
+        java.util.Map<java.util.UUID, Double> map = new java.util.HashMap<>();
+        for (String uuid : stats.getKeys(false)) {
+            org.bukkit.configuration.ConfigurationSection mine = stats.getConfigurationSection(uuid);
+            if (mine == null) {
+                continue;
+            }
+            double sum = 0;
+            for (String ref : mine.getKeys(false)) {
+                sum += mine.getDouble(ref + "." + stat, 0);
+            }
+            if (sum > 0) {
+                try {
+                    map.put(java.util.UUID.fromString(uuid), sum);
+                } catch (IllegalArgumentException ignored) {
+                    // not a player entry
+                }
+            }
+        }
+        return map;
+    }
+
     private void add(Player player, String ref, String stat, double amount) {
         String path = player.getUniqueId() + "." + key(ref) + "." + stat;
         stats.set(path, stats.getDouble(path, 0) + amount);

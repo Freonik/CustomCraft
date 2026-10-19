@@ -113,6 +113,25 @@ public final class BountyManager implements Listener, CommandExecutor {
 
     // ================================================================ bounties
 
+    /** Every player's current bounty (for /top). */
+    public Map<UUID, Double> allBounties() {
+        Map<UUID, Double> map = new HashMap<>();
+        var section = data.getConfigurationSection("bounty");
+        if (section != null) {
+            for (String k : section.getKeys(false)) {
+                int b = data.getInt("bounty." + k);
+                if (b > 0) {
+                    try {
+                        map.put(UUID.fromString(k), (double) b);
+                    } catch (IllegalArgumentException ignored) {
+                        // skip
+                    }
+                }
+            }
+        }
+        return map;
+    }
+
     public int bountyOf(UUID player) {
         return data.getInt("bounty." + player, 0);
     }

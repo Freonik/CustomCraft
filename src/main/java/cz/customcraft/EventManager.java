@@ -566,6 +566,35 @@ public final class EventManager implements Listener, CommandExecutor {
         return rift;
     }
 
+    /** A short colored text of the most important running event (sidebar, placeholders). */
+    public String shortStatus() {
+        if (rift != null && rift.active()) {
+            return rift.opening() ? "&5Rift opening" : "&5Rift &7" + rift.wave() + "/" + rift.waveTotal();
+        }
+        if (hunt != null && hunt.active()) {
+            return "&cHunt: &f" + hunt.targetName();
+        }
+        if (bloodMoon) {
+            return "&4Blood Moon";
+        }
+        if (plugin.meteor() != null && plugin.meteor().active()) {
+            return "&6Meteor";
+        }
+        if (plugin.warden() != null && plugin.warden().alive()) {
+            return "&4Forge Warden";
+        }
+        if (happy != null) {
+            return "&aHappy Hour";
+        }
+        if (marketOpen()) {
+            return "&6Forge Market";
+        }
+        if (shipment != null && !shipmentFound) {
+            return "&eGolden Shipment";
+        }
+        return plugin.getConfig().getString("messages.event-none", "&7-");
+    }
+
     public boolean riftActive() {
         return rift != null && rift.active();
     }

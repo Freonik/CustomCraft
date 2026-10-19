@@ -460,6 +460,9 @@ public final class WardenManager implements Listener {
         }
         world.playSound(at, Sound.ENTITY_WITHER_DEATH, 2f, 0.7f);
         world.spawnParticle(Particle.EXPLOSION_EMITTER, at, 2, 0.5, 0.5, 0.5, 0);
+        if (winner != null && plugin.top() != null) {
+            plugin.top().add(winner, "wardens");
+        }
         Bukkit.broadcast(plugin.msg("warden-defeated", "&4☠ The Forge Warden has fallen! &7Top damage: &f{player}",
                 "player", winner == null ? "?" : winner.getName()));
         plugin.getLogger().info("Forge Warden defeated, seal " + seal.getUniqueId() + " for " + (winner == null ? "?" : winner.getName()));

@@ -31,6 +31,7 @@
 - [Meteors](#meteors)
 - [The Forge Warden](#the-forge-warden)
 - [Advancements](#advancements)
+- [HUD, Codex and leaderboards](#hud-codex-and-leaderboards)
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
 - [Resource pack](#resource-pack)
@@ -58,6 +59,9 @@
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
 - **Advancements**: a CustomCraft tab in the advancements screen, with toasts, chat messages and rewards
 - **Resource pack** with animated textures, custom worn armor, particles and a themed menu
+- **HUD**: a sidebar, tab list and join title with your tokens, bounty and the current event (works with the TAB plugin)
+- **Forge Codex**: a book for new players that explains everything (`/codex`)
+- **Leaderboards**: `/top`, plus placeholders for top-10 holograms (PlaceholderAPI)
 - **Live MOTD**: the server list shows what's happening right now (a Rift, the Blood Moon, a ritual...)
 - **Fully configurable**: numbers, cooldowns, drop chances, ritual length, messages, on/off switches
 
@@ -471,6 +475,44 @@ Turn them all off with `advancements.enabled: false` in the config.
 
 ---
 
+## HUD, Codex and leaderboards
+
+### Sidebar, tab list and join title
+Everyone sees a sidebar with their **tokens**, **bounty**, free legends, the **current event** and when the shop
+rotates. The tab list gets a header and footer, and joining shows a title (a different one the first time).
+Each part can be turned off under `hud:`, and players can hide their own sidebar with **`/hud`**.
+
+**Using the TAB plugin?** The sidebar and tab list step aside automatically when TAB is installed,
+so they don't fight over the screen. Put the placeholders below into TAB's config instead.
+
+### 📖 Forge Codex
+New players get the **Forge Codex**, a book that explains the forge, rituals, legends, bounties, tokens and events.
+**`/codex`** opens it any time. The pages are in the config (`codex.pages`), so you can rewrite or translate them.
+
+### 🏆 Leaderboards
+**`/top <category>`** shows the top 10 (click a category to switch):
+`bounty`, `kills`, `mobkills`, `damage` (with legends), `wardens` (slain), `rifts` (closed), `hunts` (survived).
+
+### Placeholders (PlaceholderAPI)
+With [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) installed, other plugins
+(TAB, hologram plugins, scoreboards, chat...) can use:
+
+| Placeholder | Shows |
+|---|---|
+| `%customcraft_tokens%` | Bounty Tokens in the player's inventory |
+| `%customcraft_bounty%` | the player's bounty |
+| `%customcraft_legends_held%` | legends the player carries |
+| `%customcraft_event%` | the current event (colored) |
+| `%customcraft_free_legends%` / `%customcraft_total_legends%` | unclaimed / all legends |
+| `%customcraft_rotation%` | time until the shop rotates |
+| `%customcraft_top_<category>_<1-100>_name%` | name at that place, e.g. `%customcraft_top_kills_1_name%` |
+| `%customcraft_top_<category>_<1-100>_value%` | value at that place |
+| `%customcraft_top_<category>_rank%` | the player's own rank |
+
+A top-10 hologram is just ten lines like `&6#1 %customcraft_top_kills_1_name% &7- &e%customcraft_top_kills_1_value%`.
+
+---
+
 ## Commands and permissions
 
 | Command | Permission | Description |
@@ -479,6 +521,9 @@ Turn them all off with `advancements.enabled: false` in the config.
 | `/forge` | everyone | tells you how to open the forge |
 | `/legends` | everyone | all legends on the server and your own stats with them |
 | `/bounty` | everyone | your bounty, the most wanted players and the Bounty Token exchange |
+| `/top [category]` | everyone | leaderboards |
+| `/codex` | everyone | open the Forge Codex |
+| `/hud` | everyone | hide or show your sidebar |
 | `/events` | everyone | which events are running right now |
 | `/shop` | everyone | the token shop (alias `/store`) |
 | `/pay <player> <amount>` | everyone | send Bounty Tokens to another player |

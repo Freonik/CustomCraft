@@ -147,6 +147,9 @@ public final class LegendHunt implements Listener {
             plugin.bounty().give(p, plugin.bounty().token(tokens));
         }
         p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+        if (plugin.top() != null) {
+            plugin.top().add(p, "hunts");
+        }
         Bukkit.broadcast(plugin.msg("hunt-survived", "&6☠ {player} survived the Legend Hunt! &7Reward: &6{tokens} Bounty Tokens",
                 "player", targetName, "tokens", String.valueOf(tokens)));
         end();

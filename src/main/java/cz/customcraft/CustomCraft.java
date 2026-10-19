@@ -25,6 +25,10 @@ public final class CustomCraft extends JavaPlugin implements Listener {
     private WardenManager warden;
     private ShopManager shop;
     private EventManager events;
+    private TopManager top;
+    private Placeholders placeholders;
+    private HudManager hud;
+    private boolean papi;
 
     @Override
     public void onEnable() {
@@ -100,6 +104,37 @@ public final class CustomCraft extends JavaPlugin implements Listener {
             eventsCommand.setExecutor(events);
         }
 
+        placeholders = new Placeholders(this);
+        top = new TopManager(this);
+        top.start();
+        hud = new HudManager(this);
+        getServer().getPluginManager().registerEvents(hud, this);
+        hud.start();
+        CodexManager codex = new CodexManager(this);
+        getServer().getPluginManager().registerEvents(codex, this);
+        for (String[] c : new String[][] {{"top"}, {"codex"}, {"hud"}}) {
+            PluginCommand pc = getCommand(c[0]);
+            if (pc == null) {
+                continue;
+            }
+            switch (c[0]) {
+                case "top" -> {
+                    pc.setExecutor(top);
+                    pc.setTabCompleter(top);
+                }
+                case "codex" -> pc.setExecutor(codex);
+                default -> pc.setExecutor(hud);
+            }
+        }
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            try {
+                papi = new PapiExpansion(this).register();
+                getLogger().info("PlaceholderAPI found: %customcraft_...% placeholders are available.");
+            } catch (Throwable ex) {
+                getLogger().warning("Could not hook into PlaceholderAPI: " + ex.getMessage());
+            }
+        }
+
         RecipesCommand command = new RecipesCommand(this, items, rituals, data);
         PluginCommand pluginCommand = getCommand("forge");
         if (pluginCommand != null) {
@@ -125,6 +160,9 @@ public final class CustomCraft extends JavaPlugin implements Listener {
         if (events != null) {
             events.shutdown();
         }
+        if (hud != null) {
+            hud.shutdown();
+        }
         if (warden != null) {
             warden.shutdown();
         }
@@ -149,6 +187,19 @@ public final class CustomCraft extends JavaPlugin implements Listener {
 
     public BountyManager bounty() {
         return bounty;
+    }
+
+    public TopManager top() {
+        return top;
+    }
+
+    public Placeholders placeholders() {
+        return placeholders;
+    }
+
+    /** Is PlaceholderAPI installed and our expansion registered? */
+    public boolean papi() {
+        return papi;
     }
 
     public MenuManager menus() {
@@ -209,7 +260,8 @@ public final class CustomCraft extends JavaPlugin implements Listener {
             "ritual", "bounty", "meteor", "warden", "economy", "economy.rewards",
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
-            "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd");
+            "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
+            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

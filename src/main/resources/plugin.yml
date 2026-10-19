@@ -4,6 +4,7 @@ main: cz.customcraft.CustomCraft
 api-version: '1.21'
 description: Legendary one-of-a-kind weapons and relics with abilities, legendary materials and forge rituals
 authors: [ filip ]
+softdepend: [PlaceholderAPI, TAB]
 
 commands:
   forge:
@@ -27,6 +28,18 @@ commands:
     description: Which events are running right now
     usage: /<command>
     aliases: [event]
+  top:
+    description: Leaderboards
+    usage: /<command> [category]
+    aliases: [leaderboard, leaderboards]
+  codex:
+    description: Opens the Forge Codex (how everything works)
+    usage: /<command>
+    aliases: [guide]
+  hud:
+    description: Hide or show your sidebar
+    usage: /<command>
+    aliases: [sidebar]
   pay:
     description: Send Bounty Tokens to another player
     usage: /<command> <player> <amount>

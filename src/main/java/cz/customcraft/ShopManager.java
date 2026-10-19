@@ -127,7 +127,7 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         return Math.max(0, (System.currentTimeMillis() - data.getLong("anchor")) / period());
     }
 
-    private long nextRotationAt() {
+    public long nextRotationAt() {
         return data.getLong("anchor") + (rotation() + 1) * period();
     }
 

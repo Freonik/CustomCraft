@@ -412,6 +412,9 @@ public final class RiftEvent implements Listener {
                 }
             }
             first = false;
+            if (plugin.top() != null) {
+                plugin.top().add(p, "rifts");
+            }
             p.sendMessage(plugin.msg("rift-reward", "&5✷ &7Your share: &d{share}% &8• &6{tokens} tokens",
                     "share", String.valueOf(Math.round(share * 100)), "tokens", String.valueOf(tokens)));
         }

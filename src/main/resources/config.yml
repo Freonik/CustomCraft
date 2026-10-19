@@ -109,6 +109,14 @@ messages:
   pay-no-player: "&cThat player isn't online."
   pay-sent: "&aYou sent &6{amount} Bounty Tokens &ato &f{player}&a."
   pay-received: "&aYou received &6{amount} Bounty Tokens &afrom &f{player}&a."
+  event-none: "&7-"
+  top-disabled: "&7Leaderboards are turned off on this server."
+  top-usage: "&7Usage: &e/top <{categories}>"
+  hud-off: "&7The sidebar is turned off on this server."
+  hud-hidden: "&7Sidebar hidden. &e/hud &7shows it again."
+  hud-shown: "&aSidebar shown."
+  codex-given: "&6📖 You got the &lForge Codex&6. Read it, or open it any time with &e/codex&6."
+  codex-off: "&7The Forge Codex is turned off on this server."
   # events (/events)
   hunt-start: "&c☠ &4&lLegend Hunt! &f{player} &cis marked for &f{minutes} minutes&c. Their bounty counts &6double&c. Hunt them down!"
   hunt-you: "&c☠ You are being hunted! &7Survive for {minutes} minutes and you get &6{tokens} Bounty Tokens&7. Your abilities recharge faster until then."
@@ -1071,6 +1079,84 @@ economy:
       trident: { material: TRIDENT, amount: 1, price: 15, limit: 1 }
       heavy_core: { material: HEAVY_CORE, amount: 1, price: 25, limit: 1 }
       beacon: { material: BEACON, amount: 1, price: 50, limit: 1 }
+
+# ------------------------------------------------------------
+#  HUD: sidebar, tab list and a title when you join
+#  Placeholders: {tokens} {bounty} {legends_held} {event} {free_legends} {total_legends}
+#  {online} {max_players} {rotation} {player}, {top_<category>_<n>_name} / {top_<category>_<n>_value} /
+#  {top_<category>_rank}. With PlaceholderAPI the same exist as %customcraft_tokens% etc.
+#  (for the TAB plugin, holograms...), and %other_plugin% placeholders work in these lines too.
+#  Players can hide their own sidebar with /hud.
+# ------------------------------------------------------------
+hud:
+  update-ticks: 40
+  scoreboard:
+    enabled: true
+    # If the TAB plugin is installed, leave the sidebar to it (use %customcraft_...% there)
+    disable-with-tab-plugin: true
+    title: "&6&l⚒ CUSTOMCRAFT"
+    lines:
+      - "&8&m              "
+      - "&6Tokens: &f{tokens}"
+      - "&cBounty: &f{bounty}"
+      - " "
+      - "&dLegends free: &f{free_legends}&7/&f{total_legends}"
+      - "&eEvent: {event}"
+      - "  "
+      - "&7Shop rotates in &f{rotation}"
+      - "&8&m               "
+  tab:
+    enabled: true
+    disable-with-tab-plugin: true
+    header:
+      - ""
+      - "&6&l⚒ CUSTOMCRAFT ⚒"
+      - "&7{online}/{max_players} online"
+      - ""
+    footer:
+      - ""
+      - "&7Event: {event}"
+      - "&d{free_legends}&7/&d{total_legends} &7legends still unclaimed"
+      - "&8/codex /shop /top /events"
+      - ""
+  join-title:
+    enabled: true
+    delay-ticks: 30
+    title: "&6&l⚒ CUSTOMCRAFT"
+    subtitle: "&7Welcome back, &f{player}&7! &d{free_legends} &7legends still unclaimed"
+    # For players joining for the first time
+    first-title: "&6&lWelcome, &f{player}"
+    first-subtitle: "&7Read the &6Forge Codex &7in your inventory"
+
+# ------------------------------------------------------------
+#  FORGE CODEX: a book that explains everything. New players get it once, /codex opens it.
+#  Each page: & colors, \n = new line (about 14 lines of ~19 characters fit on a page).
+# ------------------------------------------------------------
+codex:
+  enabled: true
+  give-on-first-join: true
+  title: "Forge Codex"
+  author: "The Forge"
+  item-name: "&6&lForge Codex"
+  pages:
+    - "&6&l   Forge Codex\n\n&0Every weapon and relic here is a &5legend&0: it exists only &lonce&r&0 on the whole server.\n\n&8Turn the page to learn how to get one."
+    - "&6&lThe Forge\n\n&0Sneak + right-click a &lcrafting table&r&0 with an empty hand.\n\nPick a weapon or relic, bring the materials and start the &5ritual&0."
+    - "&6&lThe Ritual\n\n&0Forging takes &l15 minutes&r&0. Everyone is told what is being forged, and the place is revealed step by step.\n\n&4Defend the table!&0 The legend drops on it at the end."
+    - "&6&lMaterials\n\n&0Legendary materials drop from bosses and rare mobs, or hide in structure chests.\n\nMeteors, Rifts and the Forge Warden give them too."
+    - "&6&lLegends\n\n&0F and Shift+F use a weapon's abilities.\n\n&e/legends&0 shows every legend and your stats.\n\nLeave the server for too long and your legend returns to the forge."
+    - "&6&lBounties\n\n&0Carrying a legend puts a price on your head. Whoever kills you gets &6Bounty Tokens&0.\n\n&e/bounty&0 shows the most wanted.\n&0The &lLegend Tracker&r&0 finds them."
+    - "&6&lTokens\n\n&0Tokens are the server's money.\n\n&e/shop&0 always has something, and a new offer every week.\n&e/pay&0 sends tokens to a friend."
+    - "&6&lEvents\n\n&4Blood Moon&0: tough nights.\n&5Rift&0: waves of monsters.\n&cLegend Hunt&0: a holder is hunted.\n&6Meteor&0, &eGolden Shipment&0, &aHappy Hour&0, &6Forge Market&0.\n\n&e/events&0 shows what's on."
+    - "&6&lForge Warden\n\n&0Sneak + right-click a crafting table holding a &lNether Star&r&0 to wake the Warden.\n\nThe best fighter gets a &4Warden's Seal&0: any legendary material."
+    - "&6&lCommands\n\n&e/legends /bounty\n/shop /pay /events\n/top /hud /codex\n\n&0Good luck, and may your legend outlive you."
+
+# ------------------------------------------------------------
+#  LEADERBOARDS: /top <bounty|kills|mobkills|damage|wardens|rifts|hunts>
+#  For holograms: %customcraft_top_kills_1_name% and %customcraft_top_kills_1_value% (PlaceholderAPI)
+# ------------------------------------------------------------
+top:
+  enabled: true
+  update-seconds: 60
 
 # ------------------------------------------------------------
 #  LIVE MOTD (the server list)
