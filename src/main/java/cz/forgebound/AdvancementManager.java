@@ -248,11 +248,7 @@ public final class AdvancementManager implements Listener {
     }
 
     private void save() {
-        try {
-            data.save(file);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save advancements.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(data, file);
     }
 
     /** Item rewards on top of the advancement's own XP. */
@@ -315,7 +311,7 @@ public final class AdvancementManager implements Listener {
     public void onTrophyUse(PlayerInteractEvent event) {
         ItemStack item = event.getItem();
         if (item != null && item.getType() == Material.KNOWLEDGE_BOOK && item.hasItemMeta()
-                && item.getItemMeta().getPersistentDataContainer().has(trophyKey, PersistentDataType.STRING)
+                && item.getPersistentDataContainer().has(trophyKey, PersistentDataType.STRING)
                 && (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK)) {
             event.setUseItemInHand(Event.Result.DENY);
             event.setCancelled(true);
@@ -410,7 +406,7 @@ public final class AdvancementManager implements Listener {
         if (!stack.hasItemMeta()) {
             return;
         }
-        String forger = stack.getItemMeta().getPersistentDataContainer().get(forgedByKey, PersistentDataType.STRING);
+        String forger = stack.getPersistentDataContainer().get(forgedByKey, PersistentDataType.STRING);
         if (forger != null && !forger.equals(player.getUniqueId().toString())) {
             award(player, "finders_keepers");
         }

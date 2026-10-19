@@ -1884,7 +1884,7 @@ public final class AbilityManager implements Listener {
         if (stack == null || !stack.hasItemMeta()) {
             return 0;
         }
-        return stack.getItemMeta().getPersistentDataContainer().getOrDefault(killsKey, PersistentDataType.INTEGER, 0);
+        return stack.getPersistentDataContainer().getOrDefault(killsKey, PersistentDataType.INTEGER, 0);
     }
 
     /** A kill with a kill-tracking weapon: +1 on the item, lore updated, unlocks announced. */

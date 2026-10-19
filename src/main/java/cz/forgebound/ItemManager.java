@@ -411,7 +411,7 @@ public final class ItemManager {
         if (stack == null || !stack.hasItemMeta()) {
             return null;
         }
-        return stack.getItemMeta().getPersistentDataContainer().get(idKey, PersistentDataType.STRING);
+        return stack.getPersistentDataContainer().get(idKey, PersistentDataType.STRING);
     }
 
     /** Returns the weapon if the ItemStack is one of this plugin's weapons, otherwise null. */

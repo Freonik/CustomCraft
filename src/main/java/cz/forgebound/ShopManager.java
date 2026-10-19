@@ -93,11 +93,7 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
     }
 
     private void save() {
-        try {
-            data.save(file);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save shop.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(data, file);
     }
 
     // ================================================================ rewards from events

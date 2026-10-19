@@ -70,11 +70,7 @@ public final class TopManager implements CommandExecutor, TabCompleter {
         String path = player.getUniqueId() + "." + record;
         records.set(path, records.getInt(path, 0) + 1);
         records.set(player.getUniqueId() + ".name", player.getName());
-        try {
-            records.save(file);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save records.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(records, file);
     }
 
     private Map<UUID, Double> record(String key) {

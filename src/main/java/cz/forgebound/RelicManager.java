@@ -175,7 +175,7 @@ public final class RelicManager implements Listener {
         if (stack == null || !stack.hasItemMeta()) {
             return 0;
         }
-        Long ready = stack.getItemMeta().getPersistentDataContainer().get(readyKey, PersistentDataType.LONG);
+        Long ready = stack.getPersistentDataContainer().get(readyKey, PersistentDataType.LONG);
         return ready == null ? 0 : Math.max(0, ready - System.currentTimeMillis());
     }
 
@@ -603,7 +603,7 @@ public final class RelicManager implements Listener {
         if (stack == null || !stack.hasItemMeta()) {
             return 0;
         }
-        Double bonus = stack.getItemMeta().getPersistentDataContainer().get(heartKey, PersistentDataType.DOUBLE);
+        Double bonus = stack.getPersistentDataContainer().get(heartKey, PersistentDataType.DOUBLE);
         return bonus == null ? 0 : bonus;
     }
 

@@ -40,6 +40,8 @@ public final class HudManager implements Listener, CommandExecutor {
     private final Forgebound plugin;
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
     private final Set<UUID> hidden = new HashSet<>();
+    /** What each player was last sent, so unchanged lines aren't sent again. */
+    private final Map<UUID, Map<String, String>> sent = new HashMap<>();
     private final File file;
 
     public HudManager(Forgebound plugin) {
@@ -99,22 +101,30 @@ public final class HudManager implements Listener, CommandExecutor {
                 removeSidebar(p);
             }
             if (tab) {
-                List<String> header = plugin.getConfig().getStringList("hud.tab.header");
-                List<String> footer = plugin.getConfig().getStringList("hud.tab.footer");
-                p.sendPlayerListHeaderAndFooter(join(p, header), join(p, footer));
+                String header = joinRaw(p, plugin.getConfig().getStringList("hud.tab.header"));
+                String footer = joinRaw(p, plugin.getConfig().getStringList("hud.tab.footer"));
+                if (changed(p, "tab", header + "\u0000" + footer)) {
+                    p.sendPlayerListHeaderAndFooter(ItemManager.color(header), ItemManager.color(footer));
+                }
             }
         }
     }
 
-    private Component join(Player p, List<String> lines) {
-        Component c = Component.empty();
+    private String joinRaw(Player p, List<String> lines) {
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < lines.size(); i++) {
             if (i > 0) {
-                c = c.append(Component.newline());
+                sb.append('\n');
             }
-            c = c.append(line(p, lines.get(i)));
+            sb.append(plugin.placeholders().apply(p, lines.get(i)));
         }
-        return c;
+        return sb.toString();
+    }
+
+    /** True (and remembered) if this part of the player's HUD differs from what was sent last time. */
+    private boolean changed(Player p, String part, String text) {
+        Map<String, String> mine = sent.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>());
+        return !text.equals(mine.put(part, text));
     }
 
     private void sidebar(Player p) {
@@ -123,6 +133,10 @@ public final class HudManager implements Listener, CommandExecutor {
             board = Bukkit.getScoreboardManager().getNewScoreboard();
             boards.put(p.getUniqueId(), board);
             p.setScoreboard(board);
+            Map<String, String> mine = sent.get(p.getUniqueId());
+            if (mine != null) {
+                mine.keySet().removeIf(k -> k.startsWith("side"));   // a new board needs everything again
+            }
         }
         Objective obj = board.getObjective("cc_sidebar");
         if (obj == null) {
@@ -130,22 +144,36 @@ public final class HudManager implements Listener, CommandExecutor {
             obj.setDisplaySlot(DisplaySlot.SIDEBAR);
             obj.numberFormat(NumberFormat.blank());
         }
-        obj.displayName(line(p, plugin.getConfig().getString("hud.scoreboard.title", "&6&l⚒ FORGEBOUND")));
+        String title = plugin.placeholders().apply(p, plugin.getConfig().getString("hud.scoreboard.title", "&6&l⚒ FORGEBOUND"));
+        if (changed(p, "side-title", title)) {
+            obj.displayName(ItemManager.color(title));
+        }
         List<String> lines = plugin.getConfig().getStringList("hud.scoreboard.lines");
         int n = Math.min(15, lines.size());
         for (int i = 0; i < 15; i++) {
             String entry = "l" + i;
             if (i < n) {
-                Score score = obj.getScore(entry);
-                score.setScore(n - i);
-                score.customName(line(p, lines.get(i)));
+                String text = plugin.placeholders().apply(p, lines.get(i));
+                if (changed(p, "side" + i, (n - i) + "|" + text)) {
+                    Score score = obj.getScore(entry);
+                    score.setScore(n - i);
+                    score.customName(ItemManager.color(text));
+                }
             } else if (obj.getScore(entry).isScoreSet()) {
                 board.resetScores(entry);
+                Map<String, String> mine = sent.get(p.getUniqueId());
+                if (mine != null) {
+                    mine.remove("side" + i);
+                }
             }
         }
     }
 
     private void removeSidebar(Player p) {
+        Map<String, String> mine = sent.get(p.getUniqueId());
+        if (mine != null) {
+            mine.keySet().removeIf(k -> k.startsWith("side"));
+        }
         Scoreboard board = boards.remove(p.getUniqueId());
         if (board != null && p.getScoreboard() == board) {
             p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
@@ -173,6 +201,7 @@ public final class HudManager implements Listener, CommandExecutor {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         boards.remove(event.getPlayer().getUniqueId());
+        sent.remove(event.getPlayer().getUniqueId());
     }
 
     /** /hud: hide or show your own sidebar. */
@@ -195,11 +224,7 @@ public final class HudManager implements Listener, CommandExecutor {
         }
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("hidden", hidden.stream().map(UUID::toString).toList());
-        try {
-            yaml.save(file);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save hud.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(yaml, file);
         return true;
     }
 }

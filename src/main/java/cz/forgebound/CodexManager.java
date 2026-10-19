@@ -90,11 +90,7 @@ public final class CodexManager implements Listener, CommandExecutor {
         }, 60L);
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("received", new ArrayList<>(received));
-        try {
-            yaml.save(file);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save codex.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(yaml, file);
     }
 
     /** /codex: opens the book (no item needed). */

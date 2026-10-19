@@ -102,11 +102,7 @@ public final class LegendManager implements Listener, CommandExecutor {
     }
 
     private void saveLegends() {
-        try {
-            legends.save(legendsFile);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save legends.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(legends, legendsFile);
     }
 
     private void saveStats() {
@@ -114,11 +110,7 @@ public final class LegendManager implements Listener, CommandExecutor {
             return;
         }
         statsDirty = false;
-        try {
-            stats.save(statsFile);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save stats.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(stats, statsFile);
     }
 
     // ================================================================ serial numbers
@@ -146,7 +138,7 @@ public final class LegendManager implements Listener, CommandExecutor {
     /** true if this copy of the legend is still the real one (stamps old, unstamped copies on first sight). */
     private boolean valid(ItemStack stack, ItemManager.Entry entry) {
         String current = legends.getString("current." + key(entry.ref()));
-        String mine = stack.getItemMeta().getPersistentDataContainer().get(instanceKey, PersistentDataType.STRING);
+        String mine = stack.getPersistentDataContainer().get(instanceKey, PersistentDataType.STRING);
         if (mine == null) {
             if (current == null) {
                 stamp(stack, entry.ref());                       // a copy from before serial numbers: adopt it

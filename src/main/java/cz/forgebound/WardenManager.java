@@ -508,7 +508,7 @@ public final class WardenManager implements Listener {
     public void onSealUse(PlayerInteractEvent event) {
         ItemStack item = event.getItem();
         if (item == null || item.getType() != Material.KNOWLEDGE_BOOK || !item.hasItemMeta()
-                || !item.getItemMeta().getPersistentDataContainer().has(sealKey, PersistentDataType.BYTE)
+                || !item.getPersistentDataContainer().has(sealKey, PersistentDataType.BYTE)
                 || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)) {
             return;
         }
@@ -521,7 +521,7 @@ public final class WardenManager implements Listener {
         plugin.bounty().openPicker(player, "&4Warden's Seal: choose", chosen -> {
             ItemStack hand = player.getInventory().getItemInMainHand();
             if (hand.getType() != Material.KNOWLEDGE_BOOK || !hand.hasItemMeta()
-                    || !hand.getItemMeta().getPersistentDataContainer().has(sealKey, PersistentDataType.BYTE)) {
+                    || !hand.getPersistentDataContainer().has(sealKey, PersistentDataType.BYTE)) {
                 return;                                             // the seal isn't in hand any more
             }
             hand.setAmount(hand.getAmount() - 1);

@@ -22,14 +22,37 @@ public final class Placeholders {
     private static final Pattern BRACES = Pattern.compile("\\{([a-z0-9_]+)}");
 
     private final Forgebound plugin;
+    /** Short cache: TAB and holograms ask many times a second. */
+    private final java.util.Map<String, String> cache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<String, Long> cachedAt = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long CACHE_MS = 1000;
+    private static final String NONE = "\u0000";
 
     public Placeholders(Forgebound plugin) {
         this.plugin = plugin;
     }
 
-    /** Value of one placeholder, or null if it doesn't exist. Colors use & codes. */
+    /** Value of one placeholder, or null if it doesn't exist. Colors use & codes. Cached for a second. */
     public String value(OfflinePlayer who, String key) {
         key = key.toLowerCase(Locale.ROOT);
+        String id = (who == null ? "-" : who.getUniqueId().toString()) + "|" + key;
+        long now = System.currentTimeMillis();
+        Long at = cachedAt.get(id);
+        if (at != null && now - at < CACHE_MS) {
+            String hit = cache.get(id);
+            return hit == null || hit.equals(NONE) ? null : hit;
+        }
+        String v = compute(who, key);
+        if (cache.size() > 5000) {
+            cache.clear();
+            cachedAt.clear();
+        }
+        cache.put(id, v == null ? NONE : v);
+        cachedAt.put(id, now);
+        return v;
+    }
+
+    private String compute(OfflinePlayer who, String key) {
         Player online = who == null ? null : who.getPlayer();
         switch (key) {
             case "tokens":

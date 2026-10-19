@@ -31,6 +31,40 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private HudManager hud;
     private boolean papi;
 
+    /** Writes data files one after another in the background, so saving never stalls the server. */
+    private final java.util.concurrent.ExecutorService io = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "Forgebound-IO");
+        t.setDaemon(true);
+        return t;
+    });
+
+    /** Saves a YAML file in the background (the text is taken now, on the main thread). */
+    public void saveYaml(org.bukkit.configuration.file.YamlConfiguration yaml, java.io.File file) {
+        String text = yaml.saveToString();
+        if (io.isShutdown()) {
+            writeFile(text, file);
+        } else {
+            io.execute(() -> writeFile(text, file));
+        }
+    }
+
+    private void writeFile(String text, java.io.File file) {
+        try {
+            java.nio.file.Path target = file.toPath();
+            java.nio.file.Files.createDirectories(target.getParent());
+            java.nio.file.Path tmp = target.resolveSibling(file.getName() + ".tmp");
+            java.nio.file.Files.writeString(tmp, text, java.nio.charset.StandardCharsets.UTF_8);
+            try {
+                java.nio.file.Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ex) {
+                java.nio.file.Files.move(tmp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (java.io.IOException ex) {
+            getLogger().warning("Could not save " + file.getName() + ": " + ex.getMessage());
+        }
+    }
+
     /**
      * Keys for data stored on items, players and advancements. They keep the old "customcraft" namespace,
      * so everything made before the rename still works.
@@ -211,6 +245,14 @@ public final class Forgebound extends JavaPlugin implements Listener {
         }
         if (rituals != null) {
             rituals.shutdown();
+        }
+        io.shutdown();
+        try {
+            if (!io.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                getLogger().warning("Some data files were still being saved when the server stopped.");
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
         }
     }
 

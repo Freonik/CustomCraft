@@ -78,11 +78,7 @@ public final class BountyManager implements Listener, CommandExecutor {
     }
 
     private void save() {
-        try {
-            data.save(file);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save bounties.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(data, file);
     }
 
     public void start() {
@@ -236,7 +232,7 @@ public final class BountyManager implements Listener, CommandExecutor {
 
     private boolean isToken(ItemStack stack) {
         return stack != null && stack.getType() == Material.KNOWLEDGE_BOOK && stack.hasItemMeta()
-                && stack.getItemMeta().getPersistentDataContainer().has(tokenKey, PersistentDataType.BYTE);
+                && stack.getPersistentDataContainer().has(tokenKey, PersistentDataType.BYTE);
     }
 
     public ItemStack tracker() {
@@ -254,7 +250,7 @@ public final class BountyManager implements Listener, CommandExecutor {
 
     private boolean isTracker(ItemStack stack) {
         return stack != null && stack.getType() == Material.COMPASS && stack.hasItemMeta()
-                && stack.getItemMeta().getPersistentDataContainer().has(trackerKey, PersistentDataType.BYTE);
+                && stack.getPersistentDataContainer().has(trackerKey, PersistentDataType.BYTE);
     }
 
     public void give(Player player, ItemStack stack) {

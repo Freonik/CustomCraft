@@ -129,11 +129,7 @@ public final class GhostManager implements Listener {
     }
 
     private void save() {
-        try {
-            data.save(file);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not save ghost.yml: " + ex.getMessage());
-        }
+        plugin.saveYaml(data, file);
     }
 
     public boolean active() {
