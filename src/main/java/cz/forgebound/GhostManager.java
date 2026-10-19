@@ -94,6 +94,22 @@ public final class GhostManager implements Listener {
     private int blockedTicks;
     private long nextWindAt;
     private long flyingUntil;
+    private boolean gliding;
+    private int rockets;
+    private int apples;
+    private int eatingTicks;
+    private long nextEatAt;
+    private double absorb;
+    private ItemStack eatSwap;
+    private long nextRocketAt;
+    private long boostUntil;
+    private Block digBlock;
+    private int digProgress;
+    private int digNeeded;
+    private ItemStack weapon;
+    /** Blocks it dug out: put back later, so nothing is broken for good. */
+    private final java.util.Map<Location, String> dug = new java.util.LinkedHashMap<>();
+    private final java.util.Map<Location, Long> dugAt = new java.util.HashMap<>();
     private BossBar bar;
     private final java.util.Map<UUID, Double> damage = new java.util.HashMap<>();
 
@@ -144,6 +160,7 @@ public final class GhostManager implements Listener {
     }
 
     public void start() {
+        loadDug();
         new BukkitRunnable() {
             int t;
 
@@ -155,6 +172,9 @@ public final class GhostManager implements Listener {
                 } else if (t % 1200 == 0) {
                     minute();
                 }
+                if (t % 20 == 0) {
+                    restoreDug(!active() && t % 200 == 0);
+                }
             }
         }.runTaskTimer(plugin, 100L, 1L);
     }
@@ -163,6 +183,7 @@ public final class GhostManager implements Listener {
         if (active()) {
             leave(false);
         }
+        restoreDug(true);
         save();
     }
 
@@ -275,6 +296,10 @@ public final class GhostManager implements Listener {
         glitched = glitch(copyOf);
         Player original = Bukkit.getPlayerExact(copyOf);
         ResolvableProfile skin = ResolvableProfile.resolvableProfile((original != null ? original : victim).getPlayerProfile());
+        rockets = (int) cfg("elytra-rockets", 16);
+        apples = (int) cfg("golden-apples", 3);
+        eatingTicks = 0;
+        absorb = 0;
         maxHp = cfg("health", 600);
         hp = maxHp;
         healsUsed = 0;
@@ -301,7 +326,8 @@ public final class GhostManager implements Listener {
             }
             EntityEquipment eq = m.getEquipment();
             eq.setHelmet(trimmed(Material.NETHERITE_HELMET));
-            eq.setChestplate(trimmed(Material.NETHERITE_CHESTPLATE));
+            eq.setChestplate(plugin.getConfig().getBoolean("doppelganger.elytra", false)
+                    ? new ItemStack(Material.ELYTRA) : trimmed(Material.NETHERITE_CHESTPLATE));
             eq.setLeggings(trimmed(Material.NETHERITE_LEGGINGS));
             eq.setBoots(trimmed(Material.NETHERITE_BOOTS));
             eq.setItemInMainHand(handItem(stolen));
@@ -397,7 +423,9 @@ public final class GhostManager implements Listener {
             return;
         }
         Location me = body.getLocation();
-        if (me.getY() < me.getWorld().getMinHeight() + 2 || victim.getWorld() != me.getWorld()) {
+        if (me.getY() < me.getWorld().getMinHeight() + 2 || victim.getWorld() != me.getWorld()
+                || me.distanceSquared(victim.getLocation()) > Math.pow(cfg("teleport-distance", 60), 2)) {
+            stopGliding();
             blink(victim);
             return;
         }
@@ -412,8 +440,14 @@ public final class GhostManager implements Listener {
         float pitch = (float) -Math.toDegrees(Math.atan2(to.getY(), Math.hypot(to.getX(), to.getZ())));
         body.setRotation(yaw, pitch);
         body.setBodyYaw(yaw);
-        // walk / sprint / jump
-        if (dist > 2.2 && now >= flyingUntil) {
+        // low on health: eats a golden apple (backs off while eating)
+        if (eat(victim, to, now)) {
+            // eating
+        } else if (glide(victim, dist, now)) {
+            // flying, nothing else moves it
+        } else if (digTick(victim, to, dist)) {
+            // digging through a wall
+        } else if (dist > 2.2 && now >= flyingUntil) {
             Vector flat = to.clone().setY(0);
             if (flat.lengthSquared() > 1.0E-4) {
                 flat.normalize();
@@ -438,15 +472,6 @@ public final class GhostManager implements Listener {
                 if (grounded) {
                     vy = 0.5;
                 }
-                if (blockedTicks > 8) {
-                    // the jump didn't work: just step up onto the block
-                    blockedTicks = 0;
-                    Location up = ahead.getLocation().add(0.5, 1, 0.5);
-                    up.setYaw(me.getYaw());
-                    up.setPitch(me.getPitch());
-                    body.teleport(up);
-                    return;
-                }
             } else {
                 blockedTicks = 0;
             }
@@ -463,11 +488,18 @@ public final class GhostManager implements Listener {
                 stuckTicks = 0;
             }
             lastPos = me.clone();
-            if (stuckTicks >= 2 || dist > 60) {
+            if (digBlock != null) {
+                stuckTicks = 0;                                 // digging is progress
+            }
+            if (stuckTicks >= 4) {
+                // couldn't walk, jump or dig there for ~12 s (e.g. a protected block): last resort
                 stuckTicks = 0;
                 blink(victim);
                 return;
             }
+        }
+        if (eatingTicks > 0) {
+            return;                                             // no attacks while eating
         }
         // melee
         if (attackCooldown > 0) {
@@ -497,10 +529,6 @@ public final class GhostManager implements Listener {
         if (now >= nextAbilityAt) {
             nextAbilityAt = now + (long) (cfg("ability-seconds", 5) * 1000);
             ability(victim, dist);
-        }
-        if (now >= nextBlinkAt && dist > 10) {
-            nextBlinkAt = now + 15000;
-            blinkBehind(victim);
         }
         if (now >= nextChatAt) {
             nextChatAt = now + ThreadLocalRandom.current().nextLong(40_000, 90_000);
@@ -585,8 +613,6 @@ public final class GhostManager implements Listener {
                 arrow.getPersistentDataContainer().set(ghostKey, PersistentDataType.BYTE, (byte) 1);
             }
             w.playSound(eye, Sound.ITEM_CROSSBOW_SHOOT, 1.5f, 0.7f);
-        } else {
-            blinkBehind(victim);
         }
     }
 
@@ -623,6 +649,309 @@ public final class GhostManager implements Listener {
         w.spawnParticle(Particle.GUST_EMITTER_SMALL, at, 1, 0, 0, 0, 0);
         w.playSound(at, Sound.ENTITY_WIND_CHARGE_WIND_BURST, 1f, 1f);
         body.swingOffHand();
+    }
+
+    // ================================================================ golden apples
+
+    /** Returns true while it is eating (it backs away slowly and doesn't attack). */
+    private boolean eat(Player victim, Vector to, long now) {
+        if (eatingTicks > 0) {
+            eatingTicks--;
+            Location me = body.getLocation();
+            Vector away = to.clone().setY(0);
+            if (away.lengthSquared() > 1.0E-4) {
+                away.normalize().multiply(-0.12);
+            }
+            body.setVelocity(new Vector(away.getX(), Math.min(0, body.getVelocity().getY()), away.getZ()));
+            if (eatingTicks % 4 == 0) {
+                me.getWorld().playSound(me, Sound.ENTITY_GENERIC_EAT, 1f, 0.8f + ThreadLocalRandom.current().nextFloat() * 0.4f);
+                me.getWorld().spawnParticle(Particle.ITEM, body.getEyeLocation().add(body.getLocation().getDirection().multiply(0.3)),
+                        5, 0.1, 0.1, 0.1, 0.05, new ItemStack(Material.GOLDEN_APPLE));
+                body.swingMainHand();
+            }
+            if (eatingTicks == 0) {
+                hp = Math.min(maxHp, hp + maxHp * cfg("golden-apple-heal-percent", 12) / 100.0);
+                absorb = maxHp * cfg("golden-apple-absorption-percent", 5) / 100.0;
+                me.getWorld().playSound(me, Sound.ENTITY_PLAYER_BURP, 1f, 0.9f);
+                me.getWorld().spawnParticle(Particle.HEART, me.clone().add(0, 2.1, 0), 3, 0.3, 0.2, 0.3, 0);
+                if (eatSwap != null) {
+                    body.getEquipment().setItemInMainHand(eatSwap);
+                    eatSwap = null;
+                }
+                nextEatAt = now + (long) (cfg("golden-apple-cooldown", 8) * 1000);
+            }
+            return true;
+        }
+        if (apples > 0 && now >= nextEatAt && hp < maxHp * cfg("eat-below-percent", 40) / 100.0
+                && digBlock == null && !gliding) {
+            apples--;
+            eatingTicks = 32;                                   // 1.6 s, like a player
+            eatSwap = body.getEquipment().getItemInMainHand();
+            body.getEquipment().setItemInMainHand(new ItemStack(Material.GOLDEN_APPLE, Math.max(1, apples + 1)));
+            return true;
+        }
+        return false;
+    }
+
+    // ================================================================ digging
+
+    private boolean diggable(Block b) {
+        if (b.isEmpty() || b.isLiquid() || b.isPassable()) {
+            return false;
+        }
+        Material m = b.getType();
+        if (m.getHardness() < 0 || plugin.getConfig().getStringList("doppelganger.dig-never").contains(m.name())) {
+            return false;
+        }
+        if (b.getState() instanceof org.bukkit.block.TileState) {
+            return false;                                  // chests, furnaces, signs, spawners... never
+        }
+        var data = b.getBlockData();
+        return !(data instanceof org.bukkit.block.data.Bisected) && !(data instanceof org.bukkit.block.data.type.Bed);
+    }
+
+    /** The next block in its way to the victim, or null. */
+    private Block nextObstacle(Vector to, double dist) {
+        Location me = body.getLocation();
+        Vector flat = to.clone().setY(0);
+        double horiz = flat.length();
+        Block feet = me.getBlock();
+        if (to.getY() < -1.5 && horiz < 2.5) {
+            Block below = feet.getRelative(0, -1, 0);
+            return diggable(below) ? below : null;
+        }
+        if (to.getY() > 2 && horiz < 2.5) {
+            Block above = feet.getRelative(0, 2, 0);
+            return diggable(above) ? above : null;
+        }
+        if (horiz < 1.0E-3) {
+            return null;
+        }
+        flat.normalize();
+        Block ahead = me.clone().add(flat.clone().multiply(0.8)).getBlock();
+        Block aheadHead = ahead.getRelative(0, 1, 0);
+        // a single step is jumped, not dug
+        if (ahead.getType().isSolid() && aheadHead.isPassable() && ahead.getRelative(0, 2, 0).isPassable()) {
+            return null;
+        }
+        if (diggable(aheadHead) && aheadHead.getType().isSolid()) {
+            return aheadHead;
+        }
+        if (diggable(ahead) && ahead.getType().isSolid()) {
+            return ahead;
+        }
+        return null;
+    }
+
+    /** Digs through whatever is in the way. Returns true while digging (it doesn't walk then). */
+    private boolean digTick(Player victim, Vector to, double dist) {
+        if (!plugin.getConfig().getBoolean("doppelganger.dig", true) || dist < 1.5) {
+            stopDigging();
+            return false;
+        }
+        Block next = nextObstacle(to, dist);
+        if (next == null) {
+            stopDigging();
+            return false;
+        }
+        if (!next.equals(digBlock)) {
+            digBlock = next;
+            digProgress = 0;
+            float hardness = next.getType().getHardness();
+            digNeeded = (int) Math.max(4, Math.min(60, (4 + hardness * 6) * cfg("dig-time-multiplier", 1.0)));
+            if (weapon == null) {
+                weapon = body.getEquipment().getItemInMainHand();
+                body.getEquipment().setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
+            }
+        }
+        body.setVelocity(new Vector(0, Math.min(0, body.getVelocity().getY()), 0));
+        digProgress++;
+        Location loc = next.getLocation();
+        float stage = Math.min(0.99f, (float) digProgress / digNeeded);
+        for (Player p : next.getWorld().getPlayers()) {
+            if (p.getLocation().distanceSquared(loc) < 48 * 48) {
+                p.sendBlockDamage(loc, stage, body);
+            }
+        }
+        if (digProgress % 4 == 0) {
+            body.swingMainHand();
+            next.getWorld().playSound(loc, next.getBlockSoundGroup().getHitSound(), 0.8f, 0.8f);
+        }
+        if (digProgress >= digNeeded) {
+            Location key = loc.clone();
+            if (!dug.containsKey(key)) {
+                dug.put(key, next.getBlockData().getAsString());
+                dugAt.put(key, System.currentTimeMillis());
+                saveDug();
+            }
+            next.getWorld().spawnParticle(Particle.BLOCK, loc.clone().add(0.5, 0.5, 0.5), 25, 0.3, 0.3, 0.3, 0,
+                    next.getBlockData());
+            next.getWorld().playSound(loc, next.getBlockSoundGroup().getBreakSound(), 1f, 0.8f);
+            next.setType(Material.AIR, false);
+            digBlock = null;
+        }
+        return true;
+    }
+
+    private void stopDigging() {
+        if (digBlock != null) {
+            for (Player p : digBlock.getWorld().getPlayers()) {
+                p.sendBlockDamage(digBlock.getLocation(), 0f, body);
+            }
+        }
+        digBlock = null;
+        if (weapon != null && active()) {
+            body.getEquipment().setItemInMainHand(weapon);
+        }
+        weapon = null;
+    }
+
+    private void saveDug() {
+        List<String> list = new ArrayList<>();
+        dug.forEach((loc, d) -> list.add(loc.getWorld().getName() + ";" + loc.getBlockX() + ";" + loc.getBlockY() + ";"
+                + loc.getBlockZ() + ";" + d));
+        data.set("dug", list);
+        save();
+    }
+
+    /** Puts dug blocks back: after dig-restore-seconds, or all of them when it leaves (force). */
+    private void restoreDug(boolean force) {
+        if (dug.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        long wait = (long) (cfg("dig-restore-seconds", 60) * 1000);
+        boolean changed = false;
+        for (Iterator<Map.Entry<Location, String>> it = dug.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<Location, String> e = it.next();
+            Location loc = e.getKey();
+            if (!force && now - dugAt.getOrDefault(loc, 0L) < wait) {
+                continue;
+            }
+            if (!loc.isChunkLoaded() && !force) {
+                continue;
+            }
+            org.bukkit.util.BoundingBox box = org.bukkit.util.BoundingBox.of(loc.getBlock());
+            boolean occupied = !loc.getWorld().getNearbyEntities(box, en -> en instanceof org.bukkit.entity.LivingEntity).isEmpty();
+            if (occupied && !force) {
+                continue;
+            }
+            try {
+                Block b = loc.getBlock();
+                if (b.isEmpty() || b.isPassable()) {
+                    b.setBlockData(Bukkit.createBlockData(e.getValue()), false);
+                    loc.getWorld().spawnParticle(Particle.DUST, loc.clone().add(0.5, 0.5, 0.5), 6, 0.3, 0.3, 0.3, 0, BLACK);
+                }
+            } catch (IllegalArgumentException ex) {
+                plugin.getLogger().warning("Could not restore a block at " + loc + ": " + ex.getMessage());
+            }
+            if (occupied) {
+                for (org.bukkit.entity.Entity en : loc.getWorld().getNearbyEntities(box)) {
+                    en.teleport(en.getLocation().add(0, 1.1, 0));    // don't bury anyone
+                }
+            }
+            it.remove();
+            dugAt.remove(loc);
+            changed = true;
+        }
+        if (changed) {
+            saveDug();
+        }
+    }
+
+    /** After a crash: put back blocks that were still dug out. */
+    private void loadDug() {
+        for (String line : data.getStringList("dug")) {
+            String[] p = line.split(";", 5);
+            if (p.length < 5 || Bukkit.getWorld(p[0]) == null) {
+                continue;
+            }
+            Location loc = new Location(Bukkit.getWorld(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2]), Integer.parseInt(p[3]));
+            dug.put(loc, p[4]);
+            dugAt.put(loc, 0L);
+        }
+    }
+
+    // ================================================================ elytra
+
+    /**
+     * With "elytra: true" it flies after victims that are far away, like a player: a wind charge to take off,
+     * then firework rockets for speed. Without rockets left it only glides. Returns true while flying.
+     */
+    private boolean glide(Player victim, double dist, long now) {
+        if (!plugin.getConfig().getBoolean("doppelganger.elytra", false)) {
+            return false;
+        }
+        Location me = body.getLocation();
+        boolean grounded = body.isOnGround() || me.clone().add(0, -0.05, 0).getBlock().getType().isSolid();
+        if (gliding) {
+            if (dist < 5 || grounded && now > flyingUntil) {
+                stopGliding();
+                return false;
+            }
+            Vector aim = victim.getLocation().add(0, 2, 0).toVector().subtract(me.toVector()).normalize();
+            if (rockets > 0 && now >= nextRocketAt && dist > 10) {
+                rockets--;
+                nextRocketAt = now + 1500;
+                boostUntil = now + 1100;
+                fireRocket();
+            }
+            Vector v = body.getVelocity();
+            Vector want;
+            if (now < boostUntil) {
+                want = aim.multiply(cfg("elytra-speed", 1.6));                      // rocket boost
+            } else {
+                // plain gliding: keeps its speed, turns slowly, sinks a little
+                double speed = Math.max(0.6, v.length() * 0.99);
+                want = v.clone().normalize().multiply(0.8).add(aim.clone().multiply(0.2)).normalize().multiply(speed);
+                want.setY(Math.min(want.getY(), -0.08));
+            }
+            body.setVelocity(v.multiply(0.6).add(want.multiply(0.4)));
+            body.setGliding(true);
+            return true;
+        }
+        if (dist > cfg("elytra-distance", 25) && grounded && now >= nextWindAt && (rockets > 0 || dist < 45)) {
+            burst(me);
+            body.setVelocity(new Vector(0, 1.5, 0));
+            nextWindAt = now + 4000;
+            flyingUntil = now + 1500;
+            nextRocketAt = now + 700;
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (active()) {
+                    gliding = true;
+                    body.setGliding(true);
+                    body.getEquipment().setItemInOffHand(new ItemStack(Material.FIREWORK_ROCKET, Math.max(1, rockets)));
+                }
+            }, 10L);
+            return true;
+        }
+        return false;
+    }
+
+    /** A real (harmless) firework rocket on its back, like a player boosting. */
+    private void fireRocket() {
+        Location at = body.getLocation();
+        body.swingOffHand();
+        at.getWorld().spawn(at, org.bukkit.entity.Firework.class, f -> {
+            f.setAttachedTo(body);
+            f.setTicksToDetonate(20);
+            f.setSilent(false);
+            f.getPersistentDataContainer().set(ghostKey, PersistentDataType.BYTE, (byte) 1);
+        });
+        at.getWorld().playSound(at, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1.5f, 1f);
+        ItemStack off = body.getEquipment().getItemInOffHand();
+        if (off.getType() == Material.FIREWORK_ROCKET) {
+            off.setAmount(Math.max(1, rockets));
+            body.getEquipment().setItemInOffHand(rockets > 0 ? off : new ItemStack(Material.WIND_CHARGE, 16));
+        }
+    }
+
+    private void stopGliding() {
+        if (gliding && active()) {
+            body.setGliding(false);
+            body.getEquipment().setItemInOffHand(new ItemStack(Material.WIND_CHARGE, 16));
+        }
+        gliding = false;
     }
 
     /** Teleport right behind the victim. */
@@ -682,7 +1011,9 @@ public final class GhostManager implements Listener {
             return;
         }
         double amount = Math.max(0, event.getFinalDamage()) * cfg("damage-taken-multiplier", 0.6);
-        hp -= amount;
+        double soaked = Math.min(absorb, amount);          // golden apple absorption goes first
+        absorb -= soaked;
+        hp -= amount - soaked;
         damage.merge(attacker.getUniqueId(), amount, Double::sum);
         body.playHurtAnimation(0);
         body.getWorld().playSound(body.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 0.6f);
@@ -697,14 +1028,6 @@ public final class GhostManager implements Listener {
             body.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 60, 0, false, false));
             glitchFx(body.getLocation());
             chat(healsUsed == 1 ? "that hurt. do it again." : "you can't kill what you made");
-            Player victim = Bukkit.getPlayer(target);
-            if (victim != null) {
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    if (active() && victim.isOnline()) {
-                        blinkBehind(victim);
-                    }
-                }, 60L);
-            }
         }
     }
 
@@ -835,6 +1158,10 @@ public final class GhostManager implements Listener {
 
     /** It "leaves the game". */
     public void leave(boolean message) {
+        eatingTicks = 0;
+        eatSwap = null;
+        stopDigging();
+        stopGliding();
         if (body != null && body.isValid()) {
             glitchFx(body.getLocation());
             body.remove();

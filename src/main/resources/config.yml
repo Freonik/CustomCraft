@@ -1182,9 +1182,32 @@ doppelganger:
   arrow-damage: 3
   ability-seconds: 5
   speed: 0.3
+  # Below eat-below-percent health it backs off and eats a golden apple (1.6 s): heals and gives
+  # absorption. golden-apples = how many it carries per visit.
+  golden-apples: 3
+  eat-below-percent: 40
+  golden-apple-heal-percent: 12
+  golden-apple-absorption-percent: 5
+  golden-apple-cooldown: 8
   # It carries wind charges: jumps up to you, chases you when you run, or blows you away
   wind-charges: true
   wind-charge-seconds: 4
+  # It digs through walls to get to you (no drops). Dug blocks are put back after dig-restore-seconds,
+  # and all of them once it's gone, so nothing stays broken. Chests, furnaces, signs and other
+  # block entities, doors, beds and unbreakable blocks are never dug, nor anything in dig-never.
+  dig: true
+  dig-time-multiplier: 1.0
+  dig-restore-seconds: 60
+  dig-never: [OBSIDIAN, CRYING_OBSIDIAN, RESPAWN_ANCHOR, DIAMOND_BLOCK, EMERALD_BLOCK, NETHERITE_BLOCK, GOLD_BLOCK, ANCIENT_DEBRIS, REINFORCED_DEEPSLATE, BUDDING_AMETHYST]
+  # It only teleports when you're in another dimension or this far away (elytra, trident...)
+  teleport-distance: 60
+  # Wears an elytra instead of the chestplate and flies after you when you're far away. Strong!
+  # Takes off with a wind charge and boosts with firework rockets (elytra-rockets per visit);
+  # with no rockets left it only glides.
+  elytra: false
+  elytra-distance: 25
+  elytra-rockets: 16
+  elytra-speed: 1.6
   # It leaves after this long if nobody wins
   hunt-minutes: 30
   steal-legend: true
