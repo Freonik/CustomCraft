@@ -1,0 +1,31 @@
+name: Forgebound
+version: '${project.version}'
+main: cz.forgebound.Forgebound
+bootstrapper: cz.forgebound.ForgeboundBootstrap
+api-version: '1.21.11'
+description: Legendary one-of-a-kind weapons and relics with abilities, legendary materials and forge rituals
+authors: [ filip ]
+load: POSTWORLD
+
+# Commands are registered in code (Brigadier), so they have suggestions and argument checks in the chat.
+dependencies:
+  server:
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    TAB:
+      load: BEFORE
+      required: false
+      join-classpath: false
+
+permissions:
+  forgebound.use:
+    description: Use the forge at a crafting table and open mystery crates
+    default: true
+  forgebound.nocooldown:
+    description: Weapon abilities without cooldowns (for testing)
+    default: false
+  forgebound.admin:
+    description: /forge reload, give, status, release, finish and the other admin tools
+    default: op

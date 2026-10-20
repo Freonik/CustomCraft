@@ -4,10 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -26,7 +23,7 @@ import java.util.UUID;
  * Leaderboards (/top) and the records they need (Wardens slain, Rifts closed, Legend Hunts survived).
  * The lists are rebuilt every minute and are also available as placeholders for holograms.
  */
-public final class TopManager implements CommandExecutor, TabCompleter {
+public final class TopManager {
 
     /** category -> display name */
     public static final Map<String, String> CATEGORIES = new LinkedHashMap<>();
@@ -136,8 +133,7 @@ public final class TopManager implements CommandExecutor, TabCompleter {
         return value == Math.floor(value) ? String.valueOf((long) value) : String.format(Locale.ROOT, "%.0f", value);
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         if (!plugin.getConfig().getBoolean("top.enabled", true)) {
             sender.sendMessage(plugin.msg("top-disabled", "&7Leaderboards are turned off on this server."));
             return true;
@@ -175,11 +171,4 @@ public final class TopManager implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length == 1) {
-            return CATEGORIES.keySet().stream().filter(c -> c.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
-        }
-        return List.of();
-    }
 }

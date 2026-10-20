@@ -4,10 +4,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -35,7 +31,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * The token economy: /shop with fixed offers and a weekly rotating offer, and /pay to send Bounty Tokens to others.
  * Everything can be switched off with economy.enabled: false.
  */
-public final class ShopManager implements Listener, CommandExecutor, TabCompleter {
+public final class ShopManager implements Listener {
 
     private static final int[] PERMANENT_SLOTS = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
     private static final int[] ROTATING_SLOTS = {37, 38, 39, 40, 41, 42, 43};
@@ -340,34 +336,68 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         if (offer == null || !enabled()) {
             return;
         }
-        // the offer may have rotated away while the menu was open
-        if (offer.rotating() && rotatingNow().stream().noneMatch(o -> o.id.equals(offer.id))
-                || offer.market() && (plugin.events() == null || !plugin.events().marketOpen())) {
+        if (!stillOnSale(offer)) {
             open(player);
             return;
         }
-        String path = boughtPath(player, offer);
+        int from = plugin.getConfig().getInt("dialogs.shop-confirm-from", 5);
+        if (Dialogs.on(plugin, "shop-confirm") && offer.price >= from && canBuy(player, offer)) {
+            player.closeInventory();
+            Dialogs.confirm(plugin, player, "&6&lBuy this?",
+                    List.of(Dialogs.item(display(offer)),
+                            Dialogs.text("&7Price: &6" + offer.price + " Bounty Tokens &8(you have "
+                                    + plugin.bounty().countTokens(player) + ")")),
+                    "&a&lBuy", "&7Cancel", () -> {
+                        buy(player, offer);
+                        open(player);
+                    });
+            return;
+        }
+        buy(player, offer);
+        open(player);
+    }
+
+    /** The offer may have rotated away / the market may have closed while the menu or dialog was open. */
+    private boolean stillOnSale(Offer offer) {
+        return !(offer.rotating() && rotatingNow().stream().noneMatch(o -> o.id.equals(offer.id))
+                || offer.market() && (plugin.events() == null || !plugin.events().marketOpen()));
+    }
+
+    /** Limit and price check, with a message when it fails. */
+    private boolean canBuy(Player player, Offer offer) {
         if (offer.limit > 0 && bought(player, offer) >= offer.limit) {
             player.sendMessage(plugin.msg("shop-limit", "&cYou've reached the limit for this offer ({limit}x).",
                     "limit", String.valueOf(offer.limit)));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+            return false;
+        }
+        if (plugin.bounty().countTokens(player) < offer.price) {
+            player.sendMessage(plugin.msg("bounty-not-enough", "&cYou need &6{price} Bounty Tokens&c.",
+                    "price", String.valueOf(offer.price)));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
+            return false;
+        }
+        return true;
+    }
+
+    private void buy(Player player, Offer offer) {
+        if (!enabled() || !stillOnSale(offer) || !canBuy(player, offer)) {
             return;
         }
         if (!plugin.bounty().takeTokens(player, offer.price)) {
             player.sendMessage(plugin.msg("bounty-not-enough", "&cYou need &6{price} Bounty Tokens&c.",
                     "price", String.valueOf(offer.price)));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.7f, 1f);
             return;
         }
         if (offer.market()) {
             marketBought.merge(player.getUniqueId() + "|" + offer.id, 1, Integer::sum);
         } else if (offer.limit > 0) {
+            String path = boughtPath(player, offer);
             data.set(path, data.getInt(path, 0) + 1);
             save();
         }
         deliver(player, offer);
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1.2f);
-        open(player);
     }
 
     @EventHandler
@@ -379,43 +409,77 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
 
     // ================================================================ commands
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(plugin.msg("player-only", "&cOnly players can use this command."));
-            return true;
+    /** /pay with no arguments: a window to pick the player and the amount. */
+    public void payDialog(Player player) {
+        if (!payAllowed(player)) {
+            return;
         }
-        if (command.getName().equalsIgnoreCase("shop")) {
-            open(player);
-            return true;
+        List<io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput.OptionEntry> names = new ArrayList<>();
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            if (!other.equals(player)) {
+                names.add(io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput.OptionEntry.create(
+                        other.getName(), Component.text(other.getName()), names.isEmpty()));
+            }
         }
-        // /pay <player> <amount>
+        int tokens = plugin.bounty().countTokens(player);
+        if (names.isEmpty() || tokens <= 0 || !Dialogs.on(plugin, "pay")) {
+            player.sendMessage(names.isEmpty() ? plugin.msg("pay-no-player", "&cThat player isn't online.")
+                    : tokens <= 0 ? plugin.msg("bounty-not-enough", "&cYou need &6{price} Bounty Tokens&c.", "price", "1")
+                    : plugin.msg("pay-usage", "&7Usage: &e/pay <player> <amount>"));
+            return;
+        }
+        int max = Math.max(2, Math.min(tokens, 640));
+        var who = io.papermc.paper.registry.data.dialog.input.DialogInput
+                .singleOption("player", ItemManager.color("&7Player"), names).width(200).build();
+        var amount = io.papermc.paper.registry.data.dialog.input.DialogInput
+                .numberRange("amount", ItemManager.color("&7Tokens"), 1, max).step(1f).initial(1f).width(200).build();
+        var send = Dialogs.button(ItemManager.color("&a&lSend"), null, Dialogs.action(plugin, (p, view) -> {
+            Player target = view.getText("player") == null ? null : Bukkit.getPlayerExact(view.getText("player"));
+            Float n = view.getFloat("amount");
+            pay(p, target, n == null ? 0 : Math.round(n), true);
+        }));
+        Dialogs.form(player, "&6&lSend Bounty Tokens",
+                List.of(Dialogs.text("&7You have &6" + tokens + " &7tokens.")),
+                List.of(who, amount), List.of(send), "&7Cancel", 1);
+    }
+
+    private boolean payAllowed(Player player) {
         if (!enabled() || !plugin.getConfig().getBoolean("economy.pay", true)) {
             player.sendMessage(plugin.msg("economy-disabled", "&7The token economy is turned off on this server."));
-            return true;
+            return false;
         }
-        if (args.length < 2) {
-            player.sendMessage(plugin.msg("pay-usage", "&7Usage: &e/pay <player> <amount>"));
-            return true;
+        return true;
+    }
+
+    /**
+     * /pay player amount. Big amounts ask for a confirmation first (dialogs.pay-confirm-from),
+     * unless "confirmed" is already true.
+     */
+    public void pay(Player player, Player target, int amount, boolean confirmed) {
+        if (!payAllowed(player)) {
+            return;
         }
-        Player target = Bukkit.getPlayerExact(args[0]);
-        int amount;
-        try {
-            amount = Integer.parseInt(args[1]);
-        } catch (NumberFormatException ex) {
-            amount = 0;
-        }
-        if (target == null || target.equals(player)) {
+        if (target == null || target.equals(player) || !target.isOnline()) {
             player.sendMessage(plugin.msg("pay-no-player", "&cThat player isn't online."));
-            return true;
+            return;
         }
         if (amount <= 0) {
             player.sendMessage(plugin.msg("pay-usage", "&7Usage: &e/pay <player> <amount>"));
-            return true;
+            return;
+        }
+        if (plugin.bounty().countTokens(player) < amount) {
+            player.sendMessage(plugin.msg("bounty-not-enough", "&cYou need &6{price} Bounty Tokens&c.", "price", String.valueOf(amount)));
+            return;
+        }
+        if (!confirmed && Dialogs.on(plugin, "pay-confirm") && amount >= plugin.getConfig().getInt("dialogs.pay-confirm-from", 10)) {
+            Dialogs.confirm(plugin, player, "&6&lSend tokens?",
+                    List.of(Dialogs.text("&7Send &6" + amount + " Bounty Tokens &7to &f" + target.getName() + "&7?")),
+                    "&a&lSend", "&7Cancel", () -> pay(player, target, amount, true));
+            return;
         }
         if (!plugin.bounty().takeTokens(player, amount)) {
             player.sendMessage(plugin.msg("bounty-not-enough", "&cYou need &6{price} Bounty Tokens&c.", "price", String.valueOf(amount)));
-            return true;
+            return;
         }
         int left = amount;
         while (left > 0) {
@@ -428,19 +492,5 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         target.sendMessage(plugin.msg("pay-received", "&aYou received &6{amount} Bounty Tokens &afrom &f{player}&a.",
                 "amount", String.valueOf(amount), "player", player.getName()));
         target.playSound(target.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
-        return true;
-    }
-
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("pay") && args.length == 1) {
-            String prefix = args[0].toLowerCase(Locale.ROOT);
-            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
-                    .filter(n -> n.toLowerCase(Locale.ROOT).startsWith(prefix)).toList();
-        }
-        if (command.getName().equalsIgnoreCase("pay") && args.length == 2) {
-            return List.of("1", "5", "10");
-        }
-        return List.of();
     }
 }

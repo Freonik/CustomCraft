@@ -2,7 +2,6 @@ package cz.forgebound;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -33,6 +32,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private TeamManager teams;
     private Placeholders placeholders;
     private HudManager hud;
+    private EnchantManager enchants;
     private boolean papi;
 
     /** Writes data files one after another in the background, so saving never stalls the server. */
@@ -132,10 +132,6 @@ public final class Forgebound extends JavaPlugin implements Listener {
         legends = new LegendManager(this, items);
         getServer().getPluginManager().registerEvents(legends, this);
         legends.start();
-        PluginCommand legendsCommand = getCommand("legends");
-        if (legendsCommand != null) {
-            legendsCommand.setExecutor(legends);
-        }
         advancements = new AdvancementManager(this, items);
         getServer().getPluginManager().registerEvents(advancements, this);
         advancements.register();
@@ -143,19 +139,8 @@ public final class Forgebound extends JavaPlugin implements Listener {
         bounty = new BountyManager(this, items);
         getServer().getPluginManager().registerEvents(bounty, this);
         bounty.start();
-        PluginCommand bountyCommand = getCommand("bounty");
-        if (bountyCommand != null) {
-            bountyCommand.setExecutor(bounty);
-        }
         shop = new ShopManager(this);
         getServer().getPluginManager().registerEvents(shop, this);
-        for (String name : new String[] {"shop", "pay"}) {
-            PluginCommand c = getCommand(name);
-            if (c != null) {
-                c.setExecutor(shop);
-                c.setTabCompleter(shop);
-            }
-        }
         warden = new WardenManager(this);
         getServer().getPluginManager().registerEvents(warden, this);
         warden.start();
@@ -171,10 +156,6 @@ public final class Forgebound extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(events, this);
         getServer().getPluginManager().registerEvents(rift, this);
         events.start();
-        PluginCommand eventsCommand = getCommand("events");
-        if (eventsCommand != null) {
-            eventsCommand.setExecutor(events);
-        }
 
         teams = new TeamManager(this);
         recon = new ReconManager(this);
@@ -193,20 +174,6 @@ public final class Forgebound extends JavaPlugin implements Listener {
         hud.start();
         codex = new CodexManager(this);
         getServer().getPluginManager().registerEvents(codex, this);
-        for (String[] c : new String[][] {{"top"}, {"codex"}, {"hud"}}) {
-            PluginCommand pc = getCommand(c[0]);
-            if (pc == null) {
-                continue;
-            }
-            switch (c[0]) {
-                case "top" -> {
-                    pc.setExecutor(top);
-                    pc.setTabCompleter(top);
-                }
-                case "codex" -> pc.setExecutor(codex);
-                default -> pc.setExecutor(hud);
-            }
-        }
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             try {
                 papi = new PapiExpansion(this).register();
@@ -216,12 +183,12 @@ public final class Forgebound extends JavaPlugin implements Listener {
             }
         }
 
+        enchants = new EnchantManager(this);
+        getServer().getPluginManager().registerEvents(enchants, this);
+        getServer().getPluginManager().registerEvents(new ItemComponents(this), this);
+
         RecipesCommand command = new RecipesCommand(this, items, rituals, data);
-        PluginCommand pluginCommand = getCommand("forge");
-        if (pluginCommand != null) {
-            pluginCommand.setExecutor(command);
-            pluginCommand.setTabCompleter(command);
-        }
+        new ForgeCommands(this, command).register();
 
         getLogger().info("Loaded " + items.all(ItemManager.Kind.WEAPON).size() + " weapons, "
                 + items.all(ItemManager.Kind.RELIC).size() + " relics.");
@@ -297,6 +264,14 @@ public final class Forgebound extends JavaPlugin implements Listener {
 
     public CodexManager codex() {
         return codex;
+    }
+
+    public HudManager hud() {
+        return hud;
+    }
+
+    public EnchantManager enchants() {
+        return enchants;
     }
 
     public SeasonManager season() {
@@ -379,7 +354,8 @@ public final class Forgebound extends JavaPlugin implements Listener {
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
-            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon", "teams");
+            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon", "teams",
+            "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

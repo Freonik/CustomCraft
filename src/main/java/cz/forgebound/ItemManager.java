@@ -269,6 +269,7 @@ public final class ItemManager {
         }
         meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, kind.prefix + id);
         stack.setItemMeta(meta);
+        ItemComponents.apply(plugin, stack, kind);
         return stack;
     }
 

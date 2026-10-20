@@ -4,8 +4,6 @@ import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -35,7 +33,7 @@ import java.util.UUID;
  * sidebar and tab list step aside when the TAB plugin is installed (use the placeholders there instead).
  * Players can hide their own sidebar with /hud.
  */
-public final class HudManager implements Listener, CommandExecutor {
+public final class HudManager implements Listener {
 
     private final Forgebound plugin;
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
@@ -205,8 +203,7 @@ public final class HudManager implements Listener, CommandExecutor {
     }
 
     /** /hud: hide or show your own sidebar. */
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player p)) {
             sender.sendMessage(plugin.msg("player-only", "&cOnly players can use this command."));
             return true;

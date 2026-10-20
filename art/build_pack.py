@@ -70,6 +70,16 @@ def shield_model(vanilla_model):
             "display": display}
 wjson(f'{CC}/models/item/stitchguard.json', shield_model('m_shield.json'))
 wjson(f'{CC}/models/item/stitchguard_blocking.json', shield_model('m_shield_blocking.json'))
+# names of Forgebound's enchantments (the server sends English fallbacks, the pack adds translations)
+LANG = {
+    'en_us': {"enchantment.forgebound.forge_touch": "Forge Touch", "enchantment.forgebound.bounty_hunter": "Bounty Hunter"},
+    'cs_cz': {"enchantment.forgebound.forge_touch": "Kovářský dotek", "enchantment.forgebound.bounty_hunter": "Lovec odměn"},
+}
+for code, entries in LANG.items():
+    os.makedirs(f'{CC}/lang', exist_ok=True)
+    with open(f'{CC}/lang/{code}.json', 'w', encoding='utf-8') as f:
+        json.dump(entries, f, indent=2, ensure_ascii=False)
+
 # menu font: background glyphs
 wjson(f'{CC}/font/menu.json', {"providers": [
     {"type": "space", "advances": {"\uf808": -8}},

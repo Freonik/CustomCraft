@@ -1152,6 +1152,7 @@ codex:
     - "&6&lTokens\n\n&0Tokens are the server's money.\n\n&e/shop&0 always has something, and a new offer every week.\n&e/pay&0 sends tokens to a friend."
     - "&6&lEvents\n\n&4Blood Moon&0: tough nights.\n&5Rift&0: waves of monsters.\n&cLegend Hunt&0: a holder is hunted.\n&6Meteor&0, &eGolden Shipment&0, &aHappy Hour&0, &6Forge Market&0.\n\n&e/events&0 shows what's on."
     - "&6&lForge Warden\n\n&0Sneak + right-click a crafting table holding a &lNether Star&r&0 to wake the Warden.\n\nThe best fighter gets a &4Warden's Seal&0: any legendary material."
+    - "&6&lEnchantments\n\n&5Forge Touch&0: pickaxes and shovels drop smelted ores.\n\n&5Bounty Hunter&0: more damage against players with a bounty.\n\n&0Both come from the enchanting table, librarians and loot."
     - "&6&lCommands\n\n&e/legends /bounty\n/shop /pay /events\n/top /hud /codex\n\n&0Good luck, and may your legend outlive you."
 
 # ------------------------------------------------------------
@@ -1416,6 +1417,56 @@ events:
     tokens-max: 3
     # Chance (%) of a legendary material inside
     material-chance: 15
+
+# ------------------------------------------------------------
+#  DIALOGS
+# ------------------------------------------------------------
+# Real windows (1.21.6+ clients) instead of chat hints. false = the old behaviour.
+dialogs:
+  enabled: true
+  # /shop: confirm purchases that cost at least this many tokens
+  shop-confirm: true
+  shop-confirm-from: 5
+  # /pay without arguments opens a window (player + amount)
+  pay: true
+  # /pay of at least this many tokens asks first
+  pay-confirm: true
+  pay-confirm-from: 10
+  # /forge season without arguments: theme + start / preview / cancel
+  season-panel: true
+  # /forge release asks first (shows who owns the legend)
+  release-confirm: true
+
+# ------------------------------------------------------------
+#  ENCHANTMENTS
+# ------------------------------------------------------------
+# Forgebound's own enchantments. They always exist (items that have them stay valid); these switches decide
+# what they do and where they can be found. enchanting-table / villagers / loot need a server restart.
+enchantments:
+  forge-touch:
+    # pickaxes, shovels, axes, hoes: mined blocks drop already smelted (can't be combined with Silk Touch)
+    enabled: true
+    enchanting-table: true
+    villagers: true
+    loot: true
+    # furnace XP for what was smelted
+    xp: true
+    # drops that stay as they are (exact names or wildcards like "*_log")
+    skip: ["*_log", "*_wood", "*_stem", "*_hyphae"]
+  bounty-hunter:
+    # anything that takes Sharpness: +damage against players with a bounty (I-III)
+    enabled: true
+    enchanting-table: true
+    villagers: true
+    loot: true
+    damage-per-level: 0.08
+
+# ------------------------------------------------------------
+#  ITEMS
+# ------------------------------------------------------------
+items:
+  # legendary weapons and relics float in lava and don't burn (like netherite)
+  fireproof-legends: true
 
 # ------------------------------------------------------------
 #  TEAMS

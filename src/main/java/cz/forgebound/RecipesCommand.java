@@ -1,10 +1,7 @@
 package cz.forgebound;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -21,7 +18,7 @@ import java.util.Map;
  * /forge release <id>                  - makes a weapon/relic forgeable again, stops its ritual (admin)
  * /forge finish <weapon>               - finishes a running ritual right now (admin)
  */
-public final class RecipesCommand implements CommandExecutor, TabCompleter {
+public final class RecipesCommand {
 
     private final Forgebound plugin;
     private final ItemManager items;
@@ -35,8 +32,7 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
         this.data = data;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         if (args.length == 0) {
             sender.sendMessage(plugin.msg("forge-open-hint", "&7Shift + right-click a &fcrafting table &7with an empty hand to open the forge."));
             if (sender.hasPermission("forgebound.admin")) {
@@ -59,6 +55,21 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             case "status" -> status(sender);
             case "release" -> {
                 String id = weaponId(sender, args);
+                if (id != null && sender instanceof Player p && Dialogs.on(plugin, "release-confirm")
+                        && data.claim(id) != null && !(args.length > 2 && args[2].equalsIgnoreCase("confirm"))) {
+                    ForgeData.Claim claim = data.claim(id);
+                    ItemManager.Entry entry = items.get(id);
+                    List<io.papermc.paper.registry.data.dialog.body.DialogBody> body = new ArrayList<>();
+                    if (entry != null) {
+                        body.add(Dialogs.item(entry.item));
+                    }
+                    body.add(Dialogs.text("&7Owner: &f" + claim.name() + " &8(" + claim.source() + ")"));
+                    body.add(Dialogs.text("&7It can be forged again and any running ritual stops. "
+                            + "&cThe existing item is not taken away from its owner."));
+                    Dialogs.confirm(plugin, p, "&c&lRelease " + id + "?", body, "&c&lRelease", "&7Cancel",
+                            () -> onCommand(p, new String[] {"release", id, "confirm"}));
+                    return true;
+                }
                 if (id != null) {
                     boolean had = rituals.release(id);
                     if (had && plugin.legends() != null) {
@@ -102,8 +113,14 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                         plugin.season().cancel();
                         sender.sendMessage(ItemManager.color("&7Ceremony cancelled."));
                     }
-                    default -> sender.sendMessage(ItemManager.color(
-                            "&7Usage: &e/forge season <start|preview|cancel> &8(preview = everything but the teleport)"));
+                    default -> {
+                        if (host != null && Dialogs.on(plugin, "season-panel")) {
+                            seasonPanel(host);
+                        } else {
+                            sender.sendMessage(ItemManager.color(
+                                    "&7Usage: &e/forge season <start|preview|cancel> &8(preview = everything but the teleport)"));
+                        }
+                    }
                 }
             }
             case "ghost" -> {
@@ -155,6 +172,43 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             default -> sender.sendMessage(plugin.msg("usage", "&7Usage: &e/forge"));
         }
         return true;
+    }
+
+    /** /forge season without arguments: a window with the theme and the start / preview / cancel buttons. */
+    private void seasonPanel(Player player) {
+        String current = plugin.getConfig().getString("season.theme", "forge").toLowerCase(Locale.ROOT);
+        var themes = List.of(
+                io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput.OptionEntry.create(
+                        "forge", ItemManager.color("&6Forge &7(fire, orange)"), !current.equals("soul")),
+                io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput.OptionEntry.create(
+                        "soul", ItemManager.color("&bSoul &7(soul fire, blue)"), current.equals("soul")));
+        var theme = io.papermc.paper.registry.data.dialog.input.DialogInput
+                .singleOption("theme", ItemManager.color("&7Theme"), themes).width(220).build();
+        java.util.function.BiConsumer<Player, String> run = (p, sub) -> onCommand(p, new String[] {"season", sub});
+        var start = Dialogs.button(ItemManager.color("&6&lStart season"),
+                ItemManager.color("&7The whole ceremony + everyone is teleported to a safe spot"),
+                Dialogs.action(plugin, (p, view) -> {
+                    useTheme(view.getText("theme"));
+                    run.accept(p, "start");
+                }));
+        var preview = Dialogs.button(ItemManager.color("&ePreview"),
+                ItemManager.color("&7Everything but the teleport"),
+                Dialogs.action(plugin, (p, view) -> {
+                    useTheme(view.getText("theme"));
+                    run.accept(p, "preview");
+                }));
+        var cancel = Dialogs.button(ItemManager.color("&cCancel ceremony"), null,
+                Dialogs.action(plugin, (p, view) -> run.accept(p, "cancel")));
+        Dialogs.form(player, "&6&lSeason ceremony",
+                List.of(Dialogs.text("&7Starts in the Overworld only. Players in the Nether or the End stay where they are.")),
+                List.of(theme), List.of(start, preview, cancel), "&7Close", 1);
+    }
+
+    /** Theme picked in the panel - kept until the next reload (the config file isn't rewritten). */
+    private void useTheme(String theme) {
+        if (theme != null && (theme.equals("forge") || theme.equals("soul"))) {
+            plugin.getConfig().set("season.theme", theme);
+        }
     }
 
     private String weaponId(CommandSender sender, String[] args) {
@@ -224,34 +278,6 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                 "amount", amount, "item", ItemManager.nameOf(entry.item), "player", target.getName()));
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        List<String> result = new ArrayList<>();
-        if (!sender.hasPermission("forgebound.admin")) {
-            return result;
-        }
-        if (args.length == 1) {
-            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "recon", "event", "ghost", "season"));
-        } else if (args[0].equalsIgnoreCase("give")) {
-            if (args.length == 2) {
-                Bukkit.getOnlinePlayers().forEach(p -> result.add(p.getName()));
-            } else if (args.length == 3) {
-                result.addAll(items.refs());
-            } else if (args.length == 4) {
-                result.addAll(List.of("1", "8", "16", "64"));
-            }
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("season")) {
-            result.addAll(List.of("start", "preview", "cancel"));
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("event")) {
-            result.addAll(EventManager.names());
-        } else if (args.length == 2 && (args[0].equalsIgnoreCase("release") || args[0].equalsIgnoreCase("finish"))) {
-            items.all(ItemManager.Kind.WEAPON).forEach(w -> result.add(w.id));
-            items.all(ItemManager.Kind.RELIC).forEach(w -> result.add(w.id));
-        }
-        String current = args[args.length - 1].toLowerCase(Locale.ROOT);
-        result.removeIf(s -> !s.toLowerCase(Locale.ROOT).startsWith(current));
-        return result;
-    }
 
     private static int parseInt(String s) {
         try {

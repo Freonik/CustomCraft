@@ -6,8 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -47,7 +45,7 @@ import java.util.function.Consumer;
  * Bounties on legend holders, Bounty Tokens and the token exchange (/bounty),
  * the Legend Tracker compass and the "pick a legendary material" menu.
  */
-public final class BountyManager implements Listener, CommandExecutor {
+public final class BountyManager implements Listener {
 
     private static final int TOKEN_MODEL = 1402;
 
@@ -399,8 +397,7 @@ public final class BountyManager implements Listener, CommandExecutor {
         return Math.max(1, plugin.getConfig().getInt("bounty.exchange." + what, def));
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.msg("player-only", "&cOnly players can use this command."));
             return true;

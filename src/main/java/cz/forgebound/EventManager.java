@@ -14,8 +14,6 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.LivingEntity;
@@ -50,7 +48,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * Big: Blood Moon (a chance every night) and the Rift (see RiftEvent).
  * Small (one at a time): Happy Hour, Forge Market, Golden Shipment.
  */
-public final class EventManager implements Listener, CommandExecutor {
+public final class EventManager implements Listener {
 
     public enum HappyType { XP, LOOT, RITUAL }
 
@@ -882,8 +880,7 @@ public final class EventManager implements Listener, CommandExecutor {
 
     // ================================================================ /events
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         long now = System.currentTimeMillis();
         List<Component> lines = new ArrayList<>();
         if (bloodMoon) {

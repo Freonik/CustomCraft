@@ -7,8 +7,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -44,7 +42,7 @@ import java.util.UUID;
  * is the real one. Abandoned legends (holder offline for too long) return to the forge, personal stats per
  * legend are tracked, and /legends shows the whole server's legends plus your own stats.
  */
-public final class LegendManager implements Listener, CommandExecutor {
+public final class LegendManager implements Listener {
 
     private static final String[] STATS = {"kills", "mob-kills", "damage", "ability-f", "ability-shift-f", "seconds"};
 
@@ -364,8 +362,7 @@ public final class LegendManager implements Listener, CommandExecutor {
         return list;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.msg("player-only", "&cOnly players can use this command."));
             return true;

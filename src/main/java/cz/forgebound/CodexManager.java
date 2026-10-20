@@ -4,8 +4,6 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -27,7 +25,7 @@ import java.util.Set;
  * The Forge Codex: a book that explains the server's systems. New players get it once; /codex opens it any time.
  * The pages live in config.yml (codex.pages), so they can be translated or changed.
  */
-public final class CodexManager implements Listener, CommandExecutor {
+public final class CodexManager implements Listener {
 
     private static final List<String> DEFAULT_PAGES = List.of(
             "&6&l   Forge Codex\n\n&0Every weapon and relic here is a &5legend&0: it exists only &lonce&r&0 on the whole server.\n\n&8Turn the page to learn how to get one.",
@@ -107,8 +105,7 @@ public final class CodexManager implements Listener, CommandExecutor {
     }
 
     /** /codex: opens the book (no item needed). */
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player p)) {
             sender.sendMessage(plugin.msg("player-only", "&cOnly players can use this command."));
             return true;

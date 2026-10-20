@@ -25,6 +25,7 @@
 - [Relics](#relics)
 - [Legendary materials](#legendary-materials)
 - [Legends](#legends)
+- [Enchantments](#enchantments)
 - [Bounties](#bounties)
 - [Token shop](#token-shop)
 - [Events](#events)
@@ -49,6 +50,7 @@
 - **20 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
 - **Forge rituals**: forging takes 15 minutes on a crafting table and the location is revealed step by step
 - **One of each**: every weapon and relic can exist only once per server
+- **Two new enchantments**: Forge Touch (auto-smelting) and Bounty Hunter I–III, straight from the enchanting table
 - **Living legends**: `/legends` shows every legend and your own stats with it; abandoned legends return to the forge
 - **Kill effects**: every legendary weapon has its own finisher
 - **Bounties**: carrying a legend puts a price on your head, paid out in **Bounty Tokens**
@@ -64,6 +66,8 @@
 - **Forge Codex**: a book for new players that explains everything (`/codex`)
 - **Leaderboards**: `/top`, plus placeholders for top-10 holograms (PlaceholderAPI)
 - **Live MOTD**: the server list shows what's happening right now (a Rift, the Blood Moon, a ritual...)
+- **Dialog windows**: confirmations for bigger purchases and payments, a `/pay` form and an admin panel for the season start
+- **Smart commands**: the chat suggests players, items, events and categories while you type
 - **Fully configurable**: numbers, cooldowns, drop chances, ritual length, messages, on/off switches
 
 <p align="center"><img src="docs/weapons.gif" alt="Weapons"></p>
@@ -74,6 +78,7 @@
 
 1. Download `Forgebound.jar` from the [**latest release**](../../releases/latest) (or build it yourself, see below).
 2. Put it into your server's `plugins/` folder and start the server (Paper **1.21.11**, Java **21**).
+   Forgebound is a *Paper plugin*: it doesn't run on Spigot, and it can't be loaded with `/reload` or PlugMan (restart instead).
 3. *(Optional, recommended)* Add the resource pack to `server.properties`. The release notes contain the exact two lines
    to copy (link + SHA1), see [Resource pack](#resource-pack). Then set `menu.resource-pack: true` in
    `plugins/Forgebound/config.yml`.
@@ -323,6 +328,24 @@ Every legendary weapon has its own finisher when it kills: the Echo Blade leaves
 collapses into a tiny black hole, the Rimebreaker shatters its victim like ice, the Trident pulls them into a
 whirlpool... Turn them off with `kill-effects: false`.
 
+### Fireproof
+Legendary weapons and relics don't burn: dropped into lava they float like netherite (`items.fireproof-legends`).
+
+---
+
+## Enchantments
+
+Two real enchantments, found like vanilla ones: in the **enchanting table**, on **librarian books** and in **loot chests**.
+They show up in the item tooltip with their own name (translated with the resource pack).
+
+| Enchantment | Goes on | What it does |
+|---|---|---|
+| **Forge Touch** | pickaxes, shovels, axes, hoes | mined blocks drop already smelted (raw iron → iron ingot, sand → glass...), with the furnace XP. Works with Fortune, not with Silk Touch. Logs stay logs. |
+| **Bounty Hunter I–III** | anything that takes Sharpness (swords, axes...) | +8 % melee damage per level against players who have a **bounty** on their head |
+
+Everything is in the `enchantments` section of the config: switch the effect off, take them out of the enchanting table,
+villager trades or loot (needs a restart), change the bonus per level or the list of drops Forge Touch leaves alone.
+
 ---
 
 ## Bounties
@@ -554,21 +577,25 @@ Teammates:
 | `/hud` | everyone | hide or show your sidebar |
 | `/events` | everyone | which events are running right now |
 | `/shop` | everyone | the token shop (alias `/store`) |
-| `/pay <player> <amount>` | everyone | send Bounty Tokens to another player |
+| `/pay [<player> <amount>]` | everyone | send Bounty Tokens to another player (without arguments: a window to pick the player and the amount) |
 | `/forge status` | `forgebound.admin` | which weapons and relics exist or are being forged (with real names) |
 | `/forge give <player> <weapon:id\|relic:id\|material:id> [amount]` | `forgebound.admin` | give an item (ignores uniqueness) |
-| `/forge release <id>` | `forgebound.admin` | make a weapon or relic forgeable again (stops its ritual) |
+| `/forge release <id>` | `forgebound.admin` | make a weapon or relic forgeable again (stops its ritual); asks for confirmation first |
 | `/forge finish <id>` | `forgebound.admin` | finish a running ritual right now |
 | `/forge reload` | `forgebound.admin` | reload `config.yml` |
 | `/forge meteor` | `forgebound.admin` | drop a meteor now |
 | `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
-| `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport |
+| `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport; without an argument it opens a panel with the theme and the buttons |
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
 | | `forgebound.nocooldown` | abilities and relics without cooldowns (for testing) |
 
 Aliases: `/recipes`, `/recepty`.
+
+All commands suggest their arguments while you type (players, items, legends, events, leaderboard categories).
+Bigger purchases in `/shop`, `/pay` of 10+ tokens and `/forge release` open a confirmation window; the `dialogs`
+section of the config sets the limits or turns the windows off.
 
 ---
 
