@@ -1275,8 +1275,12 @@ season:
   world: ""
   radius-min: 200
   radius-max: 1500
-  # Fall from the sky with slow falling instead of landing on the ground
+  # Players land at least this far from each other (if enough safe spots are found)
+  min-distance-between-players: 100
+  # Fall from the sky with slow falling (until they land) instead of landing on the ground
   drop-from-sky: true
+  # After landing: resistance + fire resistance, and monsters ignore them, for this long (0 = off)
+  protection-seconds: 15
   arrive-title: "&6&lGood luck"
   arrive-subtitle: "&7Forge your legend."
 

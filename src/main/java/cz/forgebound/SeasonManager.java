@@ -32,7 +32,19 @@ import java.util.concurrent.ThreadLocalRandom;
  * Season start ceremony: countdown, "Welcome to ... SMP", effects around the host, a white beam into the sky,
  * then everyone is scattered across the SMP world. /forge season start | preview | cancel
  */
-public final class SeasonManager {
+public final class SeasonManager implements org.bukkit.event.Listener {
+
+    private static final java.util.Set<Material> DANGER = java.util.EnumSet.of(Material.CACTUS, Material.MAGMA_BLOCK,
+            Material.POWDER_SNOW, Material.SWEET_BERRY_BUSH, Material.CAMPFIRE, Material.SOUL_CAMPFIRE, Material.FIRE,
+            Material.SOUL_FIRE, Material.LAVA, Material.POINTED_DRIPSTONE, Material.WITHER_ROSE, Material.BUBBLE_COLUMN);
+
+    /** Safe landing spots, found in the background while the ceremony plays. */
+    private final List<Location> spots = new ArrayList<>();
+    private int spotAttempts;
+    private int spotsWanted;
+    private boolean searching;
+    /** Players who just landed: mobs ignore them for a moment. */
+    private final java.util.Map<java.util.UUID, Long> fresh = new java.util.HashMap<>();
 
     private static final Particle.DustOptions GOLD = new Particle.DustOptions(Color.fromRGB(255, 210, 90), 1.4f);
     private static final Particle.DustOptions WHITE = new Particle.DustOptions(Color.fromRGB(255, 255, 255), 1.6f);
@@ -80,6 +92,7 @@ public final class SeasonManager {
     }
 
     public void cancel() {
+        searching = false;
         if (running != null) {
             running.cancel();
             running = null;
@@ -122,6 +135,9 @@ public final class SeasonManager {
                     p.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, teleportAt + 20, 200, false, false));
                 }
             }
+        }
+        if (teleport) {
+            findSpots(Bukkit.getOnlinePlayers().size() + 5);
         }
         hologram(center, cfg("hologram-countdown", forge() ? "&6The Forge Awakens..." : "&7Hold still..."));
         running = new BukkitRunnable() {
@@ -539,20 +555,107 @@ public final class SeasonManager {
 
     // ================================================================ scatter
 
-    private void scatter() {
+    private World seasonWorld() {
         String name = cfg("world", "");
         World world = name.isEmpty() ? Bukkit.getWorlds().get(0) : Bukkit.getWorld(name);
         if (world == null) {
-            plugin.getLogger().warning("Season: world '" + name + "' doesn't exist, nobody was teleported.");
+            plugin.getLogger().warning("Season: world '" + name + "' doesn't exist, nobody is teleported.");
+            return null;
+        }
+        if (world.getEnvironment() != World.Environment.NORMAL) {
+            plugin.getLogger().warning("Season: '" + world.getName() + "' isn't an overworld (nether/end have no open sky), "
+                    + "nobody is teleported. Set season.world to an overworld.");
+            return null;
+        }
+        return world;
+    }
+
+    /** Starts looking for safe spots; chunks are loaded in the background, one candidate at a time. */
+    private void findSpots(int wanted) {
+        spots.clear();
+        spotAttempts = 0;
+        spotsWanted = wanted;
+        World world = seasonWorld();
+        if (world == null) {
             return;
         }
+        searching = true;
+        nextCandidate(world);
+    }
+
+    private void nextCandidate(World world) {
+        if (!searching || spots.size() >= spotsWanted || spotAttempts >= spotsWanted * 25) {
+            searching = false;
+            return;
+        }
+        spotAttempts++;
         int min = (int) num("radius-min", 200);
         int max = Math.max(min + 1, (int) num("radius-max", 1500));
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        Location spawn = world.getSpawnLocation();
+        double a = r.nextDouble(Math.PI * 2);
+        double d = r.nextDouble(min, max);
+        int x = (int) Math.floor(spawn.getX() + Math.cos(a) * d);
+        int z = (int) Math.floor(spawn.getZ() + Math.sin(a) * d);
+        world.getChunkAtAsync(x >> 4, z >> 4, true, chunk -> {
+            Location ok = check(world, x, z);
+            if (ok != null) {
+                spots.add(ok);
+            }
+            nextCandidate(world);
+        });
+    }
+
+    /** A safe spot at x/z, or null: open sky, solid ground, nothing dangerous close, far enough from others. */
+    private Location check(World world, int x, int z) {
+        Location probe = new Location(world, x + 0.5, 0, z + 0.5);
+        if (!world.getWorldBorder().isInside(probe)) {
+            return null;
+        }
+        Block top = world.getHighestBlockAt(x, z);
+        Material m = top.getType();
+        if (top.isLiquid() || !m.isSolid() || m.name().contains("LEAVES") || DANGER.contains(m)) {
+            return null;
+        }
+        Block feet = top.getRelative(0, 1, 0);
+        if (!feet.isPassable() || !feet.getRelative(0, 1, 0).isPassable() || feet.isLiquid()) {
+            return null;
+        }
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    Block b = top.getRelative(dx, dy, dz);
+                    if (DANGER.contains(b.getType())) {
+                        return null;
+                    }
+                }
+            }
+        }
+        Location at = feet.getLocation().add(0.5, 0, 0.5);
+        double spacing = num("min-distance-between-players", 100);
+        for (Location other : spots) {
+            if (other.distanceSquared(at) < spacing * spacing) {
+                return null;
+            }
+        }
+        return at;
+    }
+
+    private void scatter() {
+        searching = false;
+        World world = seasonWorld();
+        if (world == null) {
+            return;
+        }
         boolean sky = plugin.getConfig().getBoolean("season.drop-from-sky", true);
         Component title = ItemManager.color(cfg("arrive-title", "&6&lGood luck"));
         Component sub = ItemManager.color(cfg("arrive-subtitle", "&7Forge your legend."));
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
-        // a few per tick, so the server doesn't load all chunks at once
+        java.util.Collections.shuffle(players);
+        if (spots.size() < players.size()) {
+            plugin.getLogger().warning("Season: found only " + spots.size() + " safe spots for " + players.size()
+                    + " players; the rest land at the world spawn. Try a bigger radius-max.");
+        }
         new BukkitRunnable() {
             int i;
 
@@ -563,26 +666,71 @@ public final class SeasonManager {
                     if (!p.isOnline()) {
                         continue;
                     }
-                    Location at = EventManager.surface(world, world.getSpawnLocation(), min, max);
-                    if (at == null) {
-                        at = world.getSpawnLocation();
-                    }
+                    Location ground = i < spots.size() ? spots.get(i) : world.getSpawnLocation();
+                    Location at = ground.clone();
                     if (sky) {
-                        Block top = at.getBlock();
-                        at = top.getLocation().add(0.5, Math.min(80, world.getMaxHeight() - top.getY() - 5), 0.5);
-                        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 20 * 20, 0, false, true));
+                        at.add(0, Math.min(80, world.getMaxHeight() - ground.getY() - 5), 0);
+                        // slow falling until they land (removed by land())
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, 20 * 120, 0, false, true));
                     }
-                    p.teleportAsync(at);
+                    p.setFallDistance(0);
+                    p.teleportAsync(at).thenRun(() -> land(p));
+                    p.showTitle(title(title, sub, 10, 50, 20));
+                    p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 0.8f);
                     if (plugin.codex() != null) {
                         plugin.codex().giveIfMissing(p);
                     }
-                    p.showTitle(title(title, sub, 10, 50, 20));
-                    p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 0.8f);
                 }
                 if (i >= players.size()) {
                     cancel();
                 }
             }
         }.runTaskTimer(plugin, 0L, 1L);
+    }
+
+    /** Waits until the player is on the ground, then a short protection. */
+    private void land(Player p) {
+        new BukkitRunnable() {
+            int t;
+
+            @Override
+            public void run() {
+                t++;
+                boolean down = p.isOnGround() || p.isInWater() || p.isGliding();
+                if (!p.isOnline() || down && t > 5 || t > 20 * 120) {
+                    cancel();
+                    if (!p.isOnline()) {
+                        return;
+                    }
+                    p.removePotionEffect(PotionEffectType.SLOW_FALLING);
+                    p.setFallDistance(0);
+                    int secs = (int) num("protection-seconds", 15);
+                    if (secs > 0) {
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, secs * 20, 3, false, true));
+                        p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, secs * 20, 0, false, true));
+                        fresh.put(p.getUniqueId(), System.currentTimeMillis() + secs * 1000L);
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 1L, 1L);
+    }
+
+    /** Mobs leave freshly landed players alone for a few seconds. */
+    @org.bukkit.event.EventHandler(ignoreCancelled = true)
+    public void onTarget(org.bukkit.event.entity.EntityTargetLivingEntityEvent event) {
+        if (!(event.getTarget() instanceof Player p) || fresh.isEmpty()) {
+            return;
+        }
+        Long until = fresh.get(p.getUniqueId());
+        if (until == null) {
+            return;
+        }
+        if (System.currentTimeMillis() > until) {
+            fresh.remove(p.getUniqueId());
+            return;
+        }
+        if (event.getEntity() instanceof org.bukkit.entity.Monster) {
+            event.setCancelled(true);
+        }
     }
 }

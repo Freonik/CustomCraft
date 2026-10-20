@@ -175,6 +175,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
         }
 
         season = new SeasonManager(this);
+        getServer().getPluginManager().registerEvents(season, this);
         ghost = new GhostManager(this);
         getServer().getPluginManager().registerEvents(ghost, this);
         ghost.start();
