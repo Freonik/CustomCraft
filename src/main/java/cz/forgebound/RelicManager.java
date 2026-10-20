@@ -549,7 +549,8 @@ public final class RelicManager implements Listener {
                 share = 0.5;
             }
             ItemManager.Entry thorns = attacker == null ? null : equipped(wearer, Relic.Type.THORNS);
-            if (thorns != null && !attacker.equals(wearer)) {
+            if (thorns != null && !attacker.equals(wearer)
+                    && !(attacker instanceof Player hitter && plugin.teams() != null && plugin.teams().allies(wearer, hitter))) {
                 WeaponAbilities.Params p = thorns.relic.params();
                 double reflect = (p.d("reflect-flat", 2) + event.getDamage() * p.d("reflect-percent", 25) / 100.0) * share;
                 LivingEntity target = attacker;
@@ -570,6 +571,9 @@ public final class RelicManager implements Listener {
         if (!(event.getDamager() instanceof Player player)
                 || event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) {
             return;
+        }
+        if (event.getEntity() instanceof Player mate && plugin.teams() != null && plugin.teams().allies(player, mate)) {
+            return;                                              // hitting a teammate: no Heartsteel / Soul stacks
         }
         Float strength = charge.remove(player.getUniqueId());
         if (strength != null && strength < 0.85f) {

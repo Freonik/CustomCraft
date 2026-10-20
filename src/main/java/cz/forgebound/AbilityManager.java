@@ -2605,6 +2605,9 @@ public final class AbilityManager implements Listener {
                 || weapon.abilities.onHit.isEmpty() || !enabledIn(attacker.getWorld())) {
             return;
         }
+        if (victim instanceof Player mate && plugin.teams() != null && plugin.teams().allies(attacker, mate)) {
+            return;                                              // no on-hit effects / stacks on teammates
+        }
         // Spam-clicking without a charged attack doesn't trigger on-hit effects.
         Float strength = charge.remove(attacker.getUniqueId());
         if (melee && strength != null && strength < 0.85f) {
