@@ -1185,6 +1185,8 @@ doppelganger:
   arrow-damage: 3
   ability-seconds: 5
   speed: 0.3
+  # 0 = flies back like a player when hit, 1 = can't be pushed at all
+  knockback-resistance: 0.4
   # Below eat-below-percent health it backs off and eats a golden apple (1.6 s): heals and gives
   # absorption. golden-apples = how many it carries per visit.
   golden-apples: 3

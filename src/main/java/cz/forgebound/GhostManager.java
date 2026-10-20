@@ -318,7 +318,7 @@ public final class GhostManager implements Listener {
             m.getPersistentDataContainer().set(ghostKey, PersistentDataType.BYTE, (byte) 1);
             AttributeInstance kb = m.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
             if (kb != null) {
-                kb.setBaseValue(1);
+                kb.setBaseValue(Math.max(0, Math.min(1, cfg("knockback-resistance", 0.4))));
             }
             EntityEquipment eq = m.getEquipment();
             eq.setHelmet(trimmed(Material.NETHERITE_HELMET));
@@ -406,6 +406,8 @@ public final class GhostManager implements Listener {
     }
 
     private long lastTickError;
+    /** after a hit it stops steering for a moment, so knockback actually moves it */
+    private long staggerUntil;
 
     /** One bad tick (odd geometry, a world edge...) must not stop the whole fight or hide its boss bar. */
     private void safeTick() {
@@ -475,6 +477,8 @@ public final class GhostManager implements Listener {
             // flying, nothing else moves it
         } else if (digTick(victim, to, dist)) {
             // digging through a wall
+        } else if (now < staggerUntil) {
+            // just got hit: let the knockback play out instead of walking straight through it
         } else if (dist > 2.2 && now >= flyingUntil) {
             Vector flat = to.clone().setY(0);
             if (flat.lengthSquared() > 1.0E-4) {
@@ -1048,7 +1052,7 @@ public final class GhostManager implements Listener {
         }
         double amount = Math.max(0, event.getFinalDamage()) * cfg("damage-taken-multiplier", 0.6);
         // The hit goes through as a tiny real hit (not cancelled): weapons that need a successful hit work,
-        // e.g. the mace smash bounce (no fall damage for the attacker), sweeping and knockback-free hits.
+        // e.g. the mace smash bounce (no fall damage for the attacker), sweeping and knockback.
         // Its real health pool is "hp"; the body itself is healed right back.
         for (EntityDamageEvent.DamageModifier mod : EntityDamageEvent.DamageModifier.values()) {
             if (mod != EntityDamageEvent.DamageModifier.BASE && event.isApplicable(mod)) {
@@ -1067,6 +1071,7 @@ public final class GhostManager implements Listener {
         hp -= amount - soaked;
         damage.merge(attacker.getUniqueId(), amount, Double::sum);
         updateBar();                                    // the hurt animation and sound come from the real hit
+        staggerUntil = System.currentTimeMillis() + 350;
         if (hp <= 0) {
             die(attacker);
             return;
