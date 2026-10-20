@@ -33,6 +33,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private Placeholders placeholders;
     private HudManager hud;
     private EnchantManager enchants;
+    private Updater updater;
     private boolean papi;
 
     /** Writes data files one after another in the background, so saving never stalls the server. */
@@ -187,6 +188,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(enchants, this);
         getServer().getPluginManager().registerEvents(new ItemComponents(this), this);
 
+        updater = new Updater(this);
+        getServer().getPluginManager().registerEvents(updater, this);
+        updater.start();
+
         RecipesCommand command = new RecipesCommand(this, items, rituals, data);
         new ForgeCommands(this, command).register();
 
@@ -196,6 +201,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        if (updater != null) {
+            updater.stop();
+        }
         if (abilities != null) {
             abilities.shutdown();
         }
@@ -270,6 +278,11 @@ public final class Forgebound extends JavaPlugin implements Listener {
         return hud;
     }
 
+    /** This plugin's jar in plugins/ (for the updater). */
+    public java.io.File jarFile() {
+        return getFile();
+    }
+
     public EnchantManager enchants() {
         return enchants;
     }
@@ -340,6 +353,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         mergeNewDefaults();
         items.load();
         loot.load();
+        if (updater != null) {
+            updater.start();
+        }
         if (getConfig().getBoolean("discover-recipes-on-join", true)) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 player.discoverRecipes(items.recipeKeys());
@@ -355,7 +371,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
             "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon", "teams",
-            "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items");
+            "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items", "auto-update");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

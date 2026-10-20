@@ -85,7 +85,12 @@
    `plugins/Forgebound/config.yml`.
 4. Run `/forge reload` after any config change. No restart needed.
 
-> **Updating:** just replace the jar. New weapons, relics, materials and messages are added to your existing `config.yml`
+> **Auto-update:** every 6 hours Forgebound checks GitHub for a newer release, downloads it into `plugins/update/`
+> and tells the admins; the new version starts with the next **restart**. It also puts that release's resource pack
+> link and SHA1 into `server.properties`, so you never have to copy the SHA1 by hand (only if your pack line already
+> points to this repository). Turn it off with `auto-update.enabled: false`.
+>
+> **Updating by hand:** just replace the jar. New weapons, relics, materials and messages are added to your existing `config.yml`
 > automatically (your own changes stay). Entries you delete on purpose are remembered and not added back.
 > Your forged items and running rituals are kept in `data.yml`.
 

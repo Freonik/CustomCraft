@@ -1469,6 +1469,22 @@ items:
   fireproof-legends: true
 
 # ------------------------------------------------------------
+#  AUTO-UPDATE
+#  Every few hours the plugin looks for a newer release on GitHub. A newer Forgebound.jar is downloaded into
+#  plugins/update/ and Paper swaps it in on the next restart (nothing changes while the server runs).
+#  resource-pack: also puts that release's pack link and SHA1 into server.properties, so the new plugin and
+#  the new pack switch over together at the restart. Only if the resource-pack line already points to
+#  this repository (your own pack is left alone).
+# ------------------------------------------------------------
+auto-update:
+  enabled: true
+  # false = only tell the admins that a new version is out
+  download: true
+  resource-pack: true
+  check-hours: 6
+  repo: "Freonik/Forgebound"
+
+# ------------------------------------------------------------
 #  TEAMS
 #  Teammates = same vanilla team (/team), or the same value of a PlaceholderAPI placeholder from
 #  your team/clan plugin (e.g. "%betterteams_name%", "%simpleclans_clan_tag%"). Both can be on.
