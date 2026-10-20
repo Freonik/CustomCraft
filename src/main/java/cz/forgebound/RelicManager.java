@@ -200,6 +200,10 @@ public final class RelicManager implements Listener {
         if (entity instanceof Player p && (p.getGameMode() == GameMode.CREATIVE || p.getGameMode() == GameMode.SPECTATOR)) {
             return false;
         }
+        if (entity instanceof Player p && plugin.teams() != null && plugin.teams().allies(source, p)
+                && !plugin.teams().friendlyFire()) {
+            return false;                                    // teammates
+        }
         return !(entity instanceof Tameable t && source.getUniqueId().equals(t.getOwnerUniqueId()));
     }
 
