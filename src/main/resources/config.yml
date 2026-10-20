@@ -1418,6 +1418,27 @@ events:
     material-chance: 15
 
 # ------------------------------------------------------------
+#  TEAMS
+#  Teammates = same vanilla team (/team), or the same value of a PlaceholderAPI placeholder from
+#  your team/clan plugin (e.g. "%betterteams_name%", "%simpleclans_clan_tag%"). Both can be on.
+#  Teammates: abilities don't hurt them, Devour hides them inside you, Recon spots are shared
+#  with them, no bounty for killing them, the Legend Tracker skips them.
+# ------------------------------------------------------------
+teams:
+  enabled: true
+  vanilla: true
+  # "" = only vanilla teams
+  placeholder: ""
+  # Placeholder values that mean "no team"
+  no-team-values: ["", "none", "-", "No team", "null"]
+  # Abilities also hit teammates
+  friendly-fire: false
+  # Teammates see what you spot with the Recon Spyglass
+  share-spots: true
+  # Killing a teammate pays out their bounty
+  bounty-on-teammates: false
+
+# ------------------------------------------------------------
 #  RECON SPYGLASS (in /shop)
 #  Hold a player in sight through it for aim-seconds and you see their red outline through walls
 #  and a marker with name + distance - only you. The spotted player only hears a quiet click.

@@ -30,6 +30,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private SeasonManager season;
     private CodexManager codex;
     private ReconManager recon;
+    private TeamManager teams;
     private Placeholders placeholders;
     private HudManager hud;
     private boolean papi;
@@ -175,6 +176,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
             eventsCommand.setExecutor(events);
         }
 
+        teams = new TeamManager(this);
         recon = new ReconManager(this);
         getServer().getPluginManager().registerEvents(recon, this);
         recon.start();
@@ -285,6 +287,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
         return bounty;
     }
 
+    public TeamManager teams() {
+        return teams;
+    }
+
     public ReconManager recon() {
         return recon;
     }
@@ -373,7 +379,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
-            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon");
+            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon", "teams");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

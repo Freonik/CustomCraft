@@ -1237,9 +1237,12 @@ public final class AbilityManager implements Listener {
         }
         int need = Math.max(1, p.i("stacks-needed", 3));
         boolean ally;
-        if (tasteOf(target) >= need && valid(player, target)) {
+        boolean teams = plugin.teams() != null && plugin.teams().enabled();
+        if (target instanceof Player tp && teams && plugin.teams().allies(player, tp)) {
+            ally = true;                                         // a teammate: hidden inside you
+        } else if (tasteOf(target) >= need && valid(player, target)) {
             ally = false;
-        } else if (target instanceof Player) {
+        } else if (target instanceof Player && !teams) {
             ally = true;
         } else {
             player.sendActionBar(plugin.raw("ability-devour-taste", "&cIt needs &6{stacks} Taste &cstacks first.",
@@ -2946,6 +2949,9 @@ public final class AbilityManager implements Listener {
             }
             if (!plugin.getConfig().getBoolean("ability-settings.damage-players", true)) {
                 return false;
+            }
+            if (plugin.teams() != null && plugin.teams().allies(source, target) && !plugin.teams().friendlyFire()) {
+                return false;                                    // teammates
             }
         }
         return !(entity instanceof Tameable tameable && source.getUniqueId().equals(tameable.getOwnerUniqueId()));

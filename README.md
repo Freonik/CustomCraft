@@ -32,6 +32,7 @@
 - [The Forge Warden](#the-forge-warden)
 - [Advancements](#advancements)
 - [HUD, Codex and leaderboards](#hud-codex-and-leaderboards)
+- [Teams](#teams)
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
 - [Resource pack](#resource-pack)
@@ -525,6 +526,18 @@ With [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) i
 | `%forgebound_top_<category>_rank%` | the player's own rank |
 
 A top-10 hologram is just ten lines like `&6#1 %forgebound_top_kills_1_name% &7- &e%forgebound_top_kills_1_value%`.
+
+---
+
+## Teams
+Forgebound knows who is on whose team: players in the same **vanilla team** (`/team`), or with the same value of
+a **PlaceholderAPI placeholder** from your team or clan plugin (set `teams.placeholder`, e.g. `%betterteams_name%`).
+Teammates:
+
+- aren't hurt by each other's abilities (`teams.friendly-fire` turns it back on)
+- are the ones **Devour** hides inside you; everyone else needs Taste stacks first
+- see what you spot with the **Recon Spyglass**, and can't be spotted by you
+- don't pay out bounties to each other, and the **Legend Tracker** skips them
 
 ---
 

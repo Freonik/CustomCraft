@@ -163,7 +163,8 @@ public final class LegendHunt implements Listener {
             return;
         }
         Player killer = victim.getKiller();
-        if (killer == null || killer.equals(victim)) {
+        if (killer == null || killer.equals(victim)
+                || plugin.teams() != null && plugin.teams().allies(killer, victim)) {
             return;                                               // died to a creeper: the hunt goes on
         }
         int bounty = plugin.bounty().bountyOf(victim.getUniqueId());

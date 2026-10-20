@@ -57,6 +57,8 @@ public final class ReconManager implements Listener {
     private static final class Spot {
         UUID spotter;
         UUID target;
+        /** who sees it: the spotter and (with teams.share-spots) their teammates */
+        List<UUID> viewers = new ArrayList<>();
         long endsAt;
         Mannequin outline;
         TextDisplay marker;
@@ -172,6 +174,7 @@ public final class ReconManager implements Listener {
         Location eye = p.getEyeLocation();
         RayTraceResult hit = p.getWorld().rayTrace(eye, eye.getDirection(), cfg("range", 150),
                 FluidCollisionMode.NEVER, true, 0.4, e -> e instanceof Player o && !o.equals(p)
+                        && (plugin.teams() == null || !plugin.teams().allies(p, o))
                         && o.getGameMode() != org.bukkit.GameMode.SPECTATOR);
         Entity e = hit == null ? null : hit.getHitEntity();
         if (!(e instanceof Player target)) {
@@ -246,7 +249,23 @@ public final class ReconManager implements Listener {
             d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(), new Vector3f(1.2f, 1.2f, 1.2f),
                     new Quaternionf()));
         });
-        spotter.showEntity(plugin, s.marker);
+        s.viewers.add(spotter.getUniqueId());
+        if (plugin.teams() != null && plugin.getConfig().getBoolean("teams.share-spots", true)) {
+            for (Player mate : plugin.teams().teammates(spotter)) {
+                s.viewers.add(mate.getUniqueId());
+                mate.sendActionBar(ItemManager.color("&b◆ &f" + spotter.getName() + " &bspotted &f" + target.getName()));
+                mate.playSound(mate.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f, 1.8f);
+            }
+        }
+        for (UUID v : s.viewers) {
+            Player viewer = Bukkit.getPlayer(v);
+            if (viewer != null) {
+                viewer.showEntity(plugin, s.marker);
+                if (!viewer.equals(spotter)) {
+                    redOutline(viewer, s.outline);
+                }
+            }
+        }
         assists.computeIfAbsent(target.getUniqueId(), k -> new HashMap<>())
                 .put(spotter.getUniqueId(), s.endsAt + (long) (cfg("assist-window-seconds", 10) * 1000));
         redOutline(spotter, s.outline);
@@ -281,11 +300,17 @@ public final class ReconManager implements Listener {
         if (s.outline.isValid()) {
             s.outline.teleport(at);
             s.outline.setPose(target.getPose(), true);
-            boolean direct = spotter.hasLineOfSight(target) && spotter.getLocation().distanceSquared(at) < 48 * 48;
-            if (direct) {
-                spotter.hideEntity(plugin, s.outline);
-            } else {
-                spotter.showEntity(plugin, s.outline);
+            for (UUID v : s.viewers) {
+                Player viewer = Bukkit.getPlayer(v);
+                if (viewer == null || viewer.getWorld() != at.getWorld()) {
+                    continue;
+                }
+                boolean direct = viewer.hasLineOfSight(target) && viewer.getLocation().distanceSquared(at) < 48 * 48;
+                if (direct) {
+                    viewer.hideEntity(plugin, s.outline);
+                } else {
+                    viewer.showEntity(plugin, s.outline);
+                }
             }
         }
         if (s.marker.isValid()) {
@@ -299,11 +324,13 @@ public final class ReconManager implements Listener {
     }
 
     private void remove(Spot s) {
-        Player spotter = Bukkit.getPlayer(s.spotter);
-        if (spotter != null && s.outline != null) {
-            Team team = spotter.getScoreboard().getTeam("fb_spotted");
-            if (team != null) {
-                team.removeEntity(s.outline);
+        for (UUID v : s.viewers) {
+            Player viewer = Bukkit.getPlayer(v);
+            if (viewer != null && s.outline != null) {
+                Team team = viewer.getScoreboard().getTeam("fb_spotted");
+                if (team != null) {
+                    team.removeEntity(s.outline);
+                }
             }
         }
         if (s.outline != null && s.outline.isValid()) {

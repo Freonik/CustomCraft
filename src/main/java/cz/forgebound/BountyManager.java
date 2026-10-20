@@ -188,6 +188,10 @@ public final class BountyManager implements Listener, CommandExecutor {
         if (!enabled() || killer == null || killer.equals(victim)) {
             return;
         }
+        if (plugin.teams() != null && plugin.teams().allies(killer, victim)
+                && !plugin.getConfig().getBoolean("teams.bounty-on-teammates", false)) {
+            return;                                              // no bounty farming inside a team
+        }
         int bounty = bountyOf(victim.getUniqueId());
         if (bounty <= 0) {
             return;
@@ -335,7 +339,8 @@ public final class BountyManager implements Listener, CommandExecutor {
                     continue;
                 }
                 Player target = holders.stream()
-                        .filter(h -> !h.equals(player) && h.getWorld() == player.getWorld())
+                        .filter(h -> !h.equals(player) && h.getWorld() == player.getWorld()
+                                && (plugin.teams() == null || !plugin.teams().allies(player, h)))
                         .min(Comparator.comparingDouble(h -> h.getLocation().distanceSquared(player.getLocation())))
                         .orElse(null);
                 CompassMeta meta = (CompassMeta) stack.getItemMeta();
