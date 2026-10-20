@@ -1181,6 +1181,8 @@ doppelganger:
   # Damage it takes is multiplied by this (lower = tankier)
   damage-taken-multiplier: 0.6
   attack-damage: 9
+  # how close it has to be to hit you in melee (blocks, flat; a player reaches about 3)
+  attack-reach: 2.5
   ability-damage: 6
   arrow-damage: 3
   ability-seconds: 5

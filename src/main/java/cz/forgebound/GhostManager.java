@@ -406,6 +406,14 @@ public final class GhostManager implements Listener {
     }
 
     private long lastTickError;
+
+    /** Melee range like a player's: measured flat between the two bodies, and only when roughly level. */
+    private static boolean inReach(Location me, Location other, double reach) {
+        double dx = me.getX() - other.getX();
+        double dz = me.getZ() - other.getZ();
+        double dy = other.getY() - me.getY();
+        return dx * dx + dz * dz <= reach * reach && dy > -1.5 && dy < 2.2;
+    }
     /** after a hit it stops steering for a moment, so knockback actually moves it */
     private long staggerUntil;
 
@@ -537,7 +545,8 @@ public final class GhostManager implements Listener {
         if (attackCooldown > 0) {
             attackCooldown--;
         }
-        if (dist < 3.3 && attackCooldown == 0 && body.hasLineOfSight(victim)) {
+        double reach = cfg("attack-reach", 2.5);
+        if (inReach(me, victim.getLocation(), reach) && attackCooldown == 0 && body.hasLineOfSight(victim)) {
             attackCooldown = 12;
             body.swingMainHand();
             hit(victim, cfg("attack-damage", 9));
@@ -546,7 +555,7 @@ public final class GhostManager implements Listener {
         // other players close by get hit too
         if (attackCooldown == 6) {
             for (Player p : me.getWorld().getPlayers()) {
-                if (!p.equals(victim) && survival(p) && p.getLocation().distanceSquared(me) < 9) {
+                if (!p.equals(victim) && survival(p) && inReach(me, p.getLocation(), reach)) {
                     body.swingMainHand();
                     hit(p, cfg("attack-damage", 9) * 0.7);
                     break;
