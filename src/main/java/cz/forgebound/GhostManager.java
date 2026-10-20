@@ -1030,8 +1030,8 @@ public final class GhostManager implements Listener {
         if (!active() || !event.getEntity().equals(body)) {
             return;
         }
-        event.setCancelled(true);
         if (!(event instanceof EntityDamageByEntityEvent byEntity)) {
+            event.setCancelled(true);
             if (event.getCause() == EntityDamageEvent.DamageCause.LAVA || event.getCause() == EntityDamageEvent.DamageCause.VOID) {
                 Player victim = Bukkit.getPlayer(target);
                 if (victim != null) {
@@ -1043,16 +1043,30 @@ public final class GhostManager implements Listener {
         Player attacker = byEntity.getDamager() instanceof Player p ? p
                 : byEntity.getDamager() instanceof Projectile pr && pr.getShooter() instanceof Player s ? s : null;
         if (attacker == null) {
+            event.setCancelled(true);
             return;
         }
         double amount = Math.max(0, event.getFinalDamage()) * cfg("damage-taken-multiplier", 0.6);
+        // The hit goes through as a tiny real hit (not cancelled): weapons that need a successful hit work,
+        // e.g. the mace smash bounce (no fall damage for the attacker), sweeping and knockback-free hits.
+        // Its real health pool is "hp"; the body itself is healed right back.
+        for (EntityDamageEvent.DamageModifier mod : EntityDamageEvent.DamageModifier.values()) {
+            if (mod != EntityDamageEvent.DamageModifier.BASE && event.isApplicable(mod)) {
+                event.setDamage(mod, 0);
+            }
+        }
+        event.setDamage(EntityDamageEvent.DamageModifier.BASE, 0.01);
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (body != null && body.isValid()) {
+                AttributeInstance max = body.getAttribute(Attribute.MAX_HEALTH);
+                body.setHealth(max != null ? max.getValue() : 20);
+            }
+        });
         double soaked = Math.min(absorb, amount);          // golden apple absorption goes first
         absorb -= soaked;
         hp -= amount - soaked;
         damage.merge(attacker.getUniqueId(), amount, Double::sum);
-        body.playHurtAnimation(0);
-        updateBar();
-        body.getWorld().playSound(body.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 0.6f);
+        updateBar();                                    // the hurt animation and sound come from the real hit
         if (hp <= 0) {
             die(attacker);
             return;
