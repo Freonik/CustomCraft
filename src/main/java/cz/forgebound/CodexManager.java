@@ -74,6 +74,19 @@ public final class CodexManager implements Listener, CommandExecutor {
         return stack;
     }
 
+    /** Gives the Codex to a player who doesn't carry one (season start). */
+    public void giveIfMissing(Player p) {
+        if (!enabled()) {
+            return;
+        }
+        for (ItemStack s : p.getInventory().getContents()) {
+            if (s != null && s.getPersistentDataContainer().has(codexKey, PersistentDataType.BYTE)) {
+                return;
+            }
+        }
+        p.getInventory().addItem(book()).values().forEach(left -> p.getWorld().dropItemNaturally(p.getLocation(), left));
+    }
+
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();

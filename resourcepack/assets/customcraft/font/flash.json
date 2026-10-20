@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "customcraft:font/flash.png",
+      "ascent": 128,
+      "height": 256,
+      "chars": [
+        "\ue100"
+      ]
+    }
+  ]
+}

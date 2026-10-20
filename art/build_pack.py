@@ -196,6 +196,12 @@ wjson(f'{MC}/arrow.json', dispatch([(9020, model("customcraft:gui/arrow_left")),
 # Collector's Trophy (advancement reward)
 run('trophy.py', f'{CC}/textures/item')
 wjson(f'{CC}/models/item/collectors_trophy.json', {"parent": "minecraft:item/generated", "textures": {"layer0": "customcraft:item/collectors_trophy"}})
+# season ceremony: a white glyph big enough to cover the whole screen when shown as a title (titles are 4x)
+from PIL import Image as _Img
+_Img.new('RGBA', (64, 16), (255, 255, 255, 255)).save(f'{CC}/textures/font/flash.png')
+wjson(f'{CC}/font/flash.json', {"providers": [
+    {"type": "bitmap", "file": "customcraft:font/flash.png", "ascent": 128, "height": 256, "chars": ["\ue100"]}]})
+
 # Bounty Token and Warden's Seal
 run('tokens.py', f'{CC}/textures/item')
 for name in ['bounty_token', 'wardens_seal']:

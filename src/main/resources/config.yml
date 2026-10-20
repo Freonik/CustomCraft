@@ -1235,6 +1235,52 @@ doppelganger:
     - "you made me"
 
 # ------------------------------------------------------------
+#  SEASON START: /forge season start (stand where the ceremony should be)
+#  Countdown -> "Welcome to ..." -> effects around you -> a white beam into the sky ->
+#  everyone is scattered across the SMP world. /forge season preview = the same without the teleport.
+# ------------------------------------------------------------
+season:
+  # forge = anvil strikes, embers, every legend spinning above you and diving into a glowing beam
+  # soul  = soul flames, a ring of crying obsidian and a white beam
+  theme: forge
+  countdown-seconds: 5
+  countdown-color: "&6&l"
+  countdown-subtitle: "&7The season begins..."
+  title: "&6&lWelcome to FORGEBOUND SMP"
+  subtitle: "&eSeason 1 has begun"
+  chat: "&6&l⚒ &eWelcome to &6&lFORGEBOUND SMP&e! Season 1 has begun."
+  # Floating text above the center (before / after the countdown)
+  # ({legends} = how many legends there are, \n = new line)
+  hologram-countdown: "&6The Forge Awakens..."
+  hologram: "&6&lWelcome to FORGEBOUND SMP\n&e{legends} legends. One of each. &7Season 1"
+  hologram-height: 4.5
+  hologram-scale: 2.5
+  # Particles over the whole area (forge: embers and sparks; soul: ambient-particle)
+  ambient-particle: SOUL_FIRE_FLAME
+  ambient-radius: 20
+  ambient-amount: 12
+  # The ring above you (forge: the legends themselves; soul: halo-blocks x halo-block)
+  halo-block: CRYING_OBSIDIAN
+  halo-blocks: 18
+  halo-radius: 5
+  # The glow around the beam's white core (forge: ORANGE_STAINED_GLASS, soul: WHITE_STAINED_GLASS)
+  beam-glow-block: ORANGE_STAINED_GLASS
+  # How long the beam shines before everyone is teleported
+  beam-seconds: 5
+  # Players can't walk away during the ceremony
+  freeze-players: true
+  # You float up a little when it starts
+  lift-host: true
+  # Where everyone goes ("" = the main world): a random safe spot this far from the world spawn
+  world: ""
+  radius-min: 200
+  radius-max: 1500
+  # Fall from the sky with slow falling instead of landing on the ground
+  drop-from-sky: true
+  arrive-title: "&6&lGood luck"
+  arrive-subtitle: "&7Forge your legend."
+
+# ------------------------------------------------------------
 #  LIVE MOTD (the server list)
 #  line1 always stays. The second line shows what's happening right now, in this order:
 #  Rift > Legend Hunt > Blood Moon > meteor > Forge Warden > a forge ritual > Happy Hour > Forge Market >

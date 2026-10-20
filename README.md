@@ -541,6 +541,7 @@ A top-10 hologram is just ten lines like `&6#1 %forgebound_top_kills_1_name% &7-
 | `/forge reload` | `forgebound.admin` | reload `config.yml` |
 | `/forge meteor` | `forgebound.admin` | drop a meteor now |
 | `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
+| `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
 | | `forgebound.nocooldown` | abilities and relics without cooldowns (for testing) |

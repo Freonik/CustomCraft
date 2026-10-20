@@ -89,6 +89,23 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                             : "&7Couldn't start " + args[1] + " (already running, turned off, or no good spot)."));
                 }
             }
+            case "season" -> {
+                String sub = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "";
+                org.bukkit.entity.Player host = sender instanceof org.bukkit.entity.Player p ? p : null;
+                switch (sub) {
+                    case "start", "preview" -> {
+                        if (!plugin.season().start(host, sub.equals("start"))) {
+                            sender.sendMessage(ItemManager.color("&7A season ceremony is already running. &e/forge season cancel"));
+                        }
+                    }
+                    case "cancel" -> {
+                        plugin.season().cancel();
+                        sender.sendMessage(ItemManager.color("&7Ceremony cancelled."));
+                    }
+                    default -> sender.sendMessage(ItemManager.color(
+                            "&7Usage: &e/forge season <start|preview|cancel> &8(preview = everything but the teleport)"));
+                }
+            }
             case "ghost" -> {
                 if (plugin.ghost() == null) {
                     return true;
@@ -209,7 +226,7 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             return result;
         }
         if (args.length == 1) {
-            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "event", "ghost"));
+            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "event", "ghost", "season"));
         } else if (args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) {
                 Bukkit.getOnlinePlayers().forEach(p -> result.add(p.getName()));
@@ -218,6 +235,8 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             } else if (args.length == 4) {
                 result.addAll(List.of("1", "8", "16", "64"));
             }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("season")) {
+            result.addAll(List.of("start", "preview", "cancel"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("event")) {
             result.addAll(EventManager.names());
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("release") || args[0].equalsIgnoreCase("finish"))) {
