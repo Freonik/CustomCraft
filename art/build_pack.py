@@ -103,6 +103,14 @@ wjson(f'{MC}/netherite_axe.json', dispatch([(1006, model("customcraft:item/butch
 # Knightfall (mace)
 wjson(f'{MC}/mace.json', dispatch([(1010, model("customcraft:item/knightfall"))],
                                   json.load(open('/home/claude/ref/vanilla/i_mace.json'))['model']))
+# Pinning Repeater: same states as the vanilla crossbow. Vanilla crossbow textures point to the top-left
+# (stock in the bottom-right corner) and the crossbow model's hand rotation expects that, so ours are mirrored.
+from PIL import Image as _XImg
+for _n in ['pinning_repeater', 'pinning_repeater_pulling_0', 'pinning_repeater_pulling_1', 'pinning_repeater_pulling_2',
+           'pinning_repeater_arrow', 'pinning_repeater_firework']:
+    _f = f'{CC}/textures/item/{_n}.png'
+    if os.path.exists(_f):
+        _XImg.open(_f).transpose(_XImg.FLIP_LEFT_RIGHT).save(_f)
 # Pinning Repeater: same states as the vanilla crossbow
 for n in ['pinning_repeater', 'pinning_repeater_pulling_0', 'pinning_repeater_pulling_1', 'pinning_repeater_pulling_2',
           'pinning_repeater_arrow', 'pinning_repeater_firework']:
