@@ -29,9 +29,3 @@ permissions:
   forgebound.admin:
     description: /forge reload, give, status, release, finish and the other admin tools
     default: op
-  forgebound.moderation.notify:
-    description: See moderation actions and watchdog alerts in chat
-    default: op
-  forgebound.moderation.bypass:
-    description: Chat isn't checked by the filter or the AI
-    default: false

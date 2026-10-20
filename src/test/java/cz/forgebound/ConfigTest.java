@@ -99,7 +99,7 @@ class ConfigTest {
 
     @Test
     void newSectionsArePresent() {
-        for (String path : List.of("dialogs", "enchantments", "items", "moderation", "watchdog", "teams", "recon", "season", "economy", "events")) {
+        for (String path : List.of("dialogs", "enchantments", "items", "teams", "recon", "season", "economy", "events")) {
             assertFalse(TestFiles.map(config.get(path)).isEmpty(), "config.yml is missing the " + path + " section");
         }
         Map<String, Object> enchantments = TestFiles.map(config.get("enchantments"));
