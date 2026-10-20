@@ -406,6 +406,9 @@ public final class GhostManager implements Listener {
     }
 
     private long lastTickError;
+    /** who set it on fire (Fire Aspect / flame arrow) and until when that burning counts */
+    private UUID fireBy;
+    private long fireUntil;
 
     /** Melee range like a player's: measured flat between the two bodies, and only when roughly level. */
     private static boolean inReach(Location me, Location other, double reach) {
@@ -1045,6 +1048,16 @@ public final class GhostManager implements Listener {
         }
         if (!(event instanceof EntityDamageByEntityEvent byEntity)) {
             event.setCancelled(true);
+            // burning from a player's Fire Aspect / flame arrow counts for that player; other fire doesn't
+            if ((event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK)
+                    && fireBy != null && System.currentTimeMillis() < fireUntil) {
+                Player burner = Bukkit.getPlayer(fireBy);
+                if (burner != null) {
+                    body.playHurtAnimation(0);
+                    take(burner, Math.max(0, event.getDamage()) * cfg("damage-taken-multiplier", 0.6));
+                }
+                return;
+            }
             if (event.getCause() == EntityDamageEvent.DamageCause.LAVA || event.getCause() == EntityDamageEvent.DamageCause.VOID) {
                 Player victim = Bukkit.getPlayer(target);
                 if (victim != null) {
@@ -1060,6 +1073,13 @@ public final class GhostManager implements Listener {
             return;
         }
         double amount = Math.max(0, event.getFinalDamage()) * cfg("damage-taken-multiplier", 0.6);
+        boolean fire = byEntity.getDamager() instanceof Projectile pr2 ? pr2.getFireTicks() > 0
+                : attacker.getInventory().getItemInMainHand().getEnchantmentLevel(
+                        org.bukkit.enchantments.Enchantment.FIRE_ASPECT) > 0;
+        if (fire) {
+            fireBy = attacker.getUniqueId();
+            fireUntil = System.currentTimeMillis() + 8000;
+        }
         // The hit goes through as a tiny real hit (not cancelled): weapons that need a successful hit work,
         // e.g. the mace smash bounce (no fall damage for the attacker), sweeping and knockback.
         // Its real health pool is "hp"; the body itself is healed right back.
@@ -1075,12 +1095,20 @@ public final class GhostManager implements Listener {
                 body.setHealth(max != null ? max.getValue() : 20);
             }
         });
+        staggerUntil = System.currentTimeMillis() + 350;
+        take(attacker, amount);                       // the hurt animation and sound come from the real hit
+    }
+
+    /** Damage to its own health pool, counted for the attacker's reward. */
+    private void take(Player attacker, double amount) {
+        if (!active()) {
+            return;
+        }
         double soaked = Math.min(absorb, amount);          // golden apple absorption goes first
         absorb -= soaked;
         hp -= amount - soaked;
         damage.merge(attacker.getUniqueId(), amount, Double::sum);
-        updateBar();                                    // the hurt animation and sound come from the real hit
-        staggerUntil = System.currentTimeMillis() + 350;
+        updateBar();
         if (hp <= 0) {
             die(attacker);
             return;
