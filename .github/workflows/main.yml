@@ -24,6 +24,9 @@ jobs:
       - name: Build plugin
         run: mvn -B clean package
 
+      - name: Start a real Paper server with the plugin
+        run: bash .github/smoke-test.sh
+
       - name: Zip resource pack
         shell: bash
         run: |
