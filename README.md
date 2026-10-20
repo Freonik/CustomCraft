@@ -34,6 +34,7 @@
 - [Advancements](#advancements)
 - [HUD, Codex and leaderboards](#hud-codex-and-leaderboards)
 - [Teams](#teams)
+- [Moderation and watchdog](#moderation-and-watchdog)
 - [Commands and permissions](#commands-and-permissions)
 - [Configuration](#configuration)
 - [Resource pack](#resource-pack)
@@ -68,6 +69,8 @@
 - **Live MOTD**: the server list shows what's happening right now (a Rift, the Blood Moon, a ritual...)
 - **Dialog windows**: confirmations for bigger purchases and payments, a `/pay` form and an admin panel for the season start
 - **Smart commands**: the chat suggests players, items, events and categories while you type
+- **Chat moderation**: a free spam/link/ad filter plus an optional AI moderator (Claude) that judges insults by context, with warnings and mutes
+- **Watchdog**: admins are told in game when TPS drops, memory fills up or a plugin throws errors
 - **Fully configurable**: numbers, cooldowns, drop chances, ritual length, messages, on/off switches
 
 <p align="center"><img src="docs/weapons.gif" alt="Weapons"></p>
@@ -564,6 +567,32 @@ Teammates:
 
 ---
 
+## Moderation and watchdog
+
+**Chat filter** (free, always on): blocks spam, repeated messages, links (except allowed sites like YouTube),
+server ads and IP addresses, and words you put on the blocked list. CAPS messages are turned to lowercase.
+It sees through tricks like `d.e.b.1.l` or `dÉÉbiil`.
+
+**AI moderator** (optional): messages with a *suspicious* word (from a list in the config) are sent to Claude
+(Anthropic API) in small batches every 20 seconds, together with the last few chat lines. The AI decides by context
+whether it's a joke between friends or a real insult, and can:
+- **warn** (the message disappears from chat, the player gets a strike),
+- **mute** (5 → 15 → 60 minutes; 3 strikes also mean a mute),
+- **suggest a ban**: bans are never automatic, admins get a clickable `/ban` suggestion.
+
+It needs an API key from [console.anthropic.com](https://console.anthropic.com) (prepaid credit; only suspicious
+messages are sent, so a few dollars last a long time). Put it into `moderation.ai.api-key` (or the
+`ANTHROPIC_API_KEY` environment variable) and set `moderation.ai.enabled: true`. Players see a short notice on join
+that the chat is checked by an AI.
+
+Admins with `forgebound.moderation.notify` see every action in chat (hover shows the message), and everything is
+written to `plugins/Forgebound/moderation.log`.
+
+**Watchdog**: tells the same admins when TPS drops below 15 (with the chunk that has the most entities and a
+click-to-teleport), when memory is over 90 % full, or when a plugin throws an error.
+
+---
+
 ## Commands and permissions
 
 | Command | Permission | Description |
@@ -586,9 +615,13 @@ Teammates:
 | `/forge meteor` | `forgebound.admin` | drop a meteor now |
 | `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
 | `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport; without an argument it opens a panel with the theme and the buttons |
+| `/forge mute <player> [minutes]` / `/forge unmute <player>` | `forgebound.admin` | mute or unmute a player |
+| `/forge modlog [player]` | `forgebound.admin` | the last moderation actions |
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
+| | `forgebound.moderation.notify` | see moderation actions and watchdog alerts (ops) |
+| | `forgebound.moderation.bypass` | chat isn't checked |
 | | `forgebound.nocooldown` | abilities and relics without cooldowns (for testing) |
 
 Aliases: `/recipes`, `/recepty`.

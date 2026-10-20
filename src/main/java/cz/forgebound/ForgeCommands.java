@@ -154,10 +154,32 @@ final class ForgeCommands {
                 .then(Commands.literal("stop").executes(ctx -> forge(ctx, "ghost", "stop")))
                 .then(Commands.argument("player", ArgumentTypes.player())
                         .executes(ctx -> forge(ctx, "ghost", onePlayer(ctx, "player").getName()))));
+        root.then(Commands.literal("mute").requires(ForgeCommands::admin)
+                .then(Commands.argument("player", StringArgumentType.word()).suggests(suggest(this::online))
+                        .executes(ctx -> mod(ctx, "mute", StringArgumentType.getString(ctx, "player"), 10))
+                        .then(Commands.argument("minutes", IntegerArgumentType.integer(1, 10080))
+                                .executes(ctx -> mod(ctx, "mute", StringArgumentType.getString(ctx, "player"),
+                                        IntegerArgumentType.getInteger(ctx, "minutes"))))));
+        root.then(Commands.literal("unmute").requires(ForgeCommands::admin)
+                .then(Commands.argument("player", StringArgumentType.word()).suggests(suggest(this::online))
+                        .executes(ctx -> mod(ctx, "unmute", StringArgumentType.getString(ctx, "player"), 0))));
+        root.then(Commands.literal("modlog").requires(ForgeCommands::admin)
+                .executes(ctx -> mod(ctx, "modlog", null, 0))
+                .then(Commands.argument("player", StringArgumentType.word()).suggests(suggest(this::online))
+                        .executes(ctx -> mod(ctx, "modlog", StringArgumentType.getString(ctx, "player"), 0))));
         root.then(Commands.literal("token").requires(ForgeCommands::admin).executes(ctx -> forge(ctx, "token"))
                 .then(Commands.argument("amount", IntegerArgumentType.integer(1, 64))
                         .executes(ctx -> forge(ctx, "token", String.valueOf(IntegerArgumentType.getInteger(ctx, "amount"))))));
         return root;
+    }
+
+    private int mod(CommandContext<CommandSourceStack> ctx, String sub, String player, int minutes) {
+        plugin.moderation().command(ctx.getSource().getSender(), sub, player, minutes);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private Collection<String> online() {
+        return org.bukkit.Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
     }
 
     // ================================================================ /pay, /top

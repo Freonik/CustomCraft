@@ -33,6 +33,8 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private Placeholders placeholders;
     private HudManager hud;
     private EnchantManager enchants;
+    private ModerationManager moderation;
+    private Watchdog watchdog;
     private boolean papi;
 
     /** Writes data files one after another in the background, so saving never stalls the server. */
@@ -49,6 +51,25 @@ public final class Forgebound extends JavaPlugin implements Listener {
             writeFile(text, file);
         } else {
             io.execute(() -> writeFile(text, file));
+        }
+    }
+
+    /** Appends a line to a text file in the background (logs). */
+    public void appendLine(java.io.File file, String line) {
+        Runnable task = () -> {
+            try {
+                java.nio.file.Files.createDirectories(file.toPath().getParent());
+                java.nio.file.Files.writeString(file.toPath(), line + System.lineSeparator(),
+                        java.nio.charset.StandardCharsets.UTF_8,
+                        java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+            } catch (java.io.IOException ex) {
+                getLogger().warning("Could not write " + file.getName() + ": " + ex.getMessage());
+            }
+        };
+        if (io.isShutdown()) {
+            task.run();
+        } else {
+            io.execute(task);
         }
     }
 
@@ -187,6 +208,13 @@ public final class Forgebound extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(enchants, this);
         getServer().getPluginManager().registerEvents(new ItemComponents(this), this);
 
+        moderation = new ModerationManager(this);
+        getServer().getPluginManager().registerEvents(moderation, this);
+        moderation.start();
+        watchdog = new Watchdog(this);
+        getServer().getPluginManager().registerEvents(watchdog, this);
+        watchdog.start();
+
         RecipesCommand command = new RecipesCommand(this, items, rituals, data);
         new ForgeCommands(this, command).register();
 
@@ -196,6 +224,12 @@ public final class Forgebound extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        if (moderation != null) {
+            moderation.stop();
+        }
+        if (watchdog != null) {
+            watchdog.stop();
+        }
         if (abilities != null) {
             abilities.shutdown();
         }
@@ -270,6 +304,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
         return hud;
     }
 
+    public ModerationManager moderation() {
+        return moderation;
+    }
+
     public EnchantManager enchants() {
         return enchants;
     }
@@ -340,6 +378,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         mergeNewDefaults();
         items.load();
         loot.load();
+        if (moderation != null) {
+            moderation.start();
+        }
         if (getConfig().getBoolean("discover-recipes-on-join", true)) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 player.discoverRecipes(items.recipeKeys());
@@ -355,7 +396,8 @@ public final class Forgebound extends JavaPlugin implements Listener {
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
             "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon", "teams",
-            "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items");
+            "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items",
+            "moderation", "moderation.filter", "moderation.ai", "moderation.strikes", "watchdog");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

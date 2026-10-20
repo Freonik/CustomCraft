@@ -29,4 +29,18 @@ class LogicTest {
         assertEquals("13", TopManager.format(12.6));
         assertTrue(TopManager.CATEGORIES.containsKey("bounty"), "/top without arguments shows the bounty board");
     }
+
+    @Test
+    void aiVerdictsAreRead() {
+        String response = "{\"content\":[{\"type\":\"text\",\"text\":\"Here: {\\\"verdicts\\\":["
+                + "{\\\"id\\\":3,\\\"action\\\":\\\"warn\\\",\\\"reason\\\":\\\"urazka\\\"},"
+                + "{\\\"id\\\":4,\\\"action\\\":\\\"delete_server\\\"}]}\"}]}";
+        var verdicts = ModerationManager.parse(response);
+        assertEquals(2, verdicts.size());
+        assertEquals(3, verdicts.get(0).id());
+        assertEquals("warn", verdicts.get(0).action());
+        assertEquals("urazka", verdicts.get(0).reason());
+        assertEquals("none", verdicts.get(1).action(), "unknown actions are ignored");
+        assertTrue(ModerationManager.parse("not json").isEmpty());
+    }
 }
