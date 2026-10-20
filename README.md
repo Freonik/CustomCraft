@@ -568,7 +568,7 @@ Teammates:
 ## Moderation and watchdog
 
 Chat moderation (a free filter plus an optional AI moderator) and the server watchdog are a separate plugin,
-**Forgebound Guard**, so you can use it, switch it off or remove it without touching Forgebound.
+**[Forgebound Guard](https://github.com/Freonik/ForgeboundGuard)**, so you can use it, switch it off or remove it without touching Forgebound.
 It takes over the settings from Forgebound 2.5 automatically.
 
 ---
