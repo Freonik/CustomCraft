@@ -22,7 +22,20 @@ jobs:
           cache: maven
 
       - name: Build plugin
-        run: mvn -B clean package
+        run: mvn -B clean package 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+        shell: bash
+
+      - name: Show why the build failed
+        if: failure()
+        shell: bash
+        run: |
+          # compile errors and failed tests as annotations (readable without downloading the log)
+          grep -E '^\[ERROR\]' build.log | grep -v 'Re-run Maven\|For more information\|Help 1\|^\[ERROR\] *$\|-> \[Help' | head -30 \
+            | while IFS= read -r line; do echo "::error::${line//%/%25}"; done
+          for f in target/surefire-reports/*.txt; do
+            [ -f "$f" ] && grep -E 'FAILURE|expected|Exception|Error' "$f" | head -10 | while IFS= read -r line; do echo "::error::$(basename "$f"): ${line//%/%25}"; done
+          done
+          true
 
       - name: Start a real Paper server with the plugin
         run: bash .github/smoke-test.sh
