@@ -88,7 +88,7 @@
 > **Auto-update:** every 6 hours Forgebound checks GitHub for a newer release, downloads it into `plugins/update/`
 > and tells the admins; the new version starts with the next **restart**. It also puts that release's resource pack
 > link and SHA1 into `server.properties`, so you never have to copy the SHA1 by hand (only if your pack line already
-> points to this repository). Turn it off with `auto-update.enabled: false`.
+> points to this repository). Turn it off with **`/forge update off`** (`/forge update now` checks right away).
 >
 > **Updating by hand:** just replace the jar. New weapons, relics, materials and messages are added to your existing `config.yml`
 > automatically (your own changes stay). Entries you delete on purpose are remembered and not added back.
@@ -600,6 +600,7 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/forge meteor` | `forgebound.admin` | drop a meteor now |
 | `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
 | `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport; without an argument it opens a panel with the theme and the buttons |
+| `/forge update [on\|off\|now]` | `forgebound.admin` | auto-update on/off, or check for a new version now |
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |

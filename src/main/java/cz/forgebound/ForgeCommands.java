@@ -154,10 +154,21 @@ final class ForgeCommands {
                 .then(Commands.literal("stop").executes(ctx -> forge(ctx, "ghost", "stop")))
                 .then(Commands.argument("player", ArgumentTypes.player())
                         .executes(ctx -> forge(ctx, "ghost", onePlayer(ctx, "player").getName()))));
+        var update = Commands.literal("update").requires(ForgeCommands::admin)
+                .executes(ctx -> update(ctx, "now"));
+        for (String sub : List.of("on", "off", "now")) {
+            update.then(Commands.literal(sub).executes(ctx -> update(ctx, sub)));
+        }
+        root.then(update);
         root.then(Commands.literal("token").requires(ForgeCommands::admin).executes(ctx -> forge(ctx, "token"))
                 .then(Commands.argument("amount", IntegerArgumentType.integer(1, 64))
                         .executes(ctx -> forge(ctx, "token", String.valueOf(IntegerArgumentType.getInteger(ctx, "amount"))))));
         return root;
+    }
+
+    private int update(CommandContext<CommandSourceStack> ctx, String what) {
+        plugin.updater().command(ctx.getSource().getSender(), what);
+        return Command.SINGLE_SUCCESS;
     }
 
     // ================================================================ /pay, /top

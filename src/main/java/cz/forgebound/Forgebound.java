@@ -278,6 +278,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
         return hud;
     }
 
+    public Updater updater() {
+        return updater;
+    }
+
     /** This plugin's jar in plugins/ (for the updater). */
     public java.io.File jarFile() {
         return getFile();
