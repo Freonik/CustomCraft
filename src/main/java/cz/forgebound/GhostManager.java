@@ -540,7 +540,7 @@ public final class GhostManager implements Listener {
         }
         // boss bar for everyone near
         if (body.getTicksLived() % 10 == 0) {
-            bar.progress((float) Math.max(0, Math.min(1, hp / maxHp)));
+            updateBar();
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getWorld() == me.getWorld() && p.getLocation().distanceSquared(me) < 64 * 64) {
                     p.showBossBar(bar);
@@ -549,6 +549,23 @@ public final class GhostManager implements Listener {
                 }
             }
         }
+    }
+
+    /** Boss bar: its name, health in numbers (+ golden apple absorption), red when it's almost dead. */
+    private void updateBar() {
+        if (bar == null) {
+            return;
+        }
+        double ratio = Math.max(0, Math.min(1, hp / maxHp));
+        bar.progress((float) ratio);
+        bar.color(ratio < 0.25 ? BossBar.Color.RED : ratio < 0.5 ? BossBar.Color.YELLOW : BossBar.Color.WHITE);
+        Component title = glitched.color(NamedTextColor.WHITE)
+                .append(Component.text("   ❤ " + (int) Math.ceil(Math.max(0, hp)) + " / " + (int) maxHp,
+                        ratio < 0.25 ? NamedTextColor.RED : NamedTextColor.GRAY));
+        if (absorb >= 1) {
+            title = title.append(Component.text("  +" + (int) Math.ceil(absorb), NamedTextColor.GOLD));
+        }
+        bar.name(title);
     }
 
     private void hit(Player p, double amount) {
@@ -668,6 +685,7 @@ public final class GhostManager implements Listener {
             if (eatingTicks == 0) {
                 hp = Math.min(maxHp, hp + maxHp * cfg("golden-apple-heal-percent", 12) / 100.0);
                 absorb = maxHp * cfg("golden-apple-absorption-percent", 5) / 100.0;
+                updateBar();
                 me.getWorld().playSound(me, Sound.ENTITY_PLAYER_BURP, 1f, 0.9f);
                 me.getWorld().spawnParticle(Particle.HEART, me.clone().add(0, 2.1, 0), 3, 0.3, 0.2, 0.3, 0);
                 if (eatSwap != null) {
@@ -1012,6 +1030,7 @@ public final class GhostManager implements Listener {
         hp -= amount - soaked;
         damage.merge(attacker.getUniqueId(), amount, Double::sum);
         body.playHurtAnimation(0);
+        updateBar();
         body.getWorld().playSound(body.getLocation(), Sound.ENTITY_PLAYER_HURT, 1f, 0.6f);
         if (hp <= 0) {
             die(attacker);
@@ -1021,6 +1040,7 @@ public final class GhostManager implements Listener {
         if (healsUsed == 0 && hp < maxHp * 0.5 || healsUsed == 1 && hp < maxHp * 0.2) {
             healsUsed++;
             hp = Math.min(maxHp, hp + maxHp * 0.1);
+            updateBar();
             body.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 60, 0, false, false));
             glitchFx(body.getLocation());
             chat(healsUsed == 1 ? "that hurt. do it again." : "you can't kill what you made");
