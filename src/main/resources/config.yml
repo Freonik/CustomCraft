@@ -119,6 +119,7 @@ messages:
   codex-off: "&7The Forge Codex is turned off on this server."
   ghost-killed: "&8☠ &7The copy of &f{copy} &7is gone. &f{player} &7ended it."
   ghost-stole: "&8☠ &7The copy of &f{copy} &7took &r{item}&7. It will be back. Kill it to get it back."
+  recon-assist: "&b◆ Assist! &f{killer} &7took down &f{victim}&7, who you spotted. &6+{tokens} Bounty Tokens"
   # events (/events)
   hunt-start: "&c☠ &4&lLegend Hunt! &f{player} &cis marked for &f{minutes} minutes&c. Their bounty counts &6double&c. Hunt them down!"
   hunt-you: "&c☠ You are being hunted! &7Survive for {minutes} minutes and you get &6{tokens} Bounty Tokens&7. Your abilities recharge faster until then."
@@ -1068,6 +1069,7 @@ economy:
       experience_bottle: { material: EXPERIENCE_BOTTLE, amount: 16, price: 2 }
       ender_pearl: { material: ENDER_PEARL, amount: 8, price: 2 }
       golden_carrot: { material: GOLDEN_CARROT, amount: 32, price: 1 }
+      recon_spyglass: { material: recon_spyglass, amount: 1, price: 6 }
     rotating:
       netherite_ingot: { material: NETHERITE_INGOT, amount: 1, price: 20, limit: 1 }
       enchanted_golden_apple: { material: ENCHANTED_GOLDEN_APPLE, amount: 1, price: 20, limit: 1 }
@@ -1414,6 +1416,30 @@ events:
     tokens-max: 3
     # Chance (%) of a legendary material inside
     material-chance: 15
+
+# ------------------------------------------------------------
+#  RECON SPYGLASS (in /shop)
+#  Hold a player in sight through it for aim-seconds and you see their red outline through walls
+#  and a marker with name + distance - only you. The spotted player only hears a quiet click.
+# ------------------------------------------------------------
+recon:
+  enabled: true
+  range: 150
+  aim-seconds: 0.75
+  seconds: 10
+  # Longer for players with a bounty / the Legend Hunt target
+  seconds-bounty: 15
+  seconds-hunted: 20
+  cooldown-seconds: 30
+  # Uses before it breaks
+  charges: 20
+  # The spotted player hears a quiet click and sees an eye (no name)
+  hint-target: true
+  # Someone else kills a player you spotted (while spotted or up to assist-window-seconds after):
+  # you get assist-tokens + assist-bounty-percent of their bounty (on top, the killer still gets it all)
+  assist-window-seconds: 10
+  assist-tokens: 1
+  assist-bounty-percent: 25
 
 # ------------------------------------------------------------
 #  METEOR

@@ -137,6 +137,11 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
                     plugin.warden().spawnAt(player);
                 }
             }
+            case "recon" -> {
+                if (sender instanceof org.bukkit.entity.Player player && plugin.recon() != null) {
+                    plugin.bounty().give(player, plugin.recon().item());
+                }
+            }
             case "token", "seal", "tracker" -> {
                 if (!(sender instanceof org.bukkit.entity.Player player) || plugin.bounty() == null) {
                     sender.sendMessage(ItemManager.color("&cOnly players can do that."));
@@ -226,7 +231,7 @@ public final class RecipesCommand implements CommandExecutor, TabCompleter {
             return result;
         }
         if (args.length == 1) {
-            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "event", "ghost", "season"));
+            result.addAll(List.of("reload", "give", "status", "release", "finish", "meteor", "warden", "token", "seal", "tracker", "recon", "event", "ghost", "season"));
         } else if (args[0].equalsIgnoreCase("give")) {
             if (args.length == 2) {
                 Bukkit.getOnlinePlayers().forEach(p -> result.add(p.getName()));

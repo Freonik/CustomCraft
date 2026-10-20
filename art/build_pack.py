@@ -202,6 +202,34 @@ _Img.new('RGBA', (64, 16), (255, 255, 255, 255)).save(f'{CC}/textures/font/flash
 wjson(f'{CC}/font/flash.json', {"providers": [
     {"type": "bitmap", "file": "customcraft:font/flash.png", "ascent": 128, "height": 256, "chars": ["\ue100"]}]})
 
+# Recon Spyglass (custom model data 1501): flat icon in the inventory, held like a small tool in the hand
+run('recon.py', f'{CC}/textures/item')
+wjson(f'{CC}/models/item/recon_spyglass.json', {"parent": "minecraft:item/generated", "textures": {"layer0": "customcraft:item/recon_spyglass"}})
+wjson(f'{CC}/models/item/recon_spyglass_in_hand.json', {"parent": "minecraft:item/handheld",
+    "textures": {"layer0": "customcraft:item/recon_spyglass"},
+    "display": {"thirdperson_righthand": {"rotation": [0, -90, 35], "translation": [0, 2, 0.5], "scale": [0.6, 0.6, 0.6]},
+                "firstperson_righthand": {"rotation": [0, -90, 25], "translation": [1.13, 2.2, 1.13], "scale": [0.55, 0.55, 0.55]}}})
+_vanilla_spyglass = json.load(open(f'{V}/i_spyglass.json'))['model']
+wjson(f'{MC}/spyglass.json', dispatch([(1501, {"type": "minecraft:select", "property": "minecraft:display_context",
+                                               "cases": [{"when": ["gui", "ground", "fixed", "on_shelf"],
+                                                          "model": model("customcraft:item/recon_spyglass")}],
+                                               "fallback": model("customcraft:item/recon_spyglass_in_hand")})],
+                                      _vanilla_spyglass))
+
+# Legend Tracker (custom model data 1502): 32 needle angles, pointing at its lodestone target like a compass
+run('tracker.py', f'{CC}/textures/item')
+for i in range(32):
+    wjson(f'{CC}/models/item/legend_tracker_{i:02d}.json',
+          {"parent": "minecraft:item/generated", "textures": {"layer0": f"customcraft:item/legend_tracker_{i:02d}"}})
+_vanilla_compass = json.load(open(f'{V}/i_compass.json'))['model']
+_tracker_entries = []
+for e in _vanilla_compass['on_true']['entries']:
+    n = int(e['model']['model'].rsplit('_', 1)[1])                  # vanilla compass_NN, 16 = straight up
+    _tracker_entries.append({"threshold": e['threshold'], "model": model(f"customcraft:item/legend_tracker_{(n - 16) % 32:02d}")})
+_tracker = {"type": "minecraft:range_dispatch", "property": "minecraft:compass", "target": "lodestone", "scale": 32.0,
+            "entries": _tracker_entries}
+wjson(f'{MC}/compass.json', dispatch([(1502, _tracker)], _vanilla_compass))
+
 # Bounty Token and Warden's Seal
 run('tokens.py', f'{CC}/textures/item')
 for name in ['bounty_token', 'wardens_seal']:

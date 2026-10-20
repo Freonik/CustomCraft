@@ -357,6 +357,14 @@ and **meteor caches** (2 to 5 tokens). Spend them in **`/shop`** (or right-click
   an enchanted golden apple, a totem, elytra, a heavy core or a beacon. Rare items can only be bought once or
   twice per player per week.
 
+### <img src="docs/items/recon_spyglass.png" width="48" alt="" align="center"> Recon Spyglass
+Also in the shop (6 tokens, 20 uses). Hold a player in sight through it for a moment to **spot** them:
+for 10 seconds you see their **red outline through walls** and a marker with their name and distance.
+Only you see it. Players with a bounty stay spotted for 15 s, the Legend Hunt target for 20 s.
+The spotted player only hears a quiet click - no name, no direction. 30 s cooldown; settings under `recon:`.
+If someone else kills a player you spotted (while spotted, or up to 10 s later), you get an **assist**:
+1 Bounty Token plus a quarter of their bounty, on top of what the killer gets.
+
 Send tokens to someone with **`/pay <player> <amount>`**.
 
 With the resource pack, `/shop`, `/bounty` and the material picker get their own forge-style look, just like the forge menu.
@@ -498,7 +506,7 @@ New players get the **Forge Codex**, a book that explains the forge, rituals, le
 
 ### 🏆 Leaderboards
 **`/top <category>`** shows the top 10 (click a category to switch):
-`bounty`, `kills`, `mobkills`, `damage` (with legends), `wardens` (slain), `rifts` (closed), `hunts` (survived).
+`bounty`, `kills`, `mobkills`, `damage` (with legends), `wardens` (slain), `rifts` (closed), `hunts` (survived), `assists` (Recon assists).
 
 ### Placeholders (PlaceholderAPI)
 With [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) installed, other plugins
@@ -542,6 +550,7 @@ A top-10 hologram is just ten lines like `&6#1 %forgebound_top_kills_1_name% &7-
 | `/forge meteor` | `forgebound.admin` | drop a meteor now |
 | `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
 | `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport |
+| `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
 | | `forgebound.nocooldown` | abilities and relics without cooldowns (for testing) |

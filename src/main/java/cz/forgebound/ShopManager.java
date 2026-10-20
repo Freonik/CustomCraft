@@ -140,7 +140,7 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
             }
             String name = o.getString("material", id);
             String special = name.equalsIgnoreCase("legendary_material") || name.equalsIgnoreCase("legend_tracker")
-                    ? name.toLowerCase(Locale.ROOT) : null;
+                    || name.equalsIgnoreCase("recon_spyglass") ? name.toLowerCase(Locale.ROOT) : null;
             Material material = special != null ? null : Material.matchMaterial(name);
             if (special == null && (material == null || !material.isItem() || material.isAir())) {
                 plugin.getLogger().warning("Shop: unknown material for " + path + "." + id);
@@ -184,6 +184,9 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
             t.setAmount(offer.amount);
             return t;
         }
+        if ("recon_spyglass".equals(offer.special) && plugin.recon() != null) {
+            return plugin.recon().item();
+        }
         if ("legendary_material".equals(offer.special)) {
             ItemStack s = named(new ItemStack(Material.ENDER_EYE, offer.amount), "&d&lRandom legendary material");
             return s;
@@ -195,6 +198,8 @@ public final class ShopManager implements Listener, CommandExecutor, TabComplete
         for (int i = 0; i < offer.amount; i++) {
             if ("legend_tracker".equals(offer.special)) {
                 plugin.bounty().give(player, plugin.bounty().tracker());
+            } else if ("recon_spyglass".equals(offer.special) && plugin.recon() != null) {
+                plugin.bounty().give(player, plugin.recon().item());
             } else if ("legendary_material".equals(offer.special)) {
                 List<ItemManager.Entry> list = plugin.bounty().enabledMaterials();
                 if (!list.isEmpty()) {

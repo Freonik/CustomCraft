@@ -40,6 +40,7 @@ public final class TopManager implements CommandExecutor, TabCompleter {
         CATEGORIES.put("rifts", "Rifts closed");
         CATEGORIES.put("hunts", "Legend Hunts survived");
         CATEGORIES.put("ghosts", "Doppelgangers destroyed");
+        CATEGORIES.put("assists", "Recon assists");
     }
 
     public record Entry(UUID uuid, String name, double value) {

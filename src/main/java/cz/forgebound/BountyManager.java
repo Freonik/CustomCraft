@@ -239,6 +239,7 @@ public final class BountyManager implements Listener, CommandExecutor {
         ItemStack stack = new ItemStack(Material.COMPASS);
         ItemMeta meta = stack.getItemMeta();
         meta.displayName(ItemManager.color("&c&lLegend Tracker"));
+        meta.setCustomModelData(1502);
         meta.lore(List.of(ItemManager.color("&7Points roughly at the nearest player"),
                 ItemManager.color("&7carrying a legend. Updates every 30s."),
                 ItemManager.color("&8Searching...")));

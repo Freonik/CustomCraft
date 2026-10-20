@@ -29,6 +29,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private GhostManager ghost;
     private SeasonManager season;
     private CodexManager codex;
+    private ReconManager recon;
     private Placeholders placeholders;
     private HudManager hud;
     private boolean papi;
@@ -174,6 +175,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
             eventsCommand.setExecutor(events);
         }
 
+        recon = new ReconManager(this);
+        getServer().getPluginManager().registerEvents(recon, this);
+        recon.start();
         season = new SeasonManager(this);
         getServer().getPluginManager().registerEvents(season, this);
         ghost = new GhostManager(this);
@@ -244,6 +248,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         if (season != null) {
             season.shutdown();
         }
+        if (recon != null) {
+            recon.shutdown();
+        }
         if (warden != null) {
             warden.shutdown();
         }
@@ -276,6 +283,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
 
     public BountyManager bounty() {
         return bounty;
+    }
+
+    public ReconManager recon() {
+        return recon;
     }
 
     public CodexManager codex() {
@@ -362,7 +373,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
-            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season");
+            "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,
