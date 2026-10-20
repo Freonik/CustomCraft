@@ -164,7 +164,7 @@ public final class GhostManager implements Listener {
             public void run() {
                 t++;
                 if (active()) {
-                    tick();
+                    safeTick();
                 } else if (t % 1200 == 0) {
                     minute();
                 }
@@ -400,6 +400,38 @@ public final class GhostManager implements Listener {
 
     // ================================================================ AI
 
+    /** A direction straight up/down normalizes to NaN; such a velocity would throw ("x not finite"). */
+    private static Vector finite(Vector v) {
+        return Double.isFinite(v.getX()) && Double.isFinite(v.getY()) && Double.isFinite(v.getZ()) ? v : new Vector();
+    }
+
+    private long lastTickError;
+
+    /** One bad tick (odd geometry, a world edge...) must not stop the whole fight or hide its boss bar. */
+    private void safeTick() {
+        try {
+            tick();
+        } catch (RuntimeException ex) {
+            long now = System.currentTimeMillis();
+            if (now - lastTickError > 60_000) {
+                lastTickError = now;
+                plugin.getLogger().warning("Doppelganger tick: " + ex);
+            }
+        }
+        // boss bar for everyone near (outside tick(), so it's there even when tick() returns early)
+        if (active() && bar != null && body.getTicksLived() % 10 == 0) {
+            updateBar();
+            Location me = body.getLocation();
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p.getWorld() == me.getWorld() && p.getLocation().distanceSquared(me) < 64 * 64) {
+                    p.showBossBar(bar);
+                } else {
+                    p.hideBossBar(bar);
+                }
+            }
+        }
+    }
+
     private void tick() {
         long now = System.currentTimeMillis();
         Player victim = Bukkit.getPlayer(target);
@@ -474,7 +506,7 @@ public final class GhostManager implements Listener {
             if (body.isInWater() || me.getBlock().isLiquid()) {
                 vy = 0.12;
             }
-            body.setVelocity(new Vector(move.getX(), vy, move.getZ()));
+            body.setVelocity(finite(new Vector(move.getX(), vy, move.getZ())));
         }
         // stuck -> glitch closer
         if (body.getTicksLived() % 60 == 0) {
@@ -505,7 +537,7 @@ public final class GhostManager implements Listener {
             attackCooldown = 12;
             body.swingMainHand();
             hit(victim, cfg("attack-damage", 9));
-            victim.setVelocity(victim.getVelocity().add(to.clone().setY(0).normalize().multiply(0.4).setY(0.25)));
+            victim.setVelocity(finite(victim.getVelocity().add(to.clone().setY(0).normalize().multiply(0.4).setY(0.25))));
         }
         // other players close by get hit too
         if (attackCooldown == 6) {
@@ -537,17 +569,6 @@ public final class GhostManager implements Listener {
         if (body.getTicksLived() % 3 == 0) {
             me.getWorld().spawnParticle(Particle.DUST, me.clone().add(0, 1, 0), 2, 0.3, 0.8, 0.3, 0,
                     ThreadLocalRandom.current().nextBoolean() ? BLACK : WHITE);
-        }
-        // boss bar for everyone near
-        if (body.getTicksLived() % 10 == 0) {
-            updateBar();
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                if (p.getWorld() == me.getWorld() && p.getLocation().distanceSquared(me) < 64 * 64) {
-                    p.showBossBar(bar);
-                } else {
-                    p.hideBossBar(bar);
-                }
-            }
         }
     }
 
@@ -597,7 +618,7 @@ public final class GhostManager implements Listener {
         } else if (dist < 14 && r.nextBoolean()) {
             // echo dash: a burst straight at the victim
             Vector dir = victim.getLocation().toVector().subtract(me.toVector()).normalize();
-            body.setVelocity(dir.multiply(1.8).setY(0.25));
+            body.setVelocity(finite(dir.multiply(1.8).setY(0.25)));
             w.playSound(me, Sound.ENTITY_BREEZE_WIND_BURST, 1.5f, 0.7f);
             w.spawnParticle(Particle.SONIC_BOOM, me.clone().add(0, 1, 0), 1, 0, 0, 0, 0);
         } else if (dist < 22 && r.nextBoolean()) {
@@ -611,7 +632,7 @@ public final class GhostManager implements Listener {
             }
             w.playSound(victim.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 1.5f, 0.5f);
             Vector pull = me.toVector().subtract(victim.getLocation().toVector()).normalize().multiply(Math.min(2.2, 0.6 + len * 0.08));
-            victim.setVelocity(pull.setY(0.4));
+            victim.setVelocity(finite(pull.setY(0.4)));
             hit(victim, cfg("ability-damage", 6) * 0.5);
         } else if (body.hasLineOfSight(victim)) {
             // arrow volley
@@ -642,7 +663,7 @@ public final class GhostManager implements Listener {
             // a wind charge at its own feet: launches it up and forward
             burst(me);
             double lift = up > 2.5 ? Math.min(1.6, 0.9 + up * 0.12) : 0.9;
-            body.setVelocity(toward.clone().multiply(up > 2.5 ? 0.6 : 1.3).setY(lift));
+            body.setVelocity(finite(toward.clone().multiply(up > 2.5 ? 0.6 : 1.3).setY(lift)));
             flyingUntil = now + 900;
             nextWindAt = now + cooldown;
         } else if (dist > 4 && dist < 20 && body.hasLineOfSight(victim) && ThreadLocalRandom.current().nextInt(3) == 0) {
@@ -675,7 +696,7 @@ public final class GhostManager implements Listener {
             if (away.lengthSquared() > 1.0E-4) {
                 away.normalize().multiply(-0.12);
             }
-            body.setVelocity(new Vector(away.getX(), Math.min(0, body.getVelocity().getY()), away.getZ()));
+            body.setVelocity(finite(new Vector(away.getX(), Math.min(0, body.getVelocity().getY()), away.getZ())));
             if (eatingTicks % 4 == 0) {
                 me.getWorld().playSound(me, Sound.ENTITY_GENERIC_EAT, 1f, 0.8f + ThreadLocalRandom.current().nextFloat() * 0.4f);
                 me.getWorld().spawnParticle(Particle.ITEM, body.getEyeLocation().add(body.getLocation().getDirection().multiply(0.3)),
@@ -778,7 +799,7 @@ public final class GhostManager implements Listener {
                 body.getEquipment().setItemInMainHand(new ItemStack(Material.NETHERITE_PICKAXE));
             }
         }
-        body.setVelocity(new Vector(0, Math.min(0, body.getVelocity().getY()), 0));
+        body.setVelocity(finite(new Vector(0, Math.min(0, body.getVelocity().getY()), 0)));
         digProgress++;
         Location loc = next.getLocation();
         float stage = Math.min(0.99f, (float) digProgress / digNeeded);
@@ -920,13 +941,13 @@ public final class GhostManager implements Listener {
                 want = v.clone().normalize().multiply(0.8).add(aim.clone().multiply(0.2)).normalize().multiply(speed);
                 want.setY(Math.min(want.getY(), -0.08));
             }
-            body.setVelocity(v.multiply(0.6).add(want.multiply(0.4)));
+            body.setVelocity(finite(v.multiply(0.6).add(want.multiply(0.4))));
             body.setGliding(true);
             return true;
         }
         if (dist > cfg("elytra-distance", 25) && grounded && now >= nextWindAt && (rockets > 0 || dist < 45)) {
             burst(me);
-            body.setVelocity(new Vector(0, 1.5, 0));
+            body.setVelocity(finite(new Vector(0, 1.5, 0)));
             nextWindAt = now + 4000;
             flyingUntil = now + 1500;
             nextRocketAt = now + 700;
