@@ -46,8 +46,7 @@ run('arsenal.py', f'{CC}/textures/item')
 # The Last Act (rifle on the crossbow) + Gilded Mask Shard
 run('lastact.py', f'{CC}/textures/item')
 # 3D in-hand models made from the sprites themselves (after every sprite above is drawn)
-run('voxel3d.py', CC, 'clawline_pick', 'silk_needle',
-    'rimebreaker', 'knightfall')
+run('voxel3d.py', CC, 'rimebreaker', 'knightfall')
 # hand-built 3D models (two at a time), replacing the sprite-based ones
 run('pair_models.py', CC)
 for n in os.listdir(f'{CC}/textures/item/gui'):

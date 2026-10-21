@@ -306,4 +306,76 @@ for f in range(12):
 save(bulb, f'{TEX}/abyssal_maw_lure.png', frametime=2)
 write_model('abyssal_maw', {"t": "customcraft:item/abyssal_maw_3d", "glow": "customcraft:item/abyssal_maw_glow",
                             "glow2": "customcraft:item/abyssal_maw_lure"}, els)
+
+def chain(points, heights, z, mat, ends=None, front=None, overlap=0.4, depthfn=None):
+    """Boxes along a bent path (one per pair of points), angles rounded to 22.5 degrees."""
+    out = []
+    for i in range(len(points) - 1):
+        (x0, y0), (x1, y1) = points[i], points[i + 1]
+        ang = round((math.degrees(math.atan2(y1 - y0, x1 - x0)) % 180) / 22.5) * 22.5
+        h = (heights[i] + heights[i + 1]) / 2
+        zz = depthfn(i) if depthfn else z
+        out.append(seg((x0 + x1) / 2, (y0 + y1) / 2, math.hypot(x1 - x0, y1 - y0) + overlap, h, 8 - zz, 8 + zz, ang,
+                       mat, ends=ends, front=front))
+    return out
+
+
+# ============================================================ Clawline Pick
+PSTEEL = [(40, 42, 50), (70, 72, 84), (110, 112, 126), (160, 162, 176), (215, 216, 228)]
+PWOOD = [(36, 22, 14), (66, 44, 28), (96, 66, 42), (126, 90, 60)]
+PRED = [(110, 14, 20), (200, 40, 44), (250, 100, 96)]
+
+s = Sheet('clawline_pick_3d')
+s.paint('head', 0, 0, 32, 8, lambda x, y, w, h: ramp(PSTEEL, min(0.99, 0.25 + 0.65 * (1 - y / (h - 1)) ** 1.4
+                                                                  + 0.05 * noise(x, y, 60))))
+s.paint('headside', 32, 0, 16, 4, lambda x, y, w, h: ramp(PSTEEL, 0.5 + 0.1 * noise(x, y, 61)))
+s.paint('wood', 0, 8, 8, 40, lambda x, y, w, h: ramp(PWOOD, 0.25 + 0.5 * (1 - abs(x - 3.5) / 3.5)
+                                                   + (0.12 if (x * 5 + y) % 9 == 0 else 0)))
+s.paint('red', 8, 8, 8, 8, lambda x, y, w, h: ramp(PRED, 0.4 + 0.55 * (1 - (x + y) / 14)))
+s.paint('cap', 16, 8, 8, 8, lambda x, y, w, h: ramp(PSTEEL, 0.4 + 0.5 * (1 - y / 7)))
+s.save()
+t = lambda k: ("t", s.uv(k))
+els = []
+els.append(seg(1.3, 1.3, 1.2, 1.6, 7.2, 8.8, 45, t('cap')))                                     # end cap
+els.append(seg(5.3, 5.3, 10.4, 1.15, 7.42, 8.58, 45, t('wood'), ends=t('cap')))                # haft
+els.append(seg(9.1, 9.1, 1.8, 1.9, 7.05, 8.95, 45, t('red')))                                   # red binding
+arc = [(2.6, 11.2), (4.6, 12.1), (7.0, 12.25), (9.2, 11.7), (10.8, 10.5), (11.65, 8.7), (11.85, 6.5), (11.7, 4.4),
+       (11.45, 3.0)]
+heights = [0.9, 1.35, 1.6, 1.75, 1.8, 1.75, 1.6, 1.3, 0.9]
+els += chain(arc, heights, 0.55, t('headside'), ends=t('headside'), front=t('head'),
+             depthfn=lambda i: 0.6 - 0.12 * abs(i - 3.5) / 3.5)
+els.append(seg(2.2, 10.9, 1.2, 1.0, 7.5, 8.5, 22.5, t('red')))                                 # red tips
+els.append(seg(11.4, 2.5, 1.2, 1.0, 7.5, 8.5, 90, t('red')))
+write_model('clawline_pick', {"t": "customcraft:item/clawline_pick_3d"}, els)
+
+# ============================================================ Silk Needle
+NSTEEL = [(60, 62, 74), (120, 124, 138), (190, 194, 206), (235, 238, 245), (255, 255, 255)]
+NRED = [(60, 8, 14), (110, 16, 26), (170, 34, 44)]
+SILKC = [(205, 198, 182), (238, 234, 222), (255, 255, 250)]
+
+s = Sheet('silk_needle_3d')
+s.paint('blade', 0, 0, 4, 56, lambda x, y, w, h: ramp(NSTEEL, [0.95, 0.75, 0.5, 0.3][x]))
+s.paint('bladeside', 4, 0, 4, 56, lambda x, y, w, h: ramp(NSTEEL, 0.55))
+s.paint('ring', 8, 0, 8, 8, lambda x, y, w, h: ramp(SILKC, 0.35 + 0.6 * (1 - y / 7)))
+s.paint('grip', 16, 0, 8, 16, lambda x, y, w, h: ramp(NRED, 0.85 if (y + (x > 3)) % 3 == 0 else 0.3))
+s.paint('silk', 24, 0, 8, 8, lambda x, y, w, h: ramp(SILKC, 0.6 + 0.35 * noise(x, y, 70)))
+s.save()
+t = lambda k: ("t", s.uv(k))
+els = []
+els.append(seg(1.3, 1.6, 1.0, 1.0, 7.5, 8.5, 45, t('ring')))                                    # pommel bead
+els.append(seg(3.0, 3.3, 3.6, 0.95, 7.52, 8.48, 45, t('grip'), ends=t('ring')))                 # red grip
+# the ring guard: an open loop of silk-white metal around the base of the blade
+rc = (4.9, 5.2)
+for k in range(8):
+    a = math.radians(k * 45 + 22.5)
+    els.append(seg(rc[0] + math.cos(a) * 1.25, rc[1] + math.sin(a) * 1.25, 1.15, 0.45, 7.6, 8.4,
+                   (k * 45 + 22.5 + 90) % 180, t('ring')))
+# the needle: long, thin, a white edge on one side, narrowing to a fine point
+els.append(seg(10.0, 10.3, 12.0, 0.95, 7.7, 8.3, 45, t('bladeside'), front=t('blade')))
+els.append(seg(14.85, 15.15, 1.5, 0.62, 7.78, 8.22, 45, t('bladeside'), front=t('blade')))
+els.append(seg(15.55, 15.85, 1.0, 0.36, 7.84, 8.16, 45, t('bladeside')))
+# silk thread trailing from the pommel, rippling out to the right
+thread = [(1.0, 1.3), (2.4, 0.8), (4.0, 0.7), (5.6, 1.0), (7.0, 1.3), (8.6, 1.4), (10.0, 1.8), (11.6, 2.3)]
+els += chain(thread, [0.38] * len(thread), 0.16, t('silk'), overlap=0.25)
+write_model('silk_needle', {"t": "customcraft:item/silk_needle_3d"}, els)
 print('pair models done')
