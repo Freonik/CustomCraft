@@ -45,6 +45,9 @@ run('sets2.py', f'{CC}/textures/item', f'{CC}/textures/entity/equipment')
 run('arsenal.py', f'{CC}/textures/item')
 # The Last Act (rifle on the crossbow) + Gilded Mask Shard
 run('lastact.py', f'{CC}/textures/item')
+# 3D in-hand models made from the sprites themselves (after every sprite above is drawn)
+run('voxel3d.py', CC, 'soulbinder', 'hydra_edge', 'butcher_cleaver', 'abyssal_maw', 'clawline_pick', 'silk_needle',
+    'rimebreaker', 'knightfall')
 for n in os.listdir(f'{CC}/textures/item/gui'):
     os.remove(f'{CC}/textures/item/gui/{n}')
 run('gui.py', f'{CC}/textures/item/gui')
