@@ -188,4 +188,122 @@ for f in range(12):
     glow.append(im)
 save(glow, f'{TEX}/hydra_edge_glow.png', frametime=2)
 write_model('hydra_edge', {"t": "customcraft:item/hydra_edge_3d", "glow": "customcraft:item/hydra_edge_glow"}, els)
+
+# ============================================================ Butcher's Cleaver
+STEELC = [(26, 24, 30), (44, 42, 50), (66, 64, 74), (96, 94, 104), (140, 138, 146), (200, 200, 208), (245, 245, 250)]
+BLOODC = [(70, 4, 12), (120, 10, 22), (170, 24, 34)]
+RUSTC = [(90, 44, 20), (130, 70, 30)]
+PLAGUEC = [(70, 34, 96), (120, 70, 170), (170, 120, 220)]
+BONEC = [(150, 140, 110), (205, 196, 165), (238, 232, 206)]
+WRAPC = [(80, 66, 50), (130, 112, 88), (180, 164, 134)]
+
+def cleaver_face(x, y, w, h):
+    # hammered steel, darker toward the spine (right), blood splashes and a rust stain, a plague sheen
+    t_ = 0.3 + 0.25 * (1 - x / (w - 1)) + 0.06 * ((x // 3 + y // 3) % 2)
+    col = ramp(STEELC, t_)
+    if (x - 9) ** 2 / 9 + (y - 18) ** 2 / 16 < 1 or (x - 4) ** 2 / 4 + (y - 30) ** 2 / 9 < 1 or (x - 12) ** 2 / 3 + (y - 8) ** 2 / 5 < 1:
+        col = ramp(BLOODC, 0.3 + 0.6 * noise(x, y, 40))
+    elif (x - 6) ** 2 / 4 + (y - 7) ** 2 / 3 < 1:
+        col = ramp(RUSTC, 0.6)
+    elif x > w - 5 and (x + y) % 5 == 0:
+        col = ramp(PLAGUEC, 0.5)
+    return col
+
+s = Sheet('butcher_cleaver_3d')
+s.paint('face', 0, 0, 16, 44, cleaver_face)
+s.paint('edge', 16, 0, 4, 44, lambda x, y, w, h: ramp(STEELC, 0.92 if (y + 3) % 9 else 0.99))
+s.paint('spine', 20, 0, 4, 44, lambda x, y, w, h: ramp(STEELC, 0.08 + 0.08 * noise(x, y, 41)))
+s.paint('wrap', 24, 0, 8, 24, lambda x, y, w, h: ramp(WRAPC, 0.15 if y % 4 == 0 else 0.55 + 0.3 * (1 - abs(x - 3.5) / 3.5)))
+s.paint('bone', 32, 0, 8, 8, lambda x, y, w, h: ramp(BONEC, 0.35 + 0.6 * (1 - (x + y) / 14)))
+s.paint('bolster', 40, 0, 8, 8, lambda x, y, w, h: ramp(STEELC, 0.35 + 0.35 * (1 - y / 7)))
+s.paint('rivet', 48, 0, 4, 4, lambda x, y, w, h: ramp(PLAGUEC, 0.95 if (x, y) == (1, 1) else 0.55))
+s.paint('red', 52, 0, 4, 4, lambda x, y, w, h: ramp(BLOODC, 0.95))
+s.save()
+t = lambda k: ("t", s.uv(k))
+els = []
+d45 = (math.sqrt(0.5), math.sqrt(0.5))          # along the weapon
+perp = (-math.sqrt(0.5), math.sqrt(0.5))        # across it, toward the cutting edge
+els.append(seg(1.25, 1.45, 1.9, 1.9, 7.0, 9.0, 45, t('bone')))                                  # bone knob
+els.append(seg(3.6, 3.85, 5.6, 1.3, 7.35, 8.65, 45, t('wrap')))                                # wrapped handle
+els.append(seg(6.2, 6.45, 1.6, 2.2, 7.1, 8.9, 45, t('bolster')))                               # bolster
+bc = (8.9, 10.4)                                                                                # blade centre
+els.append(seg(bc[0], bc[1], 10.8, 4.4, 7.62, 8.38, 45, t('edge'), ends=t('spine'), front=t('face')))
+def along(c, a, p):
+    return (c[0] + d45[0] * a + perp[0] * p, c[1] + d45[1] * a + perp[1] * p)
+ex, ey = along(bc, 0, 2.35)
+els.append(seg(ex, ey, 10.4, 0.45, 7.68, 8.32, 45, t('edge')))                                 # the cutting edge
+sx, sy = along(bc, -0.2, -2.35)
+els.append(seg(sx, sy, 10.6, 0.7, 7.3, 8.7, 45, t('spine')))                                   # the thick spine
+for a in (-3.2, 1.0):
+    rx, ry = along(bc, a, -1.9)
+    els.append(seg(rx, ry, 0.6, 0.6, 7.2, 8.8, 45, t('rivet')))                                # plague rivets
+hx, hy = along(bc, 3.6, -0.9)
+els.append(seg(hx, hy, 0.8, 0.8, 7.55, 8.45, 45, ("t", s.uv('spine'))))                        # the hanging hole
+kx, ky = along(bc, -4.6, 2.6)
+els.append(seg(kx, ky, 0.6, 0.6, 7.6, 8.4, 45, t('red')))                                      # the red notch
+write_model('butcher_cleaver', {"t": "customcraft:item/butcher_cleaver_3d"}, els)
+
+# ============================================================ Abyssal Maw
+ABY = [(4, 12, 22), (8, 24, 40), (14, 40, 62), (22, 62, 88), (40, 96, 120), (90, 160, 170)]
+GLOWC = [(20, 110, 120), (40, 200, 200), (140, 255, 240), (230, 255, 250)]
+TOOTHC = [(170, 172, 150), (222, 224, 204), (252, 252, 242)]
+LUREY = [(160, 120, 20), (240, 200, 60), (255, 240, 150), (255, 255, 230)]
+SKINC = [(8, 26, 32), (16, 48, 56), (30, 80, 90)]
+
+s = Sheet('abyssal_maw_3d')
+s.paint('blade', 0, 0, 8, 48, lambda x, y, w, h: ramp(ABY, min(0.99, 0.38 + 0.3 * (1 - abs(x - 3.5) / 3.5)
+                                                                    + (0.1 if (y // 2) % 2 else 0) + (0.35 if x == 0 else 0))))
+s.paint('bladeside', 8, 0, 4, 48, lambda x, y, w, h: ramp(ABY, 0.45))
+s.paint('tooth', 12, 0, 4, 4, lambda x, y, w, h: ramp(TOOTHC, 0.95 - 0.25 * y / 3))
+s.paint('skin', 16, 0, 8, 8, lambda x, y, w, h: ramp(SKINC, 0.25 + 0.6 * (1 - y / 7) + 0.1 * noise(x, y, 50)))
+s.paint('grip', 24, 0, 8, 16, lambda x, y, w, h: ramp(SKINC, 0.9 if (y + (x > 3)) % 3 == 0 else 0.25))
+s.paint('eye', 32, 0, 4, 4, lambda x, y, w, h: ramp(LUREY, 0.9))
+s.paint('pommel', 36, 0, 8, 8, lambda x, y, w, h: ramp(GLOWC, 0.5 + 0.45 * (1 - (x + y) / 14)))
+s.save()
+t = lambda k: ("t", s.uv(k))
+els = []
+els.append(seg(1.4, 1.4, 1.8, 1.8, 7.1, 8.9, 45, t('pommel')))                                 # glowing pommel
+els.append(seg(3.1, 3.1, 3.4, 1.25, 7.38, 8.62, 45, t('grip')))                                # grip
+els.append(seg(5.3, 5.3, 4.4, 1.5, 7.0, 9.0, 135, t('skin')))                                  # the fish-jaw guard
+els.append(seg(4.0, 6.7, 0.6, 0.6, 6.9, 9.1, 135, t('eye')))                                   # its eye
+bc = (10.0, 10.0)
+els.append(seg(bc[0], bc[1], 12.8, 2.4, 7.6, 8.4, 45, t('bladeside'), front=t('blade')))
+els.append(seg(14.75, 14.75, 1.4, 1.4, 7.7, 8.3, 45, t('bladeside'), front=t('blade')))
+els.append(seg(bc[0] + 0.3, bc[1] + 0.3, 11.2, 0.55, 7.45, 8.55, 45, ("glow", [5, 0, 11, 16])))             # the glowing line
+for k in range(6):                                                                             # fangs on both edges
+    a = -4.4 + k * 1.85
+    for side, off in ((1, 1.45), (-1, -1.45)):
+        if side < 0 and k == 5:
+            continue
+        tx, ty = along(bc, a + (0.9 if side < 0 else 0), off)
+        els.append(seg(tx, ty, 0.55, 0.7, 7.75, 8.25, 45 if side > 0 else 45, t('tooth')))
+# the lure: a stalk curling up from the guard, and its glowing bulb
+stalk = [(4.2, 6.6), (3.1, 7.9), (2.6, 9.4), (2.9, 10.9), (3.9, 12.0), (5.1, 12.4)]
+for i in range(len(stalk) - 1):
+    (x0, y0), (x1, y1) = stalk[i], stalk[i + 1]
+    ang = round((math.degrees(math.atan2(y1 - y0, x1 - x0)) % 180) / 22.5) * 22.5
+    els.append(seg((x0 + x1) / 2, (y0 + y1) / 2, math.hypot(x1 - x0, y1 - y0) + 0.35, 0.45, 7.78, 8.22, ang, t('skin')))
+els.append(seg(6.1, 12.1, 1.5, 1.5, 7.25, 8.75, 0, ("glow2", [0, 0, 16, 16])))
+glow = []
+for f in range(12):
+    im = Image.new('RGBA', (16, 16))
+    for y in range(16):
+        w = ((15 - y) / 16 - f / 12) % 1.0
+        g = max(0, 1 - abs(w - 0.5) * 5)
+        for x in range(16):
+            im.putpixel((x, y), tuple(ramp(GLOWC, 0.35 + 0.6 * g)[:3]) + (255,))
+    glow.append(im)
+save(glow, f'{TEX}/abyssal_maw_glow.png', frametime=2)
+bulb = []
+for f in range(12):
+    p_ = 0.5 + 0.5 * math.sin(2 * math.pi * f / 12)
+    im = Image.new('RGBA', (16, 16))
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5) / 8
+            im.putpixel((x, y), tuple(ramp(LUREY, max(0, min(0.99, 0.95 - d * 0.6 + 0.2 * p_ - 0.1)))[:3]) + (255,))
+    bulb.append(im)
+save(bulb, f'{TEX}/abyssal_maw_lure.png', frametime=2)
+write_model('abyssal_maw', {"t": "customcraft:item/abyssal_maw_3d", "glow": "customcraft:item/abyssal_maw_glow",
+                            "glow2": "customcraft:item/abyssal_maw_lure"}, els)
 print('pair models done')
