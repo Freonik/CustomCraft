@@ -158,6 +158,28 @@ final class ForgeCommands {
             plugin.scorched().locate(ctx.getSource().getSender());
             return Command.SINGLE_SUCCESS;
         }));
+        root.then(Commands.literal("ancient").requires(ForgeCommands::admin)
+                .executes(ctx -> {
+                    plugin.stars().list(ctx.getSource().getSender());
+                    return Command.SINGLE_SUCCESS;
+                })
+                .then(Commands.literal("here").executes(ctx -> player(ctx, p -> plugin.stars().buildHere(p))))
+                .then(Commands.literal("finish").executes(ctx -> {
+                    plugin.stars().finishAll(ctx.getSource().getSender());
+                    return Command.SINGLE_SUCCESS;
+                }))
+                .then(Commands.literal("cool").executes(ctx -> {
+                    plugin.stars().resetCooldowns(ctx.getSource().getSender());
+                    return Command.SINGLE_SUCCESS;
+                })));
+        root.then(Commands.literal("stars").requires(ForgeCommands::admin)
+                .then(Commands.argument("player", ArgumentTypes.player())
+                        .then(Commands.argument("stars", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(1, 5))
+                                .executes(ctx -> {
+                                    plugin.stars().setCommand(ctx.getSource().getSender(), onePlayer(ctx, "player"),
+                                            com.mojang.brigadier.arguments.DoubleArgumentType.getDouble(ctx, "stars"));
+                                    return Command.SINGLE_SUCCESS;
+                                }))));
         var update = Commands.literal("update").requires(ForgeCommands::admin)
                 .executes(ctx -> update(ctx, "now"));
         for (String sub : List.of("on", "off", "now")) {

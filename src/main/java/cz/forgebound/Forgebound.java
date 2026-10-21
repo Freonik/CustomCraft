@@ -35,6 +35,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private EnchantManager enchants;
     private Updater updater;
     private ScorchedLands scorched;
+    private StarManager stars;
     private boolean papi;
 
     /** Writes data files one after another in the background, so saving never stalls the server. */
@@ -189,6 +190,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(enchants, this);
         getServer().getPluginManager().registerEvents(new ItemComponents(this), this);
 
+        stars = new StarManager(this, items);
+        getServer().getPluginManager().registerEvents(stars, this);
+        stars.start();
         scorched = new ScorchedLands(this);
         getServer().getPluginManager().registerEvents(scorched, this);
         scorched.start();
@@ -241,6 +245,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         if (rituals != null) {
             rituals.shutdown();
         }
+        if (stars != null) {
+            stars.shutdown();
+        }
         io.shutdown();
         try {
             if (!io.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -280,6 +287,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
 
     public HudManager hud() {
         return hud;
+    }
+
+    public StarManager stars() {
+        return stars;
     }
 
     public ScorchedLands scorched() {
@@ -387,7 +398,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
             "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon", "teams",
             "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items", "auto-update",
-            "scorched-lands", "scorched-lands.loot");
+            "scorched-lands", "scorched-lands.loot", "stars", "ancient-forge");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

@@ -509,7 +509,8 @@ public final class AbilityManager implements Listener {
                 if (start) {
                     cooldowns.computeIfAbsent(player.getUniqueId(), k -> new HashMap<>())
                             .put(key, now + (long) (active.cooldown() * 1000L
-                                    * (plugin.events() == null ? 1 : plugin.events().cooldownMultiplier(player))));
+                                    * (plugin.events() == null ? 1 : plugin.events().cooldownMultiplier(player))
+                                    * (plugin.stars() == null ? 1 : plugin.stars().cooldownMultiplier(player))));
                 }
             }
             if (plugin.legends() != null) {
@@ -1934,6 +1935,9 @@ public final class AbilityManager implements Listener {
         lore.add(ItemManager.color("&6⚔ Kills: &f" + kills));
         meta.lore(lore);
         hand.setItemMeta(meta);
+        if (plugin.stars() != null && plugin.stars().enabled()) {
+            plugin.stars().decorate(hand, weapon);                 // keeps the stars in the name and lore
+        }
         killer.getInventory().setItemInMainHand(hand);
         List<String> unlocked = new ArrayList<>();
         for (Active active : weapon.abilities.actives) {

@@ -51,6 +51,7 @@ public final class ScorchedLands implements Listener {
     private final Forgebound plugin;
     private final NamespacedKey guardKey;
     private final Populator populator = new Populator();
+    private final NetherPopulator netherPopulator = new NetherPopulator();
     private final Map<Long, ScorchedNoise> noises = new ConcurrentHashMap<>();
     private final Map<String, BlockData> blockCache = new ConcurrentHashMap<>();
     private volatile Settings settings;
@@ -59,7 +60,8 @@ public final class ScorchedLands implements Listener {
     private volatile LootTable lootSmall;
 
     record Settings(boolean enabled, List<String> worlds, double rarity, double zoneSize, boolean ruins,
-                    double ruinChance, boolean guards) { }
+                    double ruinChance, boolean guards, double ancientChance, boolean nether, int netherCell,
+                    double netherChance) { }
 
     public ScorchedLands(Forgebound plugin) {
         this.plugin = plugin;
@@ -73,7 +75,9 @@ public final class ScorchedLands implements Listener {
         settings = new Settings(c.getBoolean("scorched-lands.enabled", true), c.getStringList("scorched-lands.worlds"),
                 c.getDouble("scorched-lands.rarity", 0.03), c.getDouble("scorched-lands.zone-size", 800),
                 c.getBoolean("scorched-lands.ruins", true), c.getDouble("scorched-lands.ruin-chance", 0.35),
-                c.getBoolean("scorched-lands.guards", true));
+                c.getBoolean("scorched-lands.guards", true),
+                c.getDouble("ancient-forge.scorched-chance", 0.12), c.getBoolean("ancient-forge.nether", true),
+                Math.max(4, c.getInt("ancient-forge.nether-cell-chunks", 16)), c.getDouble("ancient-forge.nether-chance", 0.3));
         noises.clear();
         biome = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).get(BIOME);
         if (biome == null) {
@@ -102,6 +106,9 @@ public final class ScorchedLands implements Listener {
     private void attach(World world) {
         if (wanted(world) && !world.getPopulators().contains(populator)) {
             world.getPopulators().add(populator);
+        }
+        if (world.getEnvironment() == World.Environment.NETHER && !world.getPopulators().contains(netherPopulator)) {
+            world.getPopulators().add(netherPopulator);
         }
     }
 
@@ -247,7 +254,8 @@ public final class ScorchedLands implements Listener {
         if (noise.strength((chunkX << 4) + 8, (chunkZ << 4) + 8) < 1) {
             return;
         }
-        ForgeRuins.Type type = ForgeRuins.pick(cell);
+        boolean ancient = cell.nextDouble() < s.ancientChance();
+        ForgeRuins.Type type = ancient ? ForgeRuins.Type.ANCIENT : ForgeRuins.pick(cell);
         int ox = 1 + cell.nextInt(Math.max(1, 15 - type.width));
         int oz = 1 + cell.nextInt(Math.max(1, 15 - type.depth));
         // flat enough, and all of it burnt (no water)?
@@ -271,7 +279,12 @@ public final class ScorchedLands implements Listener {
         int y0 = (int) Math.round((double) sum / (type.width * type.depth));
         int bx = (chunkX << 4) + ox;
         int bz = (chunkZ << 4) + oz;
-        ForgeRuins.Canvas canvas = new ForgeRuins.Canvas() {
+        ForgeRuins.Result result = ForgeRuins.build(type, canvas(region), bx, y0, bz, cell);
+        finish(info, region, result, s, cell, false);
+    }
+
+    private ForgeRuins.Canvas canvas(LimitedRegion region) {
+        return new ForgeRuins.Canvas() {
             @Override
             public void set(int x, int y, int z, String block) {
                 if (region.isInRegion(x, y, z)) {
@@ -284,7 +297,11 @@ public final class ScorchedLands implements Listener {
                 return region.isInRegion(x, y, z) ? region.getType(x, y, z).getKey().toString() : "minecraft:stone";
             }
         };
-        ForgeRuins.Result result = ForgeRuins.build(type, canvas, bx, y0, bz, cell);
+    }
+
+    /** Loot, guards and (for an Ancient Forge) registering the forge. */
+    private void finish(WorldInfo info, LimitedRegion region, ForgeRuins.Result result, Settings s, SplittableRandom cell,
+                        boolean nether) {
         long seed = cell.nextLong();
         for (int[] p : result.bigChests) {
             loot(region, p, lootBig, seed++);
@@ -294,9 +311,84 @@ public final class ScorchedLands implements Listener {
         }
         if (s.guards()) {
             for (int[] p : result.guards) {
-                guard(region, p);
+                guard(region, p, nether);
             }
         }
+        if (result.core != null && plugin.stars() != null) {
+            plugin.stars().found(info.getName(), result.core[0], result.core[1], result.core[2]);
+        }
+    }
+
+    // ================================================================ Ancient Forges in the Nether
+
+    private final class NetherPopulator extends BlockPopulator {
+        @Override
+        public void populate(WorldInfo info, Random random, int chunkX, int chunkZ, LimitedRegion region) {
+            Settings s = settings;
+            if (!s.nether() || s.netherChance() <= 0) {
+                return;
+            }
+            try {
+                netherForge(info, chunkX, chunkZ, region, s);
+            } catch (RuntimeException ex) {
+                plugin.getLogger().warning("Ancient Forge at nether chunk " + chunkX + "," + chunkZ + ": " + ex);
+            }
+        }
+    }
+
+    /** One possible Ancient Forge per cell of chunks, on an open floor between 32 and 100. */
+    private void netherForge(WorldInfo info, int chunkX, int chunkZ, LimitedRegion region, Settings s) {
+        int size = s.netherCell();
+        int cellX = Math.floorDiv(chunkX, size);
+        int cellZ = Math.floorDiv(chunkZ, size);
+        SplittableRandom cell = new SplittableRandom(info.getSeed() * 17 + cellX * 50331653L + cellZ * 1610612741L + 99);
+        int pickX = 1 + cell.nextInt(size - 2);
+        int pickZ = 1 + cell.nextInt(size - 2);
+        if (Math.floorMod(chunkX, size) != pickX || Math.floorMod(chunkZ, size) != pickZ || cell.nextDouble() >= s.netherChance()) {
+            return;
+        }
+        int bx = (chunkX << 4) + 1;
+        int bz = (chunkZ << 4) + 1;
+        int n = ForgeRuins.Type.ANCIENT_NETHER.width;
+        // the lowest open floor (solid, with 8 free blocks above) in the middle of the footprint
+        int cx = bx + n / 2;
+        int cz = bz + n / 2;
+        int floor = Integer.MIN_VALUE;
+        for (int y = 32; y <= 100; y++) {
+            if (!region.isInRegion(cx, y, cz) || !region.getType(cx, y, cz).isSolid()) {
+                continue;
+            }
+            boolean open = true;
+            for (int up = 1; up <= 8 && open; up++) {
+                open = region.isInRegion(cx, y + up, cz) && region.getType(cx, y + up, cz).isAir();
+            }
+            if (open) {
+                floor = y;
+                break;
+            }
+        }
+        if (floor == Integer.MIN_VALUE) {
+            return;
+        }
+        // most of the footprint needs ground close below the floor (no forge hanging over a lava sea)
+        int grounded = 0;
+        int total = 0;
+        for (int x = bx; x < bx + n; x += 2) {
+            for (int z = bz; z < bz + n; z += 2) {
+                total++;
+                for (int y = floor; y >= floor - 4; y--) {
+                    if (region.isInRegion(x, y, z) && region.getType(x, y, z).isSolid()) {
+                        grounded++;
+                        break;
+                    }
+                }
+            }
+        }
+        if (grounded * 10 < total * 7) {
+            return;
+        }
+        ForgeRuins.Result result = ForgeRuins.build(ForgeRuins.Type.ANCIENT_NETHER, canvas(region), bx, floor, bz, cell);
+        finish(info, region, result, s, cell, true);
     }
 
     private void loot(LimitedRegion region, int[] p, LootTable table, long seed) {
@@ -310,12 +402,20 @@ public final class ScorchedLands implements Listener {
         }
     }
 
-    /** A ruin guard: a husk in battered armor that doesn't despawn. */
-    private void guard(LimitedRegion region, int[] p) {
+    /** A ruin guard: a husk in battered armor that doesn't despawn (a wither skeleton in the Nether). */
+    private void guard(LimitedRegion region, int[] p, boolean nether) {
         if (!region.isInRegion(p[0], p[1], p[2]) || !region.getType(p[0], p[1], p[2]).isAir()) {
             return;
         }
         Location at = new Location(region.getWorld(), p[0] + 0.5, p[1], p[2] + 0.5);
+        if (nether) {
+            region.spawn(at, org.bukkit.entity.WitherSkeleton.class, ws -> {
+                ws.setRemoveWhenFarAway(false);
+                ws.setPersistent(true);
+                ws.getPersistentDataContainer().set(guardKey, PersistentDataType.BYTE, (byte) 1);
+            });
+            return;
+        }
         region.spawn(at, Husk.class, husk -> {
             husk.setRemoveWhenFarAway(false);
             husk.setPersistent(true);

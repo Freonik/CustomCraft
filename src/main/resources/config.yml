@@ -1209,6 +1209,7 @@ codex:
     - "&6&lThe Ritual\n\n&0Forging takes &l15 minutes&r&0. Everyone is told what is being forged, and the place is revealed step by step.\n\n&4Defend the table!&0 The legend drops on it at the end."
     - "&6&lMaterials\n\n&0Legendary materials drop from bosses and rare mobs, or hide in structure chests.\n\nMeteors, Rifts and the Forge Warden give them too."
     - "&6&lLegends\n\n&0F and Shift+F use a weapon's abilities.\n\n&e/legends&0 shows every legend and your stats.\n\nLeave the server for too long and your legend returns to the forge."
+    - "&6&lStars\n\n&0Weapons have &6★&0 to &6★★★★★&0. More stars = more damage, shorter cooldowns.\n\nFind an &5Ancient Forge&0 (Scorched Lands, Nether) to add one.\n\n&4Die and you lose stars!"
     - "&6&lBounties\n\n&0Carrying a legend puts a price on your head. Whoever kills you gets &6Bounty Tokens&0.\n\n&e/bounty&0 shows the most wanted.\n&0The &lLegend Tracker&r&0 finds them."
     - "&6&lTokens\n\n&0Tokens are the server's money.\n\n&e/shop&0 always has something, and a new offer every week.\n&e/pay&0 sends tokens to a friend."
     - "&6&lEvents\n\n&4Blood Moon&0: tough nights.\n&5Rift&0: waves of monsters.\n&cLegend Hunt&0: a holder is hunted.\n&6Meteor&0, &eGolden Shipment&0, &aHappy Hour&0, &6Forge Market&0.\n\n&e/events&0 shows what's on."
@@ -1560,6 +1561,70 @@ scorched-lands:
     tokens-max: 3
     # % chance of a random legendary material in the big forge chest
     material-chance: 3
+
+# ------------------------------------------------------------
+#  STARS - legend weapons have 1 to 5 stars (kept in half steps)
+#  A freshly forged weapon has ★. Every star above or below ★★★ changes ALL its damage (hits, arrows,
+#  abilities) and its ability cooldowns by percent-per-star: ★ = -15 %, ★★★ = as before, ★★★★★ = +15 %.
+#  Weapons forged before stars existed start with legacy-stars.
+#  Stars are earned only at an Ancient Forge (see ancient-forge) and lost when you die.
+# ------------------------------------------------------------
+stars:
+  enabled: true
+  percent-per-star: 7.5
+  new-stars: 1
+  legacy-stars: 3
+  # every legend weapon you carry loses this many stars when you die (never below ★)
+  lose-on-player-kill: 2
+  lose-on-other-death: 0.5
+  # what the ritual costs, by the star it reaches (2 = ★★ ... 5 = ★★★★★; from a half star it goes one star up).
+  # items: like forge recipes (max 5); "material:own" = the weapon's own legendary material
+  costs:
+    2:
+      minutes: 10
+      tokens: 2
+      items:
+        - { item: GOLD_BLOCK, amount: 8 }
+        - { item: DIAMOND, amount: 8 }
+    3:
+      minutes: 20
+      tokens: 4
+      items:
+        - { item: DIAMOND_BLOCK, amount: 4 }
+        - { item: NETHERITE_SCRAP, amount: 4 }
+        - { item: BLAZE_ROD, amount: 16 }
+    4:
+      minutes: 40
+      tokens: 8
+      items:
+        - { item: DIAMOND_BLOCK, amount: 8 }
+        - { item: NETHERITE_INGOT, amount: 2 }
+        - { item: "material:own", amount: 1 }
+    5:
+      minutes: 60
+      tokens: 12
+      items:
+        - { item: NETHERITE_INGOT, amount: 4 }
+        - { item: NETHER_STAR, amount: 1 }
+        - { item: "material:own", amount: 1 }
+
+# ------------------------------------------------------------
+#  ANCIENT FORGE - the only place where weapons get stars
+#  Rare intact forges: inside the Scorched Lands and in the Nether (only in NEW chunks).
+#  Use the anvil in the middle holding a legend weapon. The weapon stays in the forge during the ritual
+#  and drops there when it ends - whoever is there can take it. A pillar of soul fire above the forge
+#  shows where it is from far away (smoke while it cools down).
+#  /forge ancient (list, tp) - /forge ancient here (build one) - /forge stars <player> <1-5>
+# ------------------------------------------------------------
+ancient-forge:
+  # chance that a ruin spot deep in the Scorched Lands gets an Ancient Forge instead of a ruin
+  scorched-chance: 0.12
+  nether: true
+  # one possible forge per this many chunks in each direction (16 = 256 blocks), and the chance it's there
+  nether-cell-chunks: 16
+  nether-chance: 0.3
+  # after a ritual the forge cools down this long (real hours, also while the server is off)
+  cooldown-hours: 24
 
 # ------------------------------------------------------------
 #  AUTO-UPDATE

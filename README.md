@@ -143,6 +143,25 @@ Press **FORGE** when you have everything.
 Every weapon and relic can exist **only once**. As soon as its ritual starts, nobody else can forge it.
 If the item is destroyed as a dropped item (lava, fire, void, despawn), it can be forged again.
 
+### ★ Stars and the Ancient Forge
+Every legend weapon has **1 to 5 stars** (in half steps). Stars change *all* the weapon's damage (hits, arrows,
+abilities) and its ability cooldowns:
+
+| Stars | Damage | Cooldowns |
+|---|---|---|
+| ★☆☆☆☆ (freshly forged) | −15 % | +15 % |
+| ★★★☆☆ | as before stars | as before |
+| ★★★★★ | +15 % | −15 % |
+
+- Stars are earned **only at an Ancient Forge**: a rare intact forge deep in the **Scorched Lands** or in the
+  **Nether**. A pillar of soul fire rises above it, so you can spot it from far away. Use its anvil while holding the
+  weapon: one ritual = one star up, and every star costs more (the last ones need the weapon's own legendary material
+  and a Nether Star). The weapon **stays in the forge** until the ritual ends and then drops there, so whoever is
+  standing there can take it. Afterwards the forge cools down for a day.
+- **Dying costs stars.** Killed by a player: **−2 stars** on every legend weapon you carry. Any other death: −½ star.
+  A weapon never drops below ★.
+- Weapons forged before stars existed start at ★★★.
+
 ---
 
 ## Weapons
@@ -507,6 +526,7 @@ Ruins generate in it, each one a bit different:
 | **Burnt Workshop** | low walls, the collapsed roof on the floor, a furnace and a crafting table; a small chest |
 | **Slag Heap** | mounds of slag, coal and iron ore around a broken smelter; a half-buried chest |
 | **Watchtower** | half-collapsed, a ladder up to the top floor with a chest |
+| **Ancient Forge** (rare) | intact: four pillars with gold, a crown ring with soul lanterns and the anvil on a crying-obsidian altar, where weapons earn [stars](#-stars-and-the-ancient-forge). There's a Nether version too, in nether bricks |
 
 The guards are husks in battered iron armor. The chests have iron, gold, coal, sometimes diamonds, netherite scrap
 or a smithing template, plus a chance of **Bounty Tokens** and (big chests) a **legendary material**.
@@ -560,6 +580,7 @@ a toast pops up, the chat announces it, and progress is saved with the player. C
 | <img src="docs/items/stasis_hourglass.png" width="40" alt=""> | **Frozen in Time** | survive a deadly hit inside the Stasis Hourglass |
 | <img src="docs/items/heartsteel_core.png" width="40" alt=""> | **Heart of Steel** | grow the Heartsteel Core to its full size *(challenge, 50 XP)* |
 | <img src="docs/items/stitchguard.png" width="40" alt=""> | **Perfect Parry** | parry 10 hits with the Stitchguard *(challenge, 50 XP)* |
+| <img src="docs/items/the_last_act.png" width="40" alt=""> | **Five Stars** | ascend a legend weapon to ★★★★★ at an Ancient Forge *(challenge, 100 XP)* |
 
 *Some advancements are hidden until someone earns them...*
 
@@ -649,6 +670,8 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport; without an argument it opens a panel with the theme and the buttons |
 | `/forge update [on\|off\|now]` | `forgebound.admin` | auto-update on/off, or check for a new version now |
 | `/forge scorched` | `forgebound.admin` | where the nearest Scorched Lands are (click to teleport) |
+| `/forge ancient [here\|finish\|cool]` | `forgebound.admin` | list the Ancient Forges (click to teleport), build one where you stand, finish running rituals, reset cooldowns |
+| `/forge stars <player> <1-5>` | `forgebound.admin` | set the stars of the weapon in a player's hand (half steps like 3.5 work) |
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |

@@ -333,8 +333,13 @@ public final class ItemManager {
     }
 
     private List<Cost> buildCost(ConfigurationSection s) {
+        return costs(s.getMapList("forge"));
+    }
+
+    /** Parses a list of "{ item: X, amount: N }" (vanilla items or this plugin's ids like material:chrono_sand). */
+    public List<Cost> costs(List<Map<?, ?>> maps) {
         List<Cost> result = new ArrayList<>();
-        for (Map<?, ?> map : s.getMapList("forge")) {
+        for (Map<?, ?> map : maps) {
             Object itemValue = map.get("item");
             if (itemValue == null) {
                 throw new IllegalArgumentException("forge entry has no 'item'");
@@ -490,10 +495,23 @@ public final class ItemManager {
         return true;
     }
 
+    public boolean canAfford(PlayerInventory inventory, List<Cost> costs) {
+        for (Cost cost : costs) {
+            if (count(inventory, cost) < cost.amount()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** Removes the materials from the inventory. Only call after canAfford succeeded. */
     public void take(PlayerInventory inventory, Entry entry) {
+        take(inventory, entry.cost);
+    }
+
+    public void take(PlayerInventory inventory, List<Cost> costs) {
         ItemStack[] contents = inventory.getStorageContents();
-        for (Cost cost : entry.cost) {
+        for (Cost cost : costs) {
             int need = cost.amount();
             for (int i = 0; i < contents.length && need > 0; i++) {
                 ItemStack stack = contents[i];

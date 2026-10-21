@@ -65,6 +65,8 @@ public final class AdvancementManager implements Listener {
                     "Carry 3 legendary items at once", "goal", false, 0),
             new Def("the_unique", "arsenal", "weapon:knightfall", "The Unique",
                     "Carry 5 legendary items at once", "challenge", true, 100),
+            new Def("five_stars", "forgemaster", "weapon:the_last_act", "Five Stars",
+                    "Ascend a legend weapon to five stars at an Ancient Forge", "challenge", false, 100),
             // weapons
             new Def("not_today", "forgemaster", "weapon:echo_blade", "Not Today",
                     "Rewind away from death with less than 2 hearts", "task", false, 0),
