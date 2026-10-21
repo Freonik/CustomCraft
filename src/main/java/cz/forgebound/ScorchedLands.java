@@ -308,8 +308,11 @@ public final class ScorchedLands implements Listener {
         if (noise.strength((chunkX << 4) + 8, (chunkZ << 4) + 8) < 1) {
             return;
         }
-        boolean ancient = cell.nextDouble() < s.ancientChance();
-        ForgeRuins.Type type = ancient ? ForgeRuins.Type.ANCIENT : ForgeRuins.pick(cell);
+        if (cell.nextDouble() < s.ancientChance() && noise.strength((chunkX << 4) + 8, (chunkZ << 4) + 8) >= 1) {
+            sureForge(info, chunkX, chunkZ, region, s, surface);       // a random extra Ancient Forge (off by default)
+            return;
+        }
+        ForgeRuins.Type type = ForgeRuins.pick(cell);
         int ox = 1 + cell.nextInt(Math.max(1, 15 - type.width));
         int oz = 1 + cell.nextInt(Math.max(1, 15 - type.depth));
         // flat enough, and all of it burnt (no water)?
@@ -375,11 +378,10 @@ public final class ScorchedLands implements Listener {
 
     /** A guaranteed Ancient Forge: built whatever the ground looks like (on its average height). */
     private void sureForge(WorldInfo info, int chunkX, int chunkZ, LimitedRegion region, Settings s, int[][] surface) {
-        int n = ForgeRuins.Type.ANCIENT.width;
         long sum = 0;
         int count = 0;
-        for (int x = 1; x < 1 + n; x++) {
-            for (int z = 1; z < 1 + n; z++) {
+        for (int x = 0; x < 16; x++) {                       // the ground of this chunk (the forge is wider)
+            for (int z = 0; z < 16; z++) {
                 if (surface[x][z] != Integer.MIN_VALUE) {
                     sum += surface[x][z];
                     count++;
@@ -388,8 +390,9 @@ public final class ScorchedLands implements Listener {
         }
         int y0 = count == 0 ? 63 : (int) Math.round((double) sum / count);
         SplittableRandom cell = new SplittableRandom(info.getSeed() ^ (chunkX * 7919L + chunkZ * 104729L));
-        ForgeRuins.Result result = ForgeRuins.build(ForgeRuins.Type.ANCIENT, canvas(region), (chunkX << 4) + 1, y0,
-                (chunkZ << 4) + 1, cell);
+        // centered on the chunk; it reaches into the neighbours (the populator may write 16 blocks around)
+        ForgeRuins.Result result = ForgeRuins.build(ForgeRuins.Type.ANCIENT, canvas(region), (chunkX << 4) - 4, y0,
+                (chunkZ << 4) - 4, cell);
         finish(info, region, result, s, cell, false);
     }
 
@@ -427,8 +430,8 @@ public final class ScorchedLands implements Listener {
         if (!sure && !random) {
             return;
         }
-        int bx = (chunkX << 4) + 1;
-        int bz = (chunkZ << 4) + 1;
+        int bx = (chunkX << 4) - 4;
+        int bz = (chunkZ << 4) - 4;
         int n = ForgeRuins.Type.ANCIENT_NETHER.width;
         // the lowest open floor (solid, with 8 free blocks above) in the middle of the footprint
         int cx = bx + n / 2;

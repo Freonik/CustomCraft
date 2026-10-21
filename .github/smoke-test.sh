@@ -106,9 +106,11 @@ fi
 # any exception that went through our code, and any warning/error the plugin logged itself
 if grep -n 'at cz\.forgebound\.' "$LOG"; then
   fail "An exception went through Forgebound's code"
+  grep -B3 -m3 'at cz\.forgebound\.' "$LOG" | head -12 | while IFS= read -r line; do echo "::error::${line:0:400}"; done
 fi
 if grep -nE '(WARN|ERROR)\]: \[Forgebound\]' "$LOG"; then
   fail "Forgebound logged warnings or errors"
+  grep -E '(WARN|ERROR)\]: \[Forgebound\]' "$LOG" | head -8 | while IFS= read -r line; do echo "::error::${line:0:400}"; done
 fi
 
 echo "----- server console (Forgebound lines) -----"
