@@ -153,7 +153,7 @@ abilities) and its ability cooldowns:
 | ★★★☆☆ | as before stars | as before |
 | ★★★★★ | +15 % | −15 % |
 
-- Stars are earned **only at an Ancient Forge**: a rare intact forge deep in the **Scorched Lands** or in the
+- Stars are earned **only at an Ancient Forge**: there is one deep in the **Scorched Lands** and one in the
   **Nether**. A pillar of soul fire rises above it, so you can spot it from far away. Use its anvil while holding the
   weapon: one ritual = one star up, and every star costs more (the last ones need the weapon's own legendary material
   and a Nether Star). The weapon **stays in the forge** until the ritual ends and then drops there, so whoever is
@@ -526,13 +526,19 @@ Ruins generate in it, each one a bit different:
 | **Burnt Workshop** | low walls, the collapsed roof on the floor, a furnace and a crafting table; a small chest |
 | **Slag Heap** | mounds of slag, coal and iron ore around a broken smelter; a half-buried chest |
 | **Watchtower** | half-collapsed, a ladder up to the top floor with a chest |
-| **Ancient Forge** (rare) | intact: four pillars with gold, a crown ring with soul lanterns and the anvil on a crying-obsidian altar, where weapons earn [stars](#-stars-and-the-ancient-forge). There's a Nether version too, in nether bricks |
+| **Ancient Forge** (only one) | intact: four pillars with gold, a crown ring with soul lanterns and the anvil on a crying-obsidian altar, where weapons earn [stars](#-stars-and-the-ancient-forge). There's a Nether version too, in nether bricks |
 
 The guards are husks in battered iron armor. The chests have iron, gold, coal, sometimes diamonds, netherite scrap
 or a smithing template, plus a chance of **Bounty Tokens** and (big chests) a **legendary material**.
 
 > Only **new chunks** become Scorched Lands - land that's already generated is never changed. On an old world they
 > show up out where nobody has been yet; `/forge scorched` tells you where the nearest one is.
+
+**Guaranteed areas.** So a server with a world border always has some: from the seed, **2 Scorched Lands areas**
+are placed 500–1700 blocks from 0,0. There is exactly **one Ancient Forge per dimension**: in the middle of one of
+those areas, and one in the Nether within 220 blocks (inside a Nether border of 1/8). `/forge ancient` shows where
+they will be, even before anyone went there. Change it in `scorched-lands.guaranteed` and `ancient-forge`
+(random extra forges are off by default).
 
 Everything is in the `scorched-lands` section of the config (rarity, size, ruins, guards, loot chances).
 

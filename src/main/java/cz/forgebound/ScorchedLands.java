@@ -61,7 +61,11 @@ public final class ScorchedLands implements Listener {
 
     record Settings(boolean enabled, List<String> worlds, double rarity, double zoneSize, boolean ruins,
                     double ruinChance, boolean guards, double ancientChance, boolean nether, int netherCell,
-                    double netherChance) { }
+                    double netherChance, int sureCount, int sureMin, int sureMax, int sureRadius, int centerX,
+                    int centerZ, int netherSureCount, int netherSureMin, int netherSureMax, int sureForges) { }
+
+    static final long OVERWORLD_SALT = 0x5EED1L;
+    static final long NETHER_SALT = 0x4E7E2L;
 
     public ScorchedLands(Forgebound plugin) {
         this.plugin = plugin;
@@ -76,8 +80,14 @@ public final class ScorchedLands implements Listener {
                 c.getDouble("scorched-lands.rarity", 0.03), c.getDouble("scorched-lands.zone-size", 800),
                 c.getBoolean("scorched-lands.ruins", true), c.getDouble("scorched-lands.ruin-chance", 0.35),
                 c.getBoolean("scorched-lands.guards", true),
-                c.getDouble("ancient-forge.scorched-chance", 0.12), c.getBoolean("ancient-forge.nether", true),
-                Math.max(4, c.getInt("ancient-forge.nether-cell-chunks", 16)), c.getDouble("ancient-forge.nether-chance", 0.3));
+                c.getDouble("ancient-forge.scorched-chance", 0), c.getBoolean("ancient-forge.nether", true),
+                Math.max(4, c.getInt("ancient-forge.nether-cell-chunks", 16)), c.getDouble("ancient-forge.nether-chance", 0),
+                c.getInt("scorched-lands.guaranteed.count", 2), c.getInt("scorched-lands.guaranteed.min-distance", 500),
+                c.getInt("scorched-lands.guaranteed.max-distance", 1700), c.getInt("scorched-lands.guaranteed.radius", 110),
+                c.getInt("scorched-lands.guaranteed.center-x", 0), c.getInt("scorched-lands.guaranteed.center-z", 0),
+                c.getInt("ancient-forge.nether-guaranteed.count", 1), c.getInt("ancient-forge.nether-guaranteed.min-distance", 60),
+                c.getInt("ancient-forge.nether-guaranteed.max-distance", 220),
+                c.getInt("scorched-lands.guaranteed.forges", 1));
         noises.clear();
         biome = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).get(BIOME);
         if (biome == null) {
@@ -112,9 +122,45 @@ public final class ScorchedLands implements Listener {
         }
     }
 
+    /** The biome noise of a world, with the guaranteed areas forced in. */
     ScorchedNoise noise(long seed) {
         Settings s = settings;
-        return noises.computeIfAbsent(seed, k -> new ScorchedNoise(k, s.zoneSize(), s.rarity()));
+        return noises.computeIfAbsent(seed, k -> {
+            ScorchedNoise n = new ScorchedNoise(k, s.zoneSize(), s.rarity());
+            n.forceSites(sureSites(k), s.sureRadius());
+            return n;
+        });
+    }
+
+    /** Plain noise without the guaranteed areas (for ground patches). */
+    private ScorchedNoise plain(long seed) {
+        Settings s = settings;
+        return noises.computeIfAbsent(seed ^ 0x7A7C4L, k -> new ScorchedNoise(seed, s.zoneSize(), s.rarity()));
+    }
+
+    /** The guaranteed Scorched Lands areas (each with an Ancient Forge in the middle) of an overworld. */
+    List<int[]> sureSites(long seed) {
+        Settings s = settings;
+        return ScorchedNoise.sites(seed, OVERWORLD_SALT, s.sureCount(), s.sureMin(), s.sureMax(), s.centerX(), s.centerZ());
+    }
+
+    /** Where this world's guaranteed Ancient Forges will be (x, z), also before anyone went there. */
+    public List<int[]> plannedForges(World world) {
+        if (world.getEnvironment() == World.Environment.NETHER) {
+            return settings.nether() ? netherSites(world.getSeed()) : List.of();
+        }
+        if (!wanted(world) || !settings.enabled() || !settings.ruins()) {
+            return List.of();
+        }
+        List<int[]> sure = sureSites(world.getSeed());
+        return sure.subList(0, Math.min(settings.sureForges(), sure.size()));
+    }
+
+    /** The guaranteed Ancient Forges of a nether world. */
+    List<int[]> netherSites(long seed) {
+        Settings s = settings;
+        return ScorchedNoise.sites(seed, NETHER_SALT, s.netherSureCount(), s.netherSureMin(), s.netherSureMax(),
+                s.centerX() / 8, s.centerZ() / 8);
     }
 
     private BlockData data(String block) {
@@ -155,7 +201,7 @@ public final class ScorchedLands implements Listener {
             return;
         }
         SplittableRandom rnd = new SplittableRandom(info.getSeed() ^ (chunkX * 341873128712L + chunkZ * 132897987541L));
-        ScorchedNoise patches = noise(info.getSeed() + 7);         // small patches of gravel / blackstone / tuff
+        ScorchedNoise patches = plain(info.getSeed() + 7);         // small patches of gravel / blackstone / tuff
         int[][] surface = new int[16][16];
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
@@ -243,6 +289,14 @@ public final class ScorchedLands implements Listener {
     /** One possible ruin per 4x4-chunk cell, in a random chunk of the cell, only deep inside the biome. */
     private void ruins(WorldInfo info, int chunkX, int chunkZ, LimitedRegion region, Settings s, ScorchedNoise noise,
                        int[][] surface) {
+        List<int[]> sure = sureSites(info.getSeed());
+        for (int i = 0; i < Math.min(s.sureForges(), sure.size()); i++) {
+            int[] site = sure.get(i);
+            if (Math.floorDiv(site[0], 16) == chunkX && Math.floorDiv(site[1], 16) == chunkZ) {
+                sureForge(info, chunkX, chunkZ, region, s, surface);
+                return;
+            }
+        }
         int cellX = Math.floorDiv(chunkX, 4);
         int cellZ = Math.floorDiv(chunkZ, 4);
         SplittableRandom cell = new SplittableRandom(info.getSeed() * 31 + cellX * 73428767L + cellZ * 912931L);
@@ -319,6 +373,26 @@ public final class ScorchedLands implements Listener {
         }
     }
 
+    /** A guaranteed Ancient Forge: built whatever the ground looks like (on its average height). */
+    private void sureForge(WorldInfo info, int chunkX, int chunkZ, LimitedRegion region, Settings s, int[][] surface) {
+        int n = ForgeRuins.Type.ANCIENT.width;
+        long sum = 0;
+        int count = 0;
+        for (int x = 1; x < 1 + n; x++) {
+            for (int z = 1; z < 1 + n; z++) {
+                if (surface[x][z] != Integer.MIN_VALUE) {
+                    sum += surface[x][z];
+                    count++;
+                }
+            }
+        }
+        int y0 = count == 0 ? 63 : (int) Math.round((double) sum / count);
+        SplittableRandom cell = new SplittableRandom(info.getSeed() ^ (chunkX * 7919L + chunkZ * 104729L));
+        ForgeRuins.Result result = ForgeRuins.build(ForgeRuins.Type.ANCIENT, canvas(region), (chunkX << 4) + 1, y0,
+                (chunkZ << 4) + 1, cell);
+        finish(info, region, result, s, cell, false);
+    }
+
     // ================================================================ Ancient Forges in the Nether
 
     private final class NetherPopulator extends BlockPopulator {
@@ -338,13 +412,19 @@ public final class ScorchedLands implements Listener {
 
     /** One possible Ancient Forge per cell of chunks, on an open floor between 32 and 100. */
     private void netherForge(WorldInfo info, int chunkX, int chunkZ, LimitedRegion region, Settings s) {
+        boolean sure = false;
+        for (int[] site : netherSites(info.getSeed())) {
+            sure |= Math.floorDiv(site[0], 16) == chunkX && Math.floorDiv(site[1], 16) == chunkZ;
+        }
         int size = s.netherCell();
         int cellX = Math.floorDiv(chunkX, size);
         int cellZ = Math.floorDiv(chunkZ, size);
         SplittableRandom cell = new SplittableRandom(info.getSeed() * 17 + cellX * 50331653L + cellZ * 1610612741L + 99);
         int pickX = 1 + cell.nextInt(size - 2);
         int pickZ = 1 + cell.nextInt(size - 2);
-        if (Math.floorMod(chunkX, size) != pickX || Math.floorMod(chunkZ, size) != pickZ || cell.nextDouble() >= s.netherChance()) {
+        boolean random = Math.floorMod(chunkX, size) == pickX && Math.floorMod(chunkZ, size) == pickZ
+                && cell.nextDouble() < s.netherChance();
+        if (!sure && !random) {
             return;
         }
         int bx = (chunkX << 4) + 1;
@@ -368,7 +448,10 @@ public final class ScorchedLands implements Listener {
             }
         }
         if (floor == Integer.MIN_VALUE) {
-            return;
+            if (!sure) {
+                return;
+            }
+            floor = 64;                                      // guaranteed: carve a hall into the rock if there's no floor
         }
         // most of the footprint needs ground close below the floor (no forge hanging over a lava sea)
         int grounded = 0;
@@ -384,7 +467,7 @@ public final class ScorchedLands implements Listener {
                 }
             }
         }
-        if (grounded * 10 < total * 7) {
+        if (grounded * 10 < total * 7 && !sure) {
             return;
         }
         ForgeRuins.Result result = ForgeRuins.build(ForgeRuins.Type.ANCIENT_NETHER, canvas(region), bx, floor, bz, cell);

@@ -769,9 +769,23 @@ public final class StarManager implements Listener {
 
     // ================================================================ admin
 
-    /** /forge ancient: the known forges. */
+    /** /forge ancient: the known forges, and the guaranteed ones that haven't generated yet. */
     public void list(CommandSender sender) {
         drainFound();
+        if (plugin.scorched() != null) {
+            for (World w : Bukkit.getWorlds()) {
+                for (int[] p : plugin.scorched().plannedForges(w)) {
+                    boolean built = sites.values().stream().anyMatch(s -> s.world.equals(w.getName())
+                            && Math.abs(s.x - p[0]) < 24 && Math.abs(s.z - p[1]) < 24);
+                    if (!built) {
+                        sender.sendMessage(ItemManager.color("&8- planned: &7" + w.getName() + " " + p[0] + " ~ " + p[1]
+                                + " &8(generates when someone gets there) &e[tp]")
+                                .clickEvent(ClickEvent.suggestCommand("/execute in " + w.getKey().asString() + " run tp @s "
+                                        + p[0] + " " + (w.getEnvironment() == World.Environment.NETHER ? 70 : 200) + " " + p[1])));
+                    }
+                }
+            }
+        }
         if (sites.isEmpty()) {
             sender.sendMessage(ItemManager.color("&7No Ancient Forge has generated yet. They appear in NEW chunks (Scorched Lands, Nether). "
                     + "&e/forge ancient here &7builds one where you stand."));

@@ -1554,6 +1554,17 @@ scorched-lands:
   # chance of a ruin in every 4x4-chunk area deep inside the biome
   ruin-chance: 0.35
   guards: true
+  # areas that are ALWAYS there (from the seed), so they're inside your world border. Placed between min- and
+  # max-distance from center-x/z. count: 0 = only the random ones. forges: how many of them get an Ancient Forge
+  # in the middle.
+  guaranteed:
+    count: 2
+    forges: 1
+    min-distance: 500
+    max-distance: 1700
+    radius: 110
+    center-x: 0
+    center-z: 0
   loot:
     # % chance that a ruin chest also has Bounty Tokens
     token-chance: 25
@@ -1610,19 +1621,27 @@ stars:
 
 # ------------------------------------------------------------
 #  ANCIENT FORGE - the only place where weapons get stars
-#  Rare intact forges: inside the Scorched Lands and in the Nether (only in NEW chunks).
+#  One intact forge in the Scorched Lands and one in the Nether (only in NEW chunks, see the guaranteed settings).
 #  Use the anvil in the middle holding a legend weapon. The weapon stays in the forge during the ritual
 #  and drops there when it ends - whoever is there can take it. A pillar of soul fire above the forge
 #  shows where it is from far away (smoke while it cools down).
 #  /forge ancient (list, tp) - /forge ancient here (build one) - /forge stars <player> <1-5>
 # ------------------------------------------------------------
 ancient-forge:
+  # By default there is exactly ONE Ancient Forge per dimension: the guaranteed one (scorched-lands.guaranteed.forges
+  # and nether-guaranteed below). These chances add random extra ones (0 = none):
   # chance that a ruin spot deep in the Scorched Lands gets an Ancient Forge instead of a ruin
-  scorched-chance: 0.12
+  scorched-chance: 0
   nether: true
   # one possible forge per this many chunks in each direction (16 = 256 blocks), and the chance it's there
   nether-cell-chunks: 16
-  nether-chance: 0.3
+  nether-chance: 0
+  # Nether forges that are ALWAYS there (from the seed), between min- and max-distance from the nether center
+  # (scorched-lands.guaranteed.center / 8). Keep max-distance inside the Nether border.
+  nether-guaranteed:
+    count: 1
+    min-distance: 60
+    max-distance: 220
   # after a ritual the forge cools down this long (real hours, also while the server is off)
   cooldown-hours: 24
 

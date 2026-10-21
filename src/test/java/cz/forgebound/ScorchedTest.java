@@ -51,6 +51,24 @@ class ScorchedTest {
     }
 
     @Test
+    void guaranteedAreasAreInsideTheBorder() {
+        for (long seed = 1; seed < 40; seed++) {
+            List<int[]> sites = ScorchedNoise.sites(seed, 1, 2, 500, 1700, 0, 0);
+            assertEquals(2, sites.size());
+            ScorchedNoise n = new ScorchedNoise(seed, 800, 0.03);
+            n.forceSites(sites, 110);
+            for (int[] p : sites) {
+                double d = Math.hypot(p[0], p[1]);
+                assertTrue(d >= 499 && d <= 1701, "site at " + d + " blocks");
+                assertEquals(1.0, n.strength(p[0], p[1]), 1e-9, "the middle of a guaranteed area is deep inside the biome");
+                assertEquals(1.0, n.strength(p[0] + 40, p[1] - 40), 1e-9, "and so is most of it");
+            }
+            assertTrue(Math.hypot(sites.get(0)[0] - sites.get(1)[0], sites.get(0)[1] - sites.get(1)[1]) > 300,
+                    "the two areas are on different sides");
+        }
+    }
+
+    @Test
     void everyRuinBuildsWithLootAndValidIds() {
         for (ForgeRuins.Type type : ForgeRuins.Type.values()) {
             for (int seed = 0; seed < 20; seed++) {

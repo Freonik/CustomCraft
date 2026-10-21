@@ -76,6 +76,18 @@ else
   else
     fail "/forge scorched found nothing"
   fi
+  # a guaranteed Scorched Lands area with its Ancient Forge: generate that chunk and check both
+  echo "forge ancient" >&3
+  if wait_for 'planned: world -\?[0-9]* ~' 20; then
+    read -r AX AZ < <(grep -o 'planned: world -\?[0-9]* ~ -\?[0-9]*' "$LOG" | head -1 | sed -E 's/.*world (-?[0-9]+) ~ (-?[0-9]+)/\1 \2/')
+    echo "forceload add $AX $AZ" >&3
+    sleep 8
+    echo "execute if biome $AX -58 $AZ forgebound:scorched_lands run say SURE_SCORCHED_OK" >&3
+    wait_for 'SURE_SCORCHED_OK' 30 || fail "the guaranteed Scorched Lands area at $AX $AZ wasn't generated"
+    wait_for 'An Ancient Forge generated at world' 20 || fail "the guaranteed Ancient Forge at $AX $AZ wasn't built"
+  else
+    fail "/forge ancient listed no planned forge"
+  fi
 fi
 
 echo "stop" >&3

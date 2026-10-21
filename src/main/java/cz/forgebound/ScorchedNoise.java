@@ -1,6 +1,8 @@
 package cz.forgebound;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.SplittableRandom;
 
 /**
@@ -13,6 +15,9 @@ final class ScorchedNoise {
     private final int[] perm = new int[512];
     private final double scale;
     final double threshold;
+    /** Guaranteed areas (centers) that are always scorched, whatever the noise says. */
+    private List<int[]> sites = List.of();
+    private double siteRadius;
 
     ScorchedNoise(long seed, double zoneSize, double rarity) {
         int[] p = new int[256];
@@ -77,7 +82,48 @@ final class ScorchedNoise {
     double value(double blockX, double blockZ) {
         double x = blockX / scale;
         double z = blockZ / scale;
-        return perlin(x, z) * 0.7 + perlin(x * 2.3 + 41.7, z * 2.3 - 19.3) * 0.3;
+        double v = perlin(x, z) * 0.7 + perlin(x * 2.3 + 41.7, z * 2.3 - 19.3) * 0.3;
+        for (int[] site : sites) {
+            double dx = blockX - site[0];
+            double dz = blockZ - site[1];
+            double d2 = dx * dx + dz * dz;
+            double reach = siteRadius * 1.3;
+            if (d2 < reach * reach) {
+                // a round-ish blob with a wobbly edge
+                double r = siteRadius * (1 + 0.22 * perlin(blockX / 37.0 + 300, blockZ / 37.0 - 300));
+                double d = Math.sqrt(d2);
+                if (d < r) {
+                    v = Math.max(v, threshold + 0.03 + 0.12 * (1 - (d / r) * (d / r)));
+                }
+            }
+        }
+        return v;
+    }
+
+    /** Makes these areas always scorched (radius in blocks). */
+    void forceSites(List<int[]> centers, double radius) {
+        this.sites = List.copyOf(centers);
+        this.siteRadius = Math.max(24, radius);
+    }
+
+    /**
+     * Places {@code count} spots between minDist and maxDist from (cx, cz), spread around the circle, from the seed
+     * (the same seed always gives the same spots). salt keeps the overworld and nether spots apart.
+     */
+    static List<int[]> sites(long seed, long salt, int count, int minDist, int maxDist, int cx, int cz) {
+        List<int[]> out = new ArrayList<>();
+        if (count <= 0 || maxDist <= 0) {
+            return out;
+        }
+        SplittableRandom r = new SplittableRandom(seed * 31 + salt);
+        double base = r.nextDouble() * Math.PI * 2;
+        int lo = Math.max(0, Math.min(minDist, maxDist));
+        for (int i = 0; i < count; i++) {
+            double a = base + i * Math.PI * 2 / count + (r.nextDouble() - 0.5) * Math.PI / count;
+            double d = lo + r.nextDouble() * (maxDist - lo);
+            out.add(new int[] {cx + (int) Math.round(Math.cos(a) * d), cz + (int) Math.round(Math.sin(a) * d)});
+        }
+        return out;
     }
 
     /** 0 = outside, 1 = deep inside; the edge (a thin band above the threshold) fades from 0 to 1. */
