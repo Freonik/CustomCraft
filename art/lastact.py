@@ -109,10 +109,10 @@ def shard():
         for x in range(32):
             dx, dy = (x + 0.5 - cx) / 10.5, (y + 0.5 - cy) / 13.0
             r = dx * dx + dy * dy
-            crack = 16.0 + (1.0 if (y // 3) % 2 else -1.0)
+            crack = 15.5 + 2.2 * math.sin(y * 1.3) + (1.5 if y % 4 < 2 else -0.5)
             if r <= 1.0 and x + 0.5 <= crack and 3 <= y <= 28:
                 light = 0.75 - dx * 0.25 - dy * 0.2
-                if r > 0.78 or x + 0.5 > crack - 1.0:
+                if r > 0.80:
                     c.set(x, y, ramp(GOLD, 0.55 + light * 0.4), 'rim')
                 else:
                     c.set(x, y, ramp(IVORY, light), 'face')
