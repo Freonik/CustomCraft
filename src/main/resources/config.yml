@@ -1209,7 +1209,7 @@ codex:
     - "&6&lThe Ritual\n\n&0Forging takes &l15 minutes&r&0. Everyone is told what is being forged, and the place is revealed step by step.\n\n&4Defend the table!&0 The legend drops on it at the end."
     - "&6&lMaterials\n\n&0Legendary materials drop from bosses and rare mobs, or hide in structure chests.\n\nMeteors, Rifts and the Forge Warden give them too."
     - "&6&lLegends\n\n&0F and Shift+F use a weapon's abilities.\n\n&e/legends&0 shows every legend and your stats.\n\nLeave the server for too long and your legend returns to the forge."
-    - "&6&lStars\n\n&0Weapons have &6★&0 to &6★★★★★&0. More stars = more damage, shorter cooldowns.\n\nFind an &5Ancient Forge&0 (Scorched Lands, Nether) to add one.\n\n&4Die and you lose stars!"
+    - "&6&lStars\n\n&0Weapons have &6★&0 to &6★★★★★&0. More stars = more damage, shorter cooldowns.\n\nAncient Forges add them: Scorched Lands up to ★★, Nether ★★★, End ★★★★★ (it rises when the dragon dies).\n\n&4Die and you lose stars!"
     - "&6&lBounties\n\n&0Carrying a legend puts a price on your head. Whoever kills you gets &6Bounty Tokens&0.\n\n&e/bounty&0 shows the most wanted.\n&0The &lLegend Tracker&r&0 finds them."
     - "&6&lTokens\n\n&0Tokens are the server's money.\n\n&e/shop&0 always has something, and a new offer every week.\n&e/pay&0 sends tokens to a friend."
     - "&6&lEvents\n\n&4Blood Moon&0: tough nights.\n&5Rift&0: waves of monsters.\n&cLegend Hunt&0: a holder is hunted.\n&6Meteor&0, &eGolden Shipment&0, &aHappy Hour&0, &6Forge Market&0.\n\n&e/events&0 shows what's on."
@@ -1621,13 +1621,26 @@ stars:
 
 # ------------------------------------------------------------
 #  ANCIENT FORGE - the only place where weapons get stars
-#  One intact forge in the Scorched Lands and one in the Nether (only in NEW chunks, see the guaranteed settings).
+#  Three forges, each stronger than the last: one in the Scorched Lands (up to ★★), one in the Nether (up to ★★★)
+#  - both generate in NEW chunks, see the guaranteed settings - and one in the End (up to ★★★★★), which rises
+#  out of the void on a floating island when the dragon dies for the first time.
 #  Use the anvil in the middle holding a legend weapon. The weapon stays in the forge during the ritual
 #  and drops there when it ends - whoever is there can take it. A pillar of soul fire above the forge
 #  shows where it is from far away (smoke while it cools down).
-#  /forge ancient (list, tp) - /forge ancient here (build one) - /forge stars <player> <1-5>
+#  /forge ancient (list, tp) - /forge ancient here (build one) - /forge ancient end (raise the End forge now)
+#  /forge stars <player> <1-5>
 # ------------------------------------------------------------
 ancient-forge:
+  # the most stars each forge can give
+  max-stars:
+    overworld: 2
+    nether: 3
+    end: 5
+  end:
+    enabled: true
+    # how far from the exit portal the island floats, and at what height
+    distance: 110
+    height: 70
   # By default there is exactly ONE Ancient Forge per dimension: the guaranteed one (scorched-lands.guaranteed.forges
   # and nether-guaranteed below). These chances add random extra ones (0 = none):
   # chance that a ruin spot deep in the Scorched Lands gets an Ancient Forge instead of a ruin

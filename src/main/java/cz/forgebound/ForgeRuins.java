@@ -22,7 +22,9 @@ final class ForgeRuins {
     enum Type {
         FORGE(11, 9), WORKSHOP(7, 7), SLAG_HEAP(9, 9), WATCHTOWER(5, 5),
         /** The intact Ancient Forge where legend weapons ascend (rare; never picked by {@link #pick}). */
-        ANCIENT(13, 13), ANCIENT_NETHER(13, 13);
+        ANCIENT(25, 25), ANCIENT_NETHER(25, 25),
+        /** The End's Ancient Forge on its own floating island (raised when the dragon dies, not generated). */
+        ANCIENT_END(25, 25);
 
         final int width;
         final int depth;
@@ -53,14 +55,20 @@ final class ForgeRuins {
     static Result build(Type type, Canvas c, int x0, int y0, int z0, SplittableRandom r) {
         B b = new B(c, x0, y0, z0, r);
         Result result = new Result();
-        b.foundation(type.width, type.depth);
+        if (type != Type.ANCIENT_END) {
+            b.foundation(type.width, type.depth);
+        }
         switch (type) {
             case FORGE -> forge(b, result);
             case WORKSHOP -> workshop(b, result);
             case SLAG_HEAP -> slagHeap(b, result);
             case WATCHTOWER -> watchtower(b, result);
-            case ANCIENT -> ancient(b, result, false);
-            case ANCIENT_NETHER -> ancient(b, result, true);
+            case ANCIENT -> ancient(b, result, 0);
+            case ANCIENT_NETHER -> ancient(b, result, 1);
+            case ANCIENT_END -> {
+                island(b);
+                ancient(b, result, 2);
+            }
         }
         return result;
     }
@@ -162,79 +170,150 @@ final class ForgeRuins {
     }
 
     /**
-     * The Ancient Forge: an intact round hall of dark stone and gold with four pillars, a crown ring, hanging soul
-     * lanterns and a crying-obsidian altar with the anvil in the middle. In the Nether it's built of nether bricks.
+     * The Ancient Forge, a landmark: a round stepped platform (three tiers, stairs on all four sides), a hall of
+     * eight pillars under an open-work dome with an oculus, four corner towers with signal fires (their smoke rises
+     * high into the sky) and, in the middle, a crying-obsidian altar with the anvil. In the Nether it's built of
+     * nether bricks.
      */
-    private static void ancient(B b, Result res, boolean nether) {
-        int n = 13;
-        int c = 6;
-        String brick = nether ? "nether_bricks" : "polished_blackstone_bricks";
-        String cracked = nether ? "cracked_nether_bricks" : "cracked_polished_blackstone_bricks";
-        String accent = nether ? "red_nether_bricks" : "gilded_blackstone";
-        String pillar = nether ? "red_nether_bricks" : "polished_blackstone";
-        String stairs = nether ? "nether_brick_stairs" : "polished_blackstone_brick_stairs";
-        String slab = nether ? "nether_brick_slab" : "polished_blackstone_brick_slab";
-        b.clear(n, n, 10);
-        // round floor: rings of brick, an accent ring, gold toward the altar
+    private static void ancient(B b, Result res, int style) {
+        int n = 25;
+        int c = 12;
+        // 0 = Scorched Lands (blackstone and gold), 1 = Nether (nether bricks), 2 = End (end stone, purpur, obsidian)
+        String brick = new String[] {"polished_blackstone_bricks", "nether_bricks", "end_stone_bricks"}[style];
+        String cracked = new String[] {"cracked_polished_blackstone_bricks", "cracked_nether_bricks", "end_stone_bricks"}[style];
+        String accent = new String[] {"gilded_blackstone", "red_nether_bricks", "purpur_block"}[style];
+        String chiseled = new String[] {"chiseled_polished_blackstone", "chiseled_nether_bricks", "purpur_pillar[axis=y]"}[style];
+        String pillar = new String[] {"polished_blackstone", "red_nether_bricks", "obsidian"}[style];
+        String stairs = new String[] {"polished_blackstone_brick_stairs", "nether_brick_stairs", "purpur_stairs"}[style];
+        String slab = new String[] {"polished_blackstone_brick_slab", "nether_brick_slab", "purpur_slab"}[style];
+        String fire = new String[] {"campfire", "soul_campfire", "soul_campfire"}[style];
+        b.clear(n, n, 22);
+        // ---- three round tiers: y 0 (r 12), y 1 (r 10), y 2 (r 8); stairs up on the four sides
         for (int x = 0; x < n; x++) {
             for (int z = 0; z < n; z++) {
                 double d = Math.hypot(x - c, z - c);
-                if (d > 6.6) {
+                if (d > 12.4) {
                     continue;
                 }
-                String block = d > 5.6 ? brick : d > 4.6 ? accent : d > 2.6 ? b.pick(brick, brick, cracked) : "chiseled_" + (nether ? "nether_bricks" : "polished_blackstone");
-                b.set(x, 0, z, block);
+                b.set(x, 0, z, d > 11.5 ? accent : b.pick(brick, brick, brick, cracked));
+                if (d <= 10.4) {
+                    b.set(x, 1, z, d > 9.5 ? chiseled : b.pick(brick, brick, cracked));
+                }
+                if (d <= 8.4) {
+                    b.set(x, 2, z, d > 7.5 ? accent : d < 3.6 && d > 2.5 ? "gold_block" : b.pick(brick, brick, brick, cracked));
+                }
             }
         }
-        // four pillars on the diagonals, gold on top, with arches (upside-down stairs) between them
-        int[][] pillars = {{2, 2}, {10, 2}, {2, 10}, {10, 10}};
-        for (int[] p : pillars) {
-            for (int y = 1; y <= 6; y++) {
-                b.set(p[0], y, p[1], y == 3 ? "chiseled_" + (nether ? "nether_bricks" : "polished_blackstone") : pillar);
-            }
-            b.set(p[0], 7, p[1], "gold_block");
-        }
-        for (int i = 3; i <= 9; i++) {
-            b.set(i, 7, 2, i == 6 ? "gold_block" : slab + "[type=bottom]");
-            b.set(i, 7, 10, i == 6 ? "gold_block" : slab + "[type=bottom]");
-            b.set(2, 7, i, i == 6 ? "gold_block" : slab + "[type=bottom]");
-            b.set(10, 7, i, i == 6 ? "gold_block" : slab + "[type=bottom]");
-            if (i == 3 || i == 9) {
-                b.set(i, 6, 2, stairs + "[facing=" + (i == 3 ? "east" : "west") + ",half=top]");
-                b.set(i, 6, 10, stairs + "[facing=" + (i == 3 ? "east" : "west") + ",half=top]");
-                b.set(2, 6, i, stairs + "[facing=" + (i == 3 ? "south" : "north") + ",half=top]");
-                b.set(10, 6, i, stairs + "[facing=" + (i == 3 ? "south" : "north") + ",half=top]");
+        for (int side = 0; side < 4; side++) {
+            String facing = side == 0 ? "south" : side == 1 ? "north" : side == 2 ? "east" : "west";
+            for (int w = -1; w <= 1; w++) {
+                for (int[] step : new int[][] {{12, 0}, {10, 1}, {8, 2}}) {
+                    int r = step[0];
+                    int x = side == 0 || side == 1 ? c + w : side == 2 ? c - r : c + r;
+                    int z = side == 0 ? c - r : side == 1 ? c + r : c + w;
+                    b.set(x, step[1], z, stairs + "[facing=" + facing + "]");
+                }
             }
         }
-        // soul lanterns hanging from the crown ring over the altar
-        for (int[] p : new int[][] {{6, 2}, {6, 10}, {2, 6}, {10, 6}}) {
-            int x = p[0] == 6 ? 6 : p[0] == 2 ? 3 : 9;
-            int z = p[1] == 6 ? 6 : p[1] == 2 ? 3 : 9;
-            b.set(x, 7, z, slab + "[type=bottom]");
-            b.set(x, 6, z, "iron_chain[axis=y]");
-            b.set(x, 5, z, "soul_lantern[hanging=true]");
+        // ---- eight pillars on a circle (r 7), a ring on top, gold caps
+        for (int k = 0; k < 8; k++) {
+            double a = k * Math.PI / 4 + Math.PI / 8;
+            int px = c + (int) Math.round(Math.cos(a) * 7);
+            int pz = c + (int) Math.round(Math.sin(a) * 7);
+            for (int y = 3; y <= 11; y++) {
+                b.set(px, y, pz, y == 3 || y == 7 ? chiseled : pillar);
+            }
+            b.set(px, 12, pz, "gold_block");
         }
-        // the altar: crying obsidian, gold corners, lava hearths on both sides, the anvil on top
+        for (int x = 0; x < n; x++) {
+            for (int z = 0; z < n; z++) {
+                double d = Math.hypot(x - c, z - c);
+                if (d > 6.4 && d < 7.6 && !b.get(x, 12, z).endsWith("gold_block")) {
+                    b.set(x, 12, z, (x + z) % 4 == 0 ? accent : brick);
+                }
+            }
+        }
+        // ---- the dome: open lattice, a solid band at the bottom, an oculus at the top
+        for (int y = 13; y <= 18; y++) {
+            double r = 7.2 * Math.sqrt(Math.max(0, 1 - Math.pow((y - 12) / 6.6, 2)));
+            for (int x = 0; x < n; x++) {
+                for (int z = 0; z < n; z++) {
+                    double d = Math.hypot(x - c, z - c);
+                    if (Math.abs(d - r) > 0.75 || d < 1.6) {
+                        continue;
+                    }
+                    if (y > 13 && (x + z + y) % 3 == 0) {
+                        continue;                                            // openings
+                    }
+                    b.set(x, y, z, y == 13 ? accent : brick);
+                }
+            }
+        }
+        // ---- soul lanterns on chains from the dome
+        for (int[] p : new int[][] {{c - 4, c}, {c + 4, c}, {c, c - 4}, {c, c + 4}}) {
+            b.set(p[0], 17, p[1], brick);
+            for (int y = 16; y >= 13; y--) {
+                b.set(p[0], y, p[1], "iron_chain[axis=y]");
+            }
+            b.set(p[0], 12, p[1], "soul_lantern[hanging=true]");
+        }
+        // ---- four corner towers with signal fires
+        for (int[] t : new int[][] {{c - 9, c - 9}, {c + 9, c - 9}, {c - 9, c + 9}, {c + 9, c + 9}}) {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    for (int y = 0; y <= 14; y++) {
+                        boolean corner = dx != 0 && dz != 0;
+                        b.set(t[0] + dx, y, t[1] + dz, y % 5 == 4 ? chiseled : corner ? pillar : brick);
+                    }
+                }
+            }
+            b.set(t[0], 14, t[1], "hay_block");
+            b.set(t[0], 15, t[1], fire + "[lit=true,signal_fire=true]");
+            for (int[] o : new int[][] {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) {
+                b.set(t[0] + o[0], 15, t[1] + o[1], slab + "[type=bottom]");
+            }
+        }
+        // ---- the altar in the middle
         for (int x = c - 1; x <= c + 1; x++) {
             for (int z = c - 1; z <= c + 1; z++) {
-                boolean corner = x != c && z != c;
-                b.set(x, 1, z, corner ? "gold_block" : "crying_obsidian");
+                b.set(x, 3, z, x != c && z != c ? "gold_block" : "crying_obsidian");
             }
         }
-        b.set(c, 2, c, "anvil[facing=north]");
-        res.core = b.abs(c, 2, c);
-        for (int[] h : new int[][] {{c - 3, c}, {c + 3, c}}) {
-            b.set(h[0], 0, h[1], "magma_block");
-            b.set(h[0], 1, h[1], "lava_cauldron");
+        for (int[] s : new int[][] {{c, c - 2, 0}, {c, c + 2, 1}, {c - 2, c, 2}, {c + 2, c, 3}}) {
+            String facing = s[2] == 0 ? "south" : s[2] == 1 ? "north" : s[2] == 2 ? "east" : "west";
+            b.set(s[0], 3, s[1], stairs + "[facing=" + facing + "]");
         }
-        b.set(c, 1, c + 3, "smithing_table");
-        b.set(c - 2, 1, c + 4, "blast_furnace[facing=north]");
-        b.set(c + 2, 1, c + 4, "grindstone[face=floor,facing=north]");
-        // the forge keeper's chest behind the altar
-        b.set(c, 1, c - 4, "chest[facing=south]");
-        res.bigChests.add(b.abs(c, 1, c - 4));
-        for (int[] g : new int[][] {{c - 3, c - 3}, {c + 3, c + 3}, {c + 3, c - 3}}) {
-            res.guards.add(b.abs(g[0], 1, g[1]));
+        b.set(c, 4, c, "anvil[facing=north]");
+        res.core = b.abs(c, 4, c);
+        // ---- lava hearths and the forge tools
+        for (int[] h : new int[][] {{c - 4, c - 4}, {c + 4, c - 4}, {c - 4, c + 4}, {c + 4, c + 4}}) {
+            b.set(h[0], 2, h[1], "magma_block");
+            b.set(h[0], 3, h[1], "lava_cauldron");
+        }
+        b.set(c - 2, 3, c - 5, "blast_furnace[facing=south]");
+        b.set(c + 2, 3, c - 5, "smithing_table");
+        b.set(c + 5, 3, c - 2, "grindstone[face=floor,facing=west]");
+        // ---- the forge keeper's chest and the guards
+        b.set(c, 3, c - 5, "chest[facing=south]");
+        res.bigChests.add(b.abs(c, 3, c - 5));
+        for (int[] g : new int[][] {{c - 5, c + 5}, {c + 5, c + 5}, {c - 5, c - 5}, {c + 5, c - 5}}) {
+            res.guards.add(b.abs(g[0], 3, g[1]));
+        }
+    }
+
+    /** A floating island of end stone under the End forge: wide on top, tapering down into a rough point. */
+    private static void island(B b) {
+        int c = 12;
+        for (int k = 1; k <= 14; k++) {
+            double r = 15.4 * Math.pow(1 - k / 15.0, 1.15) + (b.r.nextDouble() - 0.5) * 1.2;
+            for (int x = 0; x < 25; x++) {
+                for (int z = 0; z < 25; z++) {
+                    double d = Math.hypot(x - c, z - c) + ((x * 7 + z * 13 + k * 3) % 5) * 0.25;
+                    if (d <= r) {
+                        b.set(x, -k, z, k > 10 && b.r.nextInt(4) == 0 ? "obsidian" : "end_stone");
+                    }
+                }
+            }
         }
     }
 

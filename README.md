@@ -153,8 +153,15 @@ abilities) and its ability cooldowns:
 | ★★★☆☆ | as before stars | as before |
 | ★★★★★ | +15 % | −15 % |
 
-- Stars are earned **only at an Ancient Forge**: there is one deep in the **Scorched Lands** and one in the
-  **Nether**. A pillar of soul fire rises above it, so you can spot it from far away. Use its anvil while holding the
+- Stars are earned **only at an Ancient Forge**, and there are three, each stronger than the last:
+
+  | Forge | Where | Up to |
+  |---|---|---|
+  | Scorched Lands | deep in one of the Scorched Lands areas | ★★ |
+  | Nether | somewhere in the Nether | ★★★ |
+  | End | rises out of the void on a floating island **when the dragon dies** | ★★★★★ |
+
+  Each one is a landmark: a round stepped platform, a domed hall on eight pillars and four towers with signal fires. A pillar of soul fire rises above it, so you can spot it from far away. Use its anvil while holding the
   weapon: one ritual = one star up, and every star costs more (the last ones need the weapon's own legendary material
   and a Nether Star). The weapon **stays in the forge** until the ritual ends and then drops there, so whoever is
   standing there can take it. Afterwards the forge cools down for a day.
@@ -526,7 +533,7 @@ Ruins generate in it, each one a bit different:
 | **Burnt Workshop** | low walls, the collapsed roof on the floor, a furnace and a crafting table; a small chest |
 | **Slag Heap** | mounds of slag, coal and iron ore around a broken smelter; a half-buried chest |
 | **Watchtower** | half-collapsed, a ladder up to the top floor with a chest |
-| **Ancient Forge** (only one) | intact: four pillars with gold, a crown ring with soul lanterns and the anvil on a crying-obsidian altar, where weapons earn [stars](#-stars-and-the-ancient-forge). There's a Nether version too, in nether bricks |
+| **Ancient Forge** (only one) | a landmark: a round stepped platform, a domed hall on eight pillars with soul lanterns, four towers with signal fires and the anvil on a crying-obsidian altar, where weapons earn [stars](#-stars-and-the-ancient-forge) (up to ★★ here) |
 
 The guards are husks in battered iron armor. The chests have iron, gold, coal, sometimes diamonds, netherite scrap
 or a smithing template, plus a chance of **Bounty Tokens** and (big chests) a **legendary material**.
@@ -676,7 +683,7 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport; without an argument it opens a panel with the theme and the buttons |
 | `/forge update [on\|off\|now]` | `forgebound.admin` | auto-update on/off, or check for a new version now |
 | `/forge scorched` | `forgebound.admin` | where the nearest Scorched Lands are (click to teleport) |
-| `/forge ancient [here\|finish\|cool]` | `forgebound.admin` | list the Ancient Forges (click to teleport), build one where you stand, finish running rituals, reset cooldowns |
+| `/forge ancient [here\|end\|finish\|cool]` | `forgebound.admin` | list the Ancient Forges (click to teleport), build one where you stand, raise the End forge now, finish running rituals, reset cooldowns |
 | `/forge stars <player> <1-5>` | `forgebound.admin` | set the stars of the weapon in a player's hand (half steps like 3.5 work) |
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |

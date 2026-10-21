@@ -88,6 +88,9 @@ else
   else
     fail "/forge ancient listed no planned forge"
   fi
+  # the End forge (normally after the dragon dies) can be raised and is registered
+  echo "forge ancient end" >&3
+  wait_for "The End's Ancient Forge rose at" 60 || fail "the End's Ancient Forge didn't rise"
 fi
 
 echo "stop" >&3

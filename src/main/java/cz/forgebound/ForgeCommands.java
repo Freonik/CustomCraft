@@ -164,6 +164,16 @@ final class ForgeCommands {
                     return Command.SINGLE_SUCCESS;
                 })
                 .then(Commands.literal("here").executes(ctx -> player(ctx, p -> plugin.stars().buildHere(p))))
+                .then(Commands.literal("end").executes(ctx -> {
+                    org.bukkit.World end = org.bukkit.Bukkit.getWorlds().stream()
+                            .filter(w -> w.getEnvironment() == org.bukkit.World.Environment.THE_END).findFirst().orElse(null);
+                    if (end == null) {
+                        ctx.getSource().getSender().sendMessage(ItemManager.color("&cThere is no End world."));
+                    } else {
+                        plugin.stars().raiseEnd(end, ctx.getSource().getSender());
+                    }
+                    return Command.SINGLE_SUCCESS;
+                }))
                 .then(Commands.literal("finish").executes(ctx -> {
                     plugin.stars().finishAll(ctx.getSource().getSender());
                     return Command.SINGLE_SUCCESS;

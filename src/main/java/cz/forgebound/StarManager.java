@@ -466,14 +466,21 @@ public final class StarManager implements Listener {
             player.sendMessage(plugin.msg("ancient-max", "&7{item} &7already has all five stars.", "item", ItemManager.nameOf(weapon.item)));
             return;
         }
-        Offer offer = offer(weapon, halves);
+        int cap = maxHalves(site);
+        if (halves >= cap) {
+            player.sendMessage(plugin.msg("ancient-cap", "&7This forge can't make a weapon stronger than {stars}&7. {next}",
+                    "stars", ItemManager.color(Stars.starText(cap)), "next", ItemManager.color(nextForge(cap))));
+            return;
+        }
+        Offer offer = offer(weapon, halves, cap);
         if (offer == null) {
             player.sendMessage(ItemManager.color("&cThe star costs in config.yml (stars.costs) are broken - ask an admin."));
             return;
         }
         List<io.papermc.paper.registry.data.dialog.body.DialogBody> body = new ArrayList<>();
         body.add(Dialogs.item(hand));
-        body.add(Dialogs.text("&7" + Stars.starText(halves) + " &7→ " + Stars.starText(offer.target)));
+        body.add(Dialogs.text("&7" + Stars.starText(halves) + " &7→ " + Stars.starText(offer.target)
+                + "\n&8This forge goes up to " + Stars.starCount(cap) + " stars."));
         Component cost = ItemManager.color("&7Costs:");
         for (ItemManager.Cost c : offer.costs) {
             int have = items.count(player.getInventory(), c);
@@ -497,8 +504,8 @@ public final class StarManager implements Listener {
     private record Offer(int target, List<ItemManager.Cost> costs, int tokens, long millis) { }
 
     /** What the next star costs: stars.costs.<star the ritual reaches>. "material:own" = the weapon's own material. */
-    private Offer offer(ItemManager.Entry weapon, int halves) {
-        int target = Stars.clamp(halves + 2);
+    private Offer offer(ItemManager.Entry weapon, int halves, int cap) {
+        int target = Math.min(cap, Stars.clamp(halves + 2));
         int star = (target + 1) / 2;
         ConfigurationSection sec = plugin.getConfig().getConfigurationSection("stars.costs." + star);
         if (sec == null) {
@@ -546,8 +553,8 @@ public final class StarManager implements Listener {
             player.sendMessage(plugin.msg("ancient-cancelled", "&7The forge didn't take it. Stand at the anvil with the weapon in your hand."));
             return;
         }
-        Offer offer = offer(weapon, halvesOf(hand));
-        if (offer == null) {
+        Offer offer = offer(weapon, halvesOf(hand), maxHalves(site));
+        if (offer == null || halvesOf(hand) >= maxHalves(site)) {
             return;
         }
         boolean tokensOk = offer.tokens <= 0 || (plugin.bounty() != null && plugin.bounty().countTokens(player) >= offer.tokens);
@@ -585,7 +592,23 @@ public final class StarManager implements Listener {
 
     private String where(Site site) {
         World w = Bukkit.getWorld(site.world);
-        return w != null && w.getEnvironment() == World.Environment.NETHER ? "&cin the Nether" : "&6in the Scorched Lands";
+        World.Environment env = w == null ? World.Environment.NORMAL : w.getEnvironment();
+        return env == World.Environment.NETHER ? "&cin the Nether" : env == World.Environment.THE_END ? "&5in the End"
+                : "&6in the Scorched Lands";
+    }
+
+    /** How far this forge can raise a weapon (halves): overworld ★★, Nether ★★★, End ★★★★★ by default. */
+    private int maxHalves(Site site) {
+        World w = Bukkit.getWorld(site.world);
+        World.Environment env = w == null ? World.Environment.NORMAL : w.getEnvironment();
+        String key = env == World.Environment.NETHER ? "nether" : env == World.Environment.THE_END ? "end" : "overworld";
+        double def = env == World.Environment.NETHER ? 3 : env == World.Environment.THE_END ? 5 : 2;
+        return Stars.clamp((int) Math.round(plugin.getConfig().getDouble("ancient-forge.max-stars." + key, def) * 2));
+    }
+
+    private String nextForge(int cap) {
+        double nether = plugin.getConfig().getDouble("ancient-forge.max-stars.nether", 3) * 2;
+        return cap < nether ? "&7Find the Ancient Forge &cin the Nether&7." : "&7Only the Ancient Forge &5in the End &7goes higher.";
     }
 
     private void complete(Running r) {
@@ -619,6 +642,132 @@ public final class StarManager implements Listener {
                 "item", ItemManager.nameOf(r.weapon), "stars", ItemManager.color(Stars.starText(r.target)), "where", ItemManager.color(where(r.site))));
         if (r.target >= 10 && plugin.advancements() != null) {
             plugin.advancements().awardLater(r.player, "five_stars");
+        }
+    }
+
+    // ================================================================ the End forge rises when the dragon dies
+
+    private boolean hasEndForge() {
+        for (Site s : sites.values()) {
+            World w = Bukkit.getWorld(s.world);
+            if (w != null && w.getEnvironment() == World.Environment.THE_END) {
+                return true;
+            }
+        }
+        return raising;
+    }
+
+    private boolean raising;
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDragonDeath(org.bukkit.event.entity.EntityDeathEvent event) {
+        if (event.getEntity() instanceof org.bukkit.entity.EnderDragon
+                && event.getEntity().getWorld().getEnvironment() == World.Environment.THE_END) {
+            World end = event.getEntity().getWorld();
+            Bukkit.getScheduler().runTaskLater(plugin, () -> raiseEnd(end, null), 20L * 12);   // after the death animation
+        }
+    }
+
+    /** Servers where the dragon died before this version: the forge rises when someone comes to the End. */
+    @EventHandler
+    public void onEnterEnd(org.bukkit.event.player.PlayerChangedWorldEvent event) {
+        World end = event.getPlayer().getWorld();
+        if (end.getEnvironment() == World.Environment.THE_END && end.getEnderDragonBattle() != null
+                && end.getEnderDragonBattle().hasBeenPreviouslyKilled()) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> raiseEnd(end, null), 20L * 5);
+        }
+    }
+
+    /** Raises the End's Ancient Forge on a floating island near the main island (once). */
+    public void raiseEnd(World end, CommandSender admin) {
+        if (!enabled() || !plugin.getConfig().getBoolean("ancient-forge.end.enabled", true) || hasEndForge()) {
+            if (admin != null) {
+                admin.sendMessage(ItemManager.color("&7The End already has its Ancient Forge (or it's turned off)."));
+            }
+            return;
+        }
+        raising = true;
+        java.util.SplittableRandom r = new java.util.SplittableRandom(end.getSeed() ^ 0xE4DF0L);
+        double angle = r.nextDouble() * Math.PI * 2;
+        double dist = plugin.getConfig().getDouble("ancient-forge.end.distance", 110);
+        int cx = (int) Math.round(Math.cos(angle) * dist);
+        int cz = (int) Math.round(Math.sin(angle) * dist);
+        int y0 = plugin.getConfig().getInt("ancient-forge.end.height", 70);
+        int x0 = cx - 12;
+        int z0 = cz - 12;
+        for (int x = x0 - 16; x <= x0 + 40; x += 16) {
+            for (int z = z0 - 16; z <= z0 + 40; z += 16) {
+                end.getChunkAt(x >> 4, z >> 4).load(true);
+            }
+        }
+        // plan every block first, then let it rise out of the void layer by layer
+        Map<Long, String> plan = new LinkedHashMap<>();
+        List<int[]> order = new ArrayList<>();
+        ForgeRuins.Canvas canvas = new ForgeRuins.Canvas() {
+            @Override
+            public void set(int x, int y, int z, String block) {
+                long k = ((long) x & 0x3FFFFFF) << 38 | ((long) z & 0x3FFFFFF) << 12 | (y & 0xFFF);
+                if (plan.put(k, block) == null) {
+                    order.add(new int[] {x, y, z});
+                }
+            }
+
+            @Override
+            public String get(int x, int y, int z) {
+                long k = ((long) x & 0x3FFFFFF) << 38 | ((long) z & 0x3FFFFFF) << 12 | (y & 0xFFF);
+                String planned = plan.get(k);
+                return planned != null ? planned.replaceAll("\\[.*", "") : end.getBlockAt(x, y, z).getType().getKey().toString();
+            }
+        };
+        ForgeRuins.Result result = ForgeRuins.build(ForgeRuins.Type.ANCIENT_END, canvas, x0, y0, z0, r);
+        order.sort(java.util.Comparator.comparingInt(p -> p[1]));
+        Location center = new Location(end, cx + 0.5, y0 + 4, cz + 0.5);
+        Bukkit.broadcast(plugin.msg("ancient-end-rising",
+                "&5✦ The dragon has fallen. &dSomething ancient rises out of the void in the End..."));
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            p.playSound(p.getLocation(), Sound.BLOCK_END_PORTAL_SPAWN, 0.6f, 0.6f);
+        }
+        int perTick = Math.max(40, order.size() / 80);
+        new BukkitRunnable() {
+            int i;
+
+            @Override
+            public void run() {
+                for (int n = 0; n < perTick && i < order.size(); n++, i++) {
+                    int[] p = order.get(i);
+                    long k = ((long) p[0] & 0x3FFFFFF) << 38 | ((long) p[2] & 0x3FFFFFF) << 12 | (p[1] & 0xFFF);
+                    end.getBlockAt(p[0], p[1], p[2]).setBlockData(Bukkit.createBlockData(plan.get(k)), false);
+                }
+                if (i % (perTick * 6) < perTick) {
+                    end.spawnParticle(Particle.REVERSE_PORTAL, center, 60, 6, 3, 6, 0.1);
+                    end.playSound(center, Sound.BLOCK_STONE_PLACE, 2f, 0.5f);
+                }
+                if (i < order.size()) {
+                    return;
+                }
+                cancel();
+                for (int[] chest : result.bigChests) {
+                    if (end.getBlockAt(chest[0], chest[1], chest[2]).getState() instanceof org.bukkit.block.Chest c) {
+                        c.setLootTable(Bukkit.getLootTable(ScorchedLands.LOOT_BIG), r.nextLong());
+                        c.update(true, false);
+                    }
+                }
+                Site site = new Site(end.getName(), result.core[0], result.core[1], result.core[2]);
+                sites.put(site.id(), site);
+                raising = false;
+                save();
+                end.strikeLightningEffect(center);
+                end.spawnParticle(Particle.DRAGON_BREATH, center, 200, 5, 3, 5, 0.05);
+                Bukkit.broadcast(plugin.msg("ancient-end-risen",
+                        "&5✦ The &dAncient Forge of the End &5has risen! &7Only it can give a weapon its last stars."));
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 0.7f);
+                }
+                plugin.getLogger().info("The End's Ancient Forge rose at " + site.id());
+            }
+        }.runTaskTimer(plugin, 20L, 1L);
+        if (admin != null) {
+            admin.sendMessage(ItemManager.color("&7Raising the End forge at &f" + cx + " " + y0 + " " + cz + "&7."));
         }
     }
 
@@ -786,6 +935,9 @@ public final class StarManager implements Listener {
                 }
             }
         }
+        if (!hasEndForge()) {
+            sender.sendMessage(ItemManager.color("&8- End: &7rises when the dragon dies &8(or &e/forge ancient end&8)"));
+        }
         if (sites.isEmpty()) {
             sender.sendMessage(ItemManager.color("&7No Ancient Forge has generated yet. They appear in NEW chunks (Scorched Lands, Nether). "
                     + "&e/forge ancient here &7builds one where you stand."));
@@ -810,9 +962,10 @@ public final class StarManager implements Listener {
         Location at = player.getLocation();
         World world = at.getWorld();
         boolean nether = world.getEnvironment() == World.Environment.NETHER;
-        int x0 = at.getBlockX() - 6;
+        boolean endWorld = world.getEnvironment() == World.Environment.THE_END;
+        int x0 = at.getBlockX() - 12;
         int y0 = at.getBlockY() - 1;
-        int z0 = at.getBlockZ() - 6;
+        int z0 = at.getBlockZ() - 12;
         ForgeRuins.Canvas canvas = new ForgeRuins.Canvas() {
             @Override
             public void set(int x, int y, int z, String block) {
@@ -824,12 +977,13 @@ public final class StarManager implements Listener {
                 return world.getBlockAt(x, y, z).getType().getKey().toString();
             }
         };
-        ForgeRuins.Result result = ForgeRuins.build(nether ? ForgeRuins.Type.ANCIENT_NETHER : ForgeRuins.Type.ANCIENT,
+        ForgeRuins.Result result = ForgeRuins.build(endWorld ? ForgeRuins.Type.ANCIENT_END
+                        : nether ? ForgeRuins.Type.ANCIENT_NETHER : ForgeRuins.Type.ANCIENT,
                 canvas, x0, y0, z0, new java.util.SplittableRandom(at.getBlockX() * 31L + at.getBlockZ()));
         Site site = new Site(world.getName(), result.core[0], result.core[1], result.core[2]);
         sites.put(site.id(), site);
         save();
-        player.teleport(new Location(world, x0 + 6.5, y0 + 1, z0 + 11.5, 180, 0));
+        player.teleport(new Location(world, x0 + 12.5, y0 + 1, z0 - 1.5, 0, 0));
         player.sendMessage(ItemManager.color("&6✦ &7Ancient Forge built. &8(sneak-break the anvil in creative to remove it)"));
     }
 
