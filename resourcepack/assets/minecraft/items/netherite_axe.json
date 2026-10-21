@@ -6,51 +6,15 @@
       {
         "threshold": 1006,
         "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:display_context",
-          "cases": [
-            {
-              "when": [
-                "gui",
-                "ground",
-                "fixed",
-                "on_shelf"
-              ],
-              "model": {
-                "type": "minecraft:model",
-                "model": "customcraft:item/butcher_cleaver"
-              }
-            }
-          ],
-          "fallback": {
-            "type": "minecraft:model",
-            "model": "customcraft:item/butcher_cleaver_3d"
-          }
+          "type": "minecraft:model",
+          "model": "customcraft:item/butcher_cleaver"
         }
       },
       {
         "threshold": 1011,
         "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:display_context",
-          "cases": [
-            {
-              "when": [
-                "gui",
-                "ground",
-                "fixed",
-                "on_shelf"
-              ],
-              "model": {
-                "type": "minecraft:model",
-                "model": "customcraft:item/rimebreaker"
-              }
-            }
-          ],
-          "fallback": {
-            "type": "minecraft:model",
-            "model": "customcraft:item/rimebreaker_3d"
-          }
+          "type": "minecraft:model",
+          "model": "customcraft:item/rimebreaker"
         }
       },
       {

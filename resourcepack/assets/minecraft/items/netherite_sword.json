@@ -6,76 +6,22 @@
       {
         "threshold": 1001,
         "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:display_context",
-          "cases": [
-            {
-              "when": [
-                "gui",
-                "ground",
-                "fixed",
-                "on_shelf"
-              ],
-              "model": {
-                "type": "minecraft:model",
-                "model": "customcraft:item/echo_blade"
-              }
-            }
-          ],
-          "fallback": {
-            "type": "minecraft:model",
-            "model": "customcraft:item/echo_blade_3d"
-          }
+          "type": "minecraft:model",
+          "model": "customcraft:item/echo_blade"
         }
       },
       {
         "threshold": 1007,
         "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:display_context",
-          "cases": [
-            {
-              "when": [
-                "gui",
-                "ground",
-                "fixed",
-                "on_shelf"
-              ],
-              "model": {
-                "type": "minecraft:model",
-                "model": "customcraft:item/abyssal_maw"
-              }
-            }
-          ],
-          "fallback": {
-            "type": "minecraft:model",
-            "model": "customcraft:item/abyssal_maw_3d"
-          }
+          "type": "minecraft:model",
+          "model": "customcraft:item/abyssal_maw"
         }
       },
       {
         "threshold": 1009,
         "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:display_context",
-          "cases": [
-            {
-              "when": [
-                "gui",
-                "ground",
-                "fixed",
-                "on_shelf"
-              ],
-              "model": {
-                "type": "minecraft:model",
-                "model": "customcraft:item/silk_needle"
-              }
-            }
-          ],
-          "fallback": {
-            "type": "minecraft:model",
-            "model": "customcraft:item/silk_needle_3d"
-          }
+          "type": "minecraft:model",
+          "model": "customcraft:item/silk_needle"
         }
       }
     ],

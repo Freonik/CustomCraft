@@ -6,26 +6,8 @@
       {
         "threshold": 1008,
         "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:display_context",
-          "cases": [
-            {
-              "when": [
-                "gui",
-                "ground",
-                "fixed",
-                "on_shelf"
-              ],
-              "model": {
-                "type": "minecraft:model",
-                "model": "customcraft:item/clawline_pick"
-              }
-            }
-          ],
-          "fallback": {
-            "type": "minecraft:model",
-            "model": "customcraft:item/clawline_pick_3d"
-          }
+          "type": "minecraft:model",
+          "model": "customcraft:item/clawline_pick"
         }
       }
     ],

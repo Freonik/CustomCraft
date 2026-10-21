@@ -124,8 +124,6 @@ public final class AbilityManager implements Listener {
 
     /** player -> (weapon:ability -> cooldown end in ms) */
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
-    /** Display-entity effects (slashes, shockwaves, ghosts...). */
-    private final Fx fx;
     /** player -> last activation attempt (one click can send two packets) */
     private final Map<UUID, Long> lastTrigger = new HashMap<>();
     /** player -> attack charge right before the hit (already reset inside the damage event) */
@@ -225,7 +223,6 @@ public final class AbilityManager implements Listener {
         this.arrowKey = Forgebound.key("weapon");
         this.mirrorKey = Forgebound.key("mirror_shot");
         this.killsKey = Forgebound.key("weapon_kills");
-        this.fx = new Fx(plugin);
         this.pinKey = Forgebound.key("pinned");
         this.finaleKey = Forgebound.key("finale_root");
         this.pinShotKey = Forgebound.key("pin_shot");
@@ -627,7 +624,6 @@ public final class AbilityManager implements Listener {
         world.spawnParticle(Particle.SCULK_SOUL, from.clone().add(0, 1, 0), 15, 0.3, 0.6, 0.3, 0.02);
         world.playSound(from, Sound.BLOCK_RESPAWN_ANCHOR_DEPLETE, 1f, 1.6f);
 
-        fx.afterimage(player, from.clone(), 24);                  // you, left behind for a moment
         double before = player.getHealth();
         player.teleport(to);
         player.setFallDistance(0);
@@ -677,7 +673,6 @@ public final class AbilityManager implements Listener {
         World world = player.getWorld();
         Location center = player.getLocation();
         world.playSound(center, Sound.ENTITY_WARDEN_SONIC_BOOM, 1f, 1.4f);
-        fx.ring(center, "echo_ring", 1f, (float) (radius * 2 / 0.875), 8, Color.fromRGB(90, 230, 240));
         repeat(1, 6, step -> {
             ring(center.clone().add(0, 1, 0), radius * (step + 1) / 6.0, 40,
                     l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0.1, 0, 0, ECHO_DUST));
@@ -693,7 +688,6 @@ public final class AbilityManager implements Listener {
                 Location at = target.getLocation().add(0, target.getHeight() / 2, 0);
                 target.getWorld().spawnParticle(Particle.SONIC_BOOM, at, 1, 0, 0, 0, 0);
                 target.getWorld().spawnParticle(Particle.SCULK_CHARGE_POP, at, 20, 0.3, 0.5, 0.3, 0.05);
-                fx.slash(at, player.getLocation().getYaw(), (float) (Math.random() - 0.5), 2.2f);
                 hurt(player, target, amount);
             }, 4L + i * 2L);
         }
@@ -712,8 +706,6 @@ public final class AbilityManager implements Listener {
         World world = player.getWorld();
         world.playSound(center, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 1.5f, 0.5f);
         world.playSound(center, Sound.BLOCK_ANVIL_LAND, 0.8f, 0.5f);
-        fx.fieldRing(center, radius, seconds * 20, Color.fromRGB(150, 90, 255));
-        fx.orbit(center, radius * 0.55, 7, seconds * 20);
         int steps = seconds * 10;
         repeat(2, steps, step -> {
             double spin = step * 0.15;
@@ -761,9 +753,7 @@ public final class AbilityManager implements Listener {
         World world = player.getWorld();
         world.playSound(center, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1.2f, 0.6f);
         world.spawnParticle(Particle.REVERSE_PORTAL, center.clone().add(0, 0.5, 0), 80, radius / 2, 0.3, radius / 2, 0.1);
-        fx.shockwave(center, radius);
         for (LivingEntity target : victims) {
-            fx.liftRubble(target, lift);
             target.setVelocity(new Vector(0, 0.55, 0));
             target.addPotionEffect(new PotionEffect(PotionEffectType.LEVITATION, lift, 2, false, true, true));
         }
@@ -786,12 +776,6 @@ public final class AbilityManager implements Listener {
                 hurt(player, target, Math.min(cap, base + perBlock * height));
                 target.getWorld().spawnParticle(Particle.DUST, target.getLocation(), 20, 0.3, 0.6, 0.3, 0, GRAVITY_CORE);
                 target.getWorld().playSound(target.getLocation(), Sound.ENTITY_IRON_GOLEM_ATTACK, 1f, 0.5f);
-                // where they land a moment later, the ground cracks
-                Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    if (target.isValid()) {
-                        fx.shockwave(target.getLocation(), 2.2);
-                    }
-                }, 6L);
             }
         }, lift);
         return true;
@@ -822,7 +806,6 @@ public final class AbilityManager implements Listener {
         line(player.getEyeLocation(), target.getLocation().add(0, target.getHeight() / 2, 0), 0.5,
                 l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, HEX_DUST));
         world.spawnParticle(Particle.WITCH, target.getLocation().add(0, 1, 0), 40, 0.4, 0.7, 0.4, 0.1);
-        fx.ring(target.getLocation(), "gravity_ring", 4f, 1.4f, 8, Color.fromRGB(90, 200, 90));
         world.playSound(target.getLocation(), Sound.ENTITY_WITCH_CELEBRATE, 1f, 0.6f);
         if (target instanceof Player victim) {
             victim.sendActionBar(plugin.raw("ability-hexed", "&2You have been hexed!"));
@@ -891,8 +874,6 @@ public final class AbilityManager implements Listener {
         world.playSound(player.getLocation(), Sound.BLOCK_SCULK_CATALYST_BLOOM, 1.5f, 0.8f);
         world.playSound(player.getLocation(), Sound.PARTICLE_SOUL_ESCAPE, 2f, 1f);
         world.spawnParticle(Particle.SOUL, player.getLocation().add(0, 1, 0), 15 * count, 0.5, 0.8, 0.5, 0.05);
-        fx.sweep(player, player.getInventory().getItemInMainHand(), 2.2, 10);
-        fx.ring(player.getLocation(), "soul_ring", 1f, 12f, 10, Color.fromRGB(120, 220, 240));
 
         double range = p.d("range", 16);
         double damage = p.d("damage-per-soul", 3);
@@ -923,7 +904,6 @@ public final class AbilityManager implements Listener {
             Vector to = goal.toVector().subtract(pos.toVector());
             if (to.lengthSquared() < 1.0) {
                 hurt(player, target, damage);
-                fx.slash(goal, player.getLocation().getYaw(), (float) (Math.random() - 0.5), 1.6f, "soul");
                 world.spawnParticle(Particle.SCULK_SOUL, goal, 12, 0.2, 0.3, 0.2, 0.05);
                 world.playSound(goal, Sound.PARTICLE_SOUL_ESCAPE, 1.5f, 1.4f);
                 return false;
@@ -948,12 +928,6 @@ public final class AbilityManager implements Listener {
         world.playSound(center, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.4f, 0.6f);
         world.playSound(center, Sound.ITEM_TRIDENT_RETURN, 1.2f, 0.6f);
         double yaw0 = Math.toRadians(center.getYaw());
-        fx.sweep(player, player.getInventory().getItemInMainHand(), 2.4, 8);         // the blade sweeps a full circle
-        for (int k = 0; k < 3; k++) {
-            float yaw = (float) (center.getYaw() + k * 120);
-            double a = Math.toRadians(yaw);
-            fx.slash(center.clone().add(-Math.sin(a) * 2.2, 1.0, Math.cos(a) * 2.2), yaw, 0.1f, 3.0f, "venom");
-        }
         repeat(1, 6, step -> {
             for (int k = 0; k < 10; k++) {
                 double a = yaw0 + (step * 10 + k) * (2 * Math.PI / 60);
@@ -1115,7 +1089,6 @@ public final class AbilityManager implements Listener {
         world.playSound(player.getLocation(), Sound.ENTITY_RAVAGER_ROAR, 0.8f, 0.7f);
         world.playSound(player.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 1.5f, 1.2f);
         world.spawnParticle(Particle.DUST, player.getLocation().add(0, 1, 0), 40, 0.4, 0.7, 0.4, 0, BLOOD_DUST);
-        fx.ring(player.getLocation(), "blood_ring", 1f, 7f, 7, Color.fromRGB(220, 40, 50));
         int pulses = seconds * 4;
         repeat(5, pulses, step -> {
             if (!player.isOnline() || player.isDead()) {
@@ -1133,9 +1106,6 @@ public final class AbilityManager implements Listener {
             }
             if (step % 4 == 0) {
                 world.playSound(l, Sound.ENTITY_WARDEN_HEARTBEAT, 0.9f, 1.4f);
-                if (player.isSprinting()) {
-                    fx.afterimage(player, l.clone(), 6);               // a red blur left behind while you run
-                }
             }
             if (step == pulses - 1) {
                 bloodrush.remove(player.getUniqueId());
@@ -1338,7 +1308,6 @@ public final class AbilityManager implements Listener {
         }
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, ticks, ally ? 0 : 1, false, true, true));
         World world = player.getWorld();
-        fx.jaws(target);
         world.playSound(player.getLocation(), Sound.ENTITY_FROG_EAT, 2f, 0.5f);
         world.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EAT, 1.5f, 0.6f);
         world.spawnParticle(Particle.ITEM_SLIME, target.getLocation().add(0, 1, 0), 25, 0.4, 0.6, 0.4, 0.1);
@@ -1442,46 +1411,7 @@ public final class AbilityManager implements Listener {
     }
 
     /** Lets everybody out (plugin shutdown). */
-    /** /forge fx: shows a display effect in front of an admin (to see them without a fight). */
-    public void previewFx(Player player, String name) {
-        Location front = player.getLocation().add(player.getLocation().getDirection().setY(0).normalize().multiply(4));
-        switch (name) {
-            case "shockwave" -> fx.shockwave(front, 5);
-            case "ring" -> fx.ring(front, "echo_ring", 1f, 14f, 8, Color.fromRGB(90, 230, 240));
-            case "field" -> {
-                fx.fieldRing(front, 7, 120, Color.fromRGB(150, 90, 255));
-                fx.orbit(front, 4, 7, 120);
-            }
-            case "slash" -> fx.slash(front.clone().add(0, 1.2, 0), player.getLocation().getYaw(), 0.4f, 2.2f);
-            case "ghost" -> {
-                org.bukkit.entity.ArmorStand dummy = player.getWorld().spawn(front, org.bukkit.entity.ArmorStand.class, a -> {
-                    a.setPersistent(false);
-                    a.setGravity(false);
-                });
-                ItemStack hand = player.getInventory().getItemInMainHand();
-                fx.ghostStrike(player, dummy, hand.getType().isAir() ? new ItemStack(org.bukkit.Material.NETHERITE_SWORD) : hand, 30);
-                Bukkit.getScheduler().runTaskLater(plugin, dummy::remove, 45L);
-            }
-            case "afterimage" -> fx.afterimage(player, player.getLocation(), 40);
-            case "spikes" -> fx.spikes(front, Material.PACKED_ICE.createBlockData(), 8, 1.5, 1.6f);
-            case "sweep" -> fx.sweep(player, player.getInventory().getItemInMainHand(), 2.2, 10);
-            case "jaws" -> {
-                org.bukkit.entity.ArmorStand dummy = player.getWorld().spawn(front, org.bukkit.entity.ArmorStand.class, a -> {
-                    a.setPersistent(false);
-                    a.setGravity(false);
-                });
-                fx.jaws(dummy);
-                Bukkit.getScheduler().runTaskLater(plugin, dummy::remove, 20L);
-            }
-            case "blood", "silk", "soul", "venom", "frost" ->
-                    fx.slash(front.clone().add(0, 1.2, 0), player.getLocation().getYaw(), 0.4f, 2.2f, name);
-            default -> player.sendMessage(ItemManager.color(
-                    "&7Effects: shockwave, ring, field, slash, ghost, afterimage, spikes, sweep, jaws, blood, silk, soul, venom, frost"));
-        }
-    }
-
     public void shutdown() {
-        fx.clear();
         for (Swallow s : new ArrayList<>(swallowed.values())) {
             release(s, false);
         }
@@ -1744,7 +1674,6 @@ public final class AbilityManager implements Listener {
         world.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.4f);
         ring(at.clone().add(0, 0.2, 0), radius, 40, l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0.05, 0, 0, SOUL_WHITE));
         world.spawnParticle(Particle.EXPLOSION, at, 2, 0.5, 0.2, 0.5, 0);
-        fx.shockwave(at, radius);
         for (LivingEntity target : targets(player, at, radius)) {
             hurt(player, target, damage);
             Vector out = target.getLocation().toVector().subtract(at.toVector()).setY(0);
@@ -1859,9 +1788,6 @@ public final class AbilityManager implements Listener {
             if (step % every == 0) {
                 world.playSound(c, Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.6f, 1.8f);
                 world.spawnParticle(Particle.SWEEP_ATTACK, c.clone().add(0, 1, 0), 2, radius / 2, 0.2, radius / 2, 0);
-                double sa = Math.random() * Math.PI * 2;
-                fx.slash(c.clone().add(Math.cos(sa) * radius * 0.5, 0.6 + Math.random() * 1.2, Math.sin(sa) * radius * 0.5),
-                        (float) Math.toDegrees(sa), (float) (Math.random() - 0.5) * 1.6f, 2.4f, "silk");
                 for (LivingEntity target : targets(player, c, radius)) {
                     hurt(player, target, damage);
                 }
@@ -1873,21 +1799,12 @@ public final class AbilityManager implements Listener {
 
     // ================================================================ shared: flying items
 
-    /** Weapons with a 3D model for the hand: thrown ones fly as that model too. */
-    private static final Set<String> SOLID = Set.of("weapon:echo_blade", "weapon:graviton_hammer", "weapon:soulbinder",
-            "weapon:butcher_cleaver", "weapon:abyssal_maw", "weapon:clawline_pick", "weapon:silk_needle",
-            "weapon:rimebreaker", "weapon:knightfall");
-
     private ItemDisplay spawnFlying(World world, Location pos, ItemStack look, float scale) {
-        ItemManager.Entry entry = items.weaponOf(look);
-        boolean solid = entry != null && SOLID.contains(entry.ref())
-                && (look.getItemMeta() == null || !look.getItemMeta().hasCustomModelData()
-                || look.getItemMeta().getCustomModelData() == entry.item.getItemMeta().getCustomModelData());
         return world.spawn(pos.clone(), ItemDisplay.class, d -> {
             d.setItemStack(look);
             d.setPersistent(false);
             d.setTeleportDuration(1);
-            d.setItemDisplayTransform(solid ? ItemDisplay.ItemDisplayTransform.NONE : ItemDisplay.ItemDisplayTransform.FIXED);
+            d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
             d.setBillboard(Display.Billboard.FIXED);
             d.setTransformation(new Transformation(new Vector3f(), new Quaternionf(),
                     new Vector3f(scale, scale, scale), new Quaternionf()));
@@ -2367,9 +2284,6 @@ public final class AbilityManager implements Listener {
             if (step % 3 == 0) {
                 world.playSound(center, Sound.BLOCK_POWDER_SNOW_BREAK, 1f, 0.8f);
             }
-            if (step % 2 == 0) {
-                fx.spikes(center, Material.PACKED_ICE.createBlockData(), 2 + (int) width, width, 1.2f + step * 0.08f);
-            }
             for (LivingEntity target : targets(player, center, width + 0.8)) {
                 if (hitOnce.add(target.getUniqueId())) {
                     hurt(player, target, damage);
@@ -2680,9 +2594,6 @@ public final class AbilityManager implements Listener {
             Location at = player.getLocation().add(0, 1, 0);
             world.spawnParticle(Particle.DUST, at, 3, 0.3, 0.3, 0.3, 0, VALK_DUST);
             world.spawnParticle(Particle.CLOUD, at, 1, 0.1, 0.1, 0.1, 0.01);
-            if (step % 3 == 0) {
-                fx.afterimage(player, player.getLocation(), 5);      // afterimages along the charge
-            }
             for (LivingEntity target : targets(player, at, 1.8)) {
                 if (hitOnce.add(target.getUniqueId())) {
                     hurt(player, target, damage);
@@ -2731,7 +2642,6 @@ public final class AbilityManager implements Listener {
         if (player.isOnGround()) {
             player.teleport(player.getLocation().add(0, 1.1, 0));    // like vanilla riptide on the ground
         }
-        fx.afterimage(player, player.getLocation(), 10);
         player.setVelocity(dir);
         player.startRiptideAttack(p.i("spin-ticks", 20), (float) p.d("spin-damage", 8), player.getInventory().getItemInMainHand());
         noFall.put(player.getUniqueId(), System.currentTimeMillis() + 3500);
@@ -2760,17 +2670,8 @@ public final class AbilityManager implements Listener {
         Set<UUID> hitOnce = new java.util.HashSet<>();
         world.playSound(center, Sound.ENTITY_ELDER_GUARDIAN_CURSE, 0.8f, 1.4f);
         world.playSound(center, Sound.AMBIENT_UNDERWATER_ENTER, 1.5f, 0.7f);
-        fx.shockwave(center, Math.min(radius, 7));
-        fx.ring(center, "echo_ring", 1f, (float) (radius * 2 / 0.875), 10, Color.fromRGB(60, 140, 220));
         repeat(1, 10, step -> {
             double r = radius * (step + 1) / 10.0;
-            if (step % 2 == 1) {
-                for (int k = 0; k < 4; k++) {
-                    double a = Math.random() * Math.PI * 2;
-                    fx.spikes(center.clone().add(Math.cos(a) * r, 0, Math.sin(a) * r),
-                            Material.PRISMARINE_BRICKS.createBlockData(), 1, 0.3, 1.0f);
-                }
-            }
             ring(center.clone().add(0, 0.3, 0), r, Math.max(16, (int) (r * 8)), l -> {
                 world.spawnParticle(Particle.SPLASH, l, 3, 0.1, 0.3, 0.1, 0.1);
                 world.spawnParticle(Particle.DUST, l.clone().add(0, 0.6, 0), 1, 0.05, 0.3, 0.05, 0, SEA_DUST);
@@ -3005,13 +2906,11 @@ public final class AbilityManager implements Listener {
                 double amount = event.getDamage() * p.d("percent", 40) / 100.0;
                 long delay = Math.max(1, p.i("delay-ticks", 30));
                 world.spawnParticle(Particle.DUST, at, 6, 0.3, 0.4, 0.3, 0, ECHO_DUST);
-                fx.ghostStrike(attacker, victim, attacker.getInventory().getItemInMainHand(), (int) delay);
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     if (!victim.isValid() || victim.isDead() || !attacker.isOnline()) {
                         return;
                     }
                     Location now = victim.getLocation().add(0, victim.getHeight() / 2, 0);
-                    fx.slash(now, attacker.getLocation().getYaw(), 0.5f, 1.8f);
                     victim.getWorld().spawnParticle(Particle.SCULK_SOUL, now, 10, 0.3, 0.4, 0.3, 0.03);
                     victim.getWorld().spawnParticle(Particle.SWEEP_ATTACK, now, 1, 0, 0, 0, 0);
                     victim.getWorld().playSound(now, Sound.BLOCK_SCULK_SENSOR_CLICKING, 1.2f, 1.4f);
@@ -3050,7 +2949,6 @@ public final class AbilityManager implements Listener {
                     ring(ground.clone().add(0, 0.2, 0), 2.5, 28,
                             l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0.05, 0, 0, GRAVITY_DUST));
                     world.spawnParticle(Particle.EXPLOSION, ground, 1, 0, 0, 0, 0);
-                    fx.shockwave(ground, 3);
                     if (attacker instanceof Player hammer) {
                         hammer.sendActionBar(ItemManager.color("&5⬇ Slam &d+" + Math.round(bonus) + " &7damage"));
                         if (event.getDamage() >= 20) {
@@ -3107,7 +3005,6 @@ public final class AbilityManager implements Listener {
                 ring(victim.getLocation().add(0, 0.9, 0), radius, 18,
                         l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, HYDRA_DUST));
                 world.spawnParticle(Particle.SWEEP_ATTACK, at, wrath ? 3 : 1, 0.6, 0.1, 0.6, 0);
-                fx.slash(at, attacker.getLocation().getYaw(), (float) (Math.random() - 0.5), wrath ? 2.8f : 2.0f, "venom");
                 if (healed > 0) {
                     attacker.setHealth(Math.min(maxHealth(attacker), attacker.getHealth() + heal(attacker, healed)));
                 }
@@ -3119,7 +3016,6 @@ public final class AbilityManager implements Listener {
                 if (bonus > 0.05) {
                     event.setDamage(event.getDamage() + scaled(victim, bonus));
                     world.spawnParticle(Particle.DUST, at, 12, 0.3, 0.4, 0.3, 0, BLOOD_DUST);
-                    fx.slash(at, attacker.getLocation().getYaw(), 0.6f, 1.7f, "blood");
                     world.playSound(at, Sound.ENTITY_PLAYER_ATTACK_STRONG, 1f, 0.6f);
                 }
             }

@@ -182,12 +182,6 @@ final class ForgeCommands {
                     plugin.stars().resetCooldowns(ctx.getSource().getSender());
                     return Command.SINGLE_SUCCESS;
                 })));
-        root.then(Commands.literal("fx").requires(ForgeCommands::admin)
-                .then(Commands.argument("effect", StringArgumentType.word())
-                        .suggests(suggest(() -> List.of("shockwave", "ring", "field", "slash", "ghost", "afterimage", "spikes", "sweep", "jaws",
-                                "blood", "silk", "soul", "venom", "frost")))
-                        .executes(ctx -> player(ctx, p -> plugin.abilities()
-                                .previewFx(p, StringArgumentType.getString(ctx, "effect"))))));
         root.then(Commands.literal("stars").requires(ForgeCommands::admin)
                 .then(Commands.argument("player", ArgumentTypes.player())
                         .then(Commands.argument("stars", com.mojang.brigadier.arguments.DoubleArgumentType.doubleArg(1, 5))

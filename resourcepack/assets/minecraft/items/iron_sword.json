@@ -6,26 +6,8 @@
       {
         "threshold": 1205,
         "model": {
-          "type": "minecraft:select",
-          "property": "minecraft:display_context",
-          "cases": [
-            {
-              "when": [
-                "gui",
-                "ground",
-                "fixed",
-                "on_shelf"
-              ],
-              "model": {
-                "type": "minecraft:model",
-                "model": "customcraft:item/hydra_edge"
-              }
-            }
-          ],
-          "fallback": {
-            "type": "minecraft:model",
-            "model": "customcraft:item/hydra_edge_3d"
-          }
+          "type": "minecraft:model",
+          "model": "customcraft:item/hydra_edge"
         }
       }
     ],
