@@ -62,6 +62,20 @@ else
   wait_for 'Most wanted' 30 || fail "/top printed nothing"
   echo "events" >&3
   sleep 3
+  # the bundled datapack is loaded ...
+  echo "datapack list enabled" >&3
+  wait_for 'enabled.*forgebound' 20 || fail "the Forgebound datapack isn't loaded"
+  # ... and the Scorched Lands really generate: find one, generate that chunk, check the biome there
+  echo "forge scorched" >&3
+  if wait_for 'Scorched Lands at' 30; then
+    read -r SX SZ < <(grep -o 'Scorched Lands at -\?[0-9]* ~ -\?[0-9]*' "$LOG" | tail -1 | sed -E 's/.* at (-?[0-9]+) ~ (-?[0-9]+)/\1 \2/')
+    echo "forceload add $SX $SZ" >&3
+    sleep 8
+    echo "execute if biome $SX -58 $SZ forgebound:scorched_lands run say SCORCHED_OK" >&3
+    wait_for 'SCORCHED_OK' 30 || fail "the Scorched Lands biome wasn't generated at $SX $SZ"
+  else
+    fail "/forge scorched found nothing"
+  fi
 fi
 
 echo "stop" >&3

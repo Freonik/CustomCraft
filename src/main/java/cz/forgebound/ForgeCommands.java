@@ -154,6 +154,10 @@ final class ForgeCommands {
                 .then(Commands.literal("stop").executes(ctx -> forge(ctx, "ghost", "stop")))
                 .then(Commands.argument("player", ArgumentTypes.player())
                         .executes(ctx -> forge(ctx, "ghost", onePlayer(ctx, "player").getName()))));
+        root.then(Commands.literal("scorched").requires(ForgeCommands::admin).executes(ctx -> {
+            plugin.scorched().locate(ctx.getSource().getSender());
+            return Command.SINGLE_SUCCESS;
+        }));
         var update = Commands.literal("update").requires(ForgeCommands::admin)
                 .executes(ctx -> update(ctx, "now"));
         for (String sub : List.of("on", "off", "now")) {

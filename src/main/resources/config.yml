@@ -1523,6 +1523,34 @@ items:
   fireproof-legends: true
 
 # ------------------------------------------------------------
+#  SCORCHED LANDS
+#  A rare burnt biome (forgebound:scorched_lands): ash in the air, grey-orange sky, coarse dirt, gravel and
+#  blackstone, trees burnt to stumps. Ruins generate in it: ruined forges, burnt workshops, slag heaps and
+#  watchtowers, with loot chests (and Bounty Tokens / rarely a legendary material) and husk guards.
+#  ONLY NEW CHUNKS: land that's already generated is never changed. /forge scorched = where's the nearest one.
+#  Changes to rarity / zone-size only affect chunks generated afterwards (keep them once the world is played).
+# ------------------------------------------------------------
+scorched-lands:
+  enabled: true
+  # worlds to generate in; empty = every overworld
+  worlds: []
+  # share of the world that's scorched (0.03 = 3 %, about as rare as badlands)
+  rarity: 0.03
+  # bigger = larger but fewer areas (800 = areas about 200 blocks across)
+  zone-size: 800
+  ruins: true
+  # chance of a ruin in every 4x4-chunk area deep inside the biome
+  ruin-chance: 0.35
+  guards: true
+  loot:
+    # % chance that a ruin chest also has Bounty Tokens
+    token-chance: 25
+    tokens-min: 1
+    tokens-max: 3
+    # % chance of a random legendary material in the big forge chest
+    material-chance: 3
+
+# ------------------------------------------------------------
 #  AUTO-UPDATE
 #  Every few hours the plugin looks for a newer release on GitHub. A newer Forgebound.jar is downloaded into
 #  plugins/update/ and Paper swaps it in on the next restart (nothing changes while the server runs).

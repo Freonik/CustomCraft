@@ -34,6 +34,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private HudManager hud;
     private EnchantManager enchants;
     private Updater updater;
+    private ScorchedLands scorched;
     private boolean papi;
 
     /** Writes data files one after another in the background, so saving never stalls the server. */
@@ -188,6 +189,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(enchants, this);
         getServer().getPluginManager().registerEvents(new ItemComponents(this), this);
 
+        scorched = new ScorchedLands(this);
+        getServer().getPluginManager().registerEvents(scorched, this);
+        scorched.start();
         updater = new Updater(this);
         getServer().getPluginManager().registerEvents(updater, this);
         updater.start();
@@ -278,6 +282,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
         return hud;
     }
 
+    public ScorchedLands scorched() {
+        return scorched;
+    }
+
     public Updater updater() {
         return updater;
     }
@@ -360,6 +368,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         if (updater != null) {
             updater.start();
         }
+        if (scorched != null) {
+            scorched.load();
+        }
         if (getConfig().getBoolean("discover-recipes-on-join", true)) {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 player.discoverRecipes(items.recipeKeys());
@@ -375,7 +386,8 @@ public final class Forgebound extends JavaPlugin implements Listener {
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
             "hud", "hud.scoreboard", "hud.tab", "hud.join-title", "codex", "top", "doppelganger", "season", "recon", "teams",
-            "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items", "auto-update");
+            "dialogs", "enchantments", "enchantments.forge-touch", "enchantments.bounty-hunter", "items", "auto-update",
+            "scorched-lands", "scorched-lands.loot");
 
     /**
      * Copies entries that are new in this plugin version (e.g. a new weapon) into an existing config.yml,

@@ -66,6 +66,19 @@ public final class ForgeboundBootstrap implements PluginBootstrap {
                     .activeSlots(EquipmentSlotGroup.MAINHAND));
         });
 
+        // the bundled datapack: the Scorched Lands biome and the ruin loot tables. Always loaded, so chunks that
+        // already have the biome stay valid even when the generation is switched off in the config.
+        context.getLifecycleManager().registerEventHandler(LifecycleEvents.DATAPACK_DISCOVERY, event -> {
+            try {
+                java.net.URL url = ForgeboundBootstrap.class.getResource("/datapack");
+                if (url != null) {
+                    event.registrar().discoverPack(url.toURI(), "forgebound");
+                }
+            } catch (java.net.URISyntaxException | java.io.IOException ex) {
+                context.getLogger().warn("Could not load the Forgebound datapack: " + ex.getMessage());
+            }
+        });
+
         context.getLifecycleManager().registerEventHandler(LifecycleEvents.TAGS.preFlatten(RegistryKey.ENCHANTMENT), event -> {
             PreFlattenTagRegistrar<Enchantment> tags = event.registrar();
             addTo(tags, config, "forge-touch", touch);

@@ -30,6 +30,7 @@
 - [Token shop](#token-shop)
 - [Events](#events)
 - [Meteors](#meteors)
+- [Scorched Lands](#scorched-lands)
 - [The Forge Warden](#the-forge-warden)
 - [Advancements](#advancements)
 - [HUD, Codex and leaderboards](#hud-codex-and-leaderboards)
@@ -58,6 +59,7 @@
 - **Token shop**: spend Bounty Tokens in `/shop` on diamonds, netherite, golden apples... with a weekly rotating offer
 - **Legend Tracker**: a compass that leads you to the nearest legend holder
 - **Events**: Blood Moon, Rifts, Legend Hunts, Happy Hour, Forge Market and Golden Shipments keep the server alive
+- **Scorched Lands**: a rare burnt biome with ruined forges, workshops, slag heaps and watchtowers to loot
 - **Meteors**: every few hours a meteor crashes somewhere with a cache of legendary loot
 - **The Forge Warden**: a three-phase boss you wake at a crafting table
 - **Forge menu** opened from any crafting table, with its own look when the resource pack is used
@@ -479,6 +481,31 @@ Sometimes (25 %) the **Forge Warden** guards the crash site. Settings are under 
 
 ---
 
+## Scorched Lands
+
+A rare burnt biome, about as rare as badlands (3 % of the world, areas around 200 blocks across): ash drifts
+through a grey-orange sky, the ground is coarse dirt, gravel and blackstone with glowing magma here and there,
+and the trees are burnt down to stumps. On the map (F3) it's `forgebound:scorched_lands`.
+
+Ruins generate in it, each one a bit different:
+
+| Ruin | |
+|---|---|
+| **Ruined Forge** | broken blackstone walls, a tall chimney with a lava hearth, anvils, a blast furnace, chains from a burnt beam; a big loot chest and 2-3 guards |
+| **Burnt Workshop** | low walls, the collapsed roof on the floor, a furnace and a crafting table; a small chest |
+| **Slag Heap** | mounds of slag, coal and iron ore around a broken smelter; a half-buried chest |
+| **Watchtower** | half-collapsed, a ladder up to the top floor with a chest |
+
+The guards are husks in battered iron armor. The chests have iron, gold, coal, sometimes diamonds, netherite scrap
+or a smithing template, plus a chance of **Bounty Tokens** and (big chests) a **legendary material**.
+
+> Only **new chunks** become Scorched Lands - land that's already generated is never changed. On an old world they
+> show up out where nobody has been yet; `/forge scorched` tells you where the nearest one is.
+
+Everything is in the `scorched-lands` section of the config (rarity, size, ruins, guards, loot chances).
+
+---
+
 ## The Forge Warden
 
 **Sneak + right-click a crafting table holding a Nether Star** to wake the Forge Warden. After a short ritual a giant
@@ -609,6 +636,7 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
 | `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport; without an argument it opens a panel with the theme and the buttons |
 | `/forge update [on\|off\|now]` | `forgebound.admin` | auto-update on/off, or check for a new version now |
+| `/forge scorched` | `forgebound.admin` | where the nearest Scorched Lands are (click to teleport) |
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
