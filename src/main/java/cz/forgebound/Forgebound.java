@@ -289,6 +289,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
         return hud;
     }
 
+    public AbilityManager abilities() {
+        return abilities;
+    }
+
     public StarManager stars() {
         return stars;
     }

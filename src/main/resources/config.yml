@@ -305,6 +305,9 @@ unique-weapons:
 # ------------------------------------------------------------
 ability-settings:
   enabled: true
+  # Effects made of display entities (drawn slashes, the ground cracking open, floating rubble, weapon ghosts,
+  # afterimages) on top of the particles. false = particles only.
+  display-effects: true
   # Cooldowns in the action bar while holding a weapon with abilities
   hud: true
   # Can abilities hurt players? (PvP disabled in a world/region is always respected)

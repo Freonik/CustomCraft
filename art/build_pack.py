@@ -29,6 +29,7 @@ os.makedirs(f'{CC}/textures/item/gui', exist_ok=True)
 # weapons
 run('echo_blade.py', f'{CC}/textures/item/echo_blade.png')
 run('graviton_hammer.py', f'{CC}/textures/item/graviton_hammer.png')
+run('weapons3d.py', CC)
 run('hex_bow.py', f'{CC}/textures/item')
 run('soulbinder.py', f'{CC}/textures/item/soulbinder.png')
 # relics (icons + worn armor), gui, menu
@@ -112,8 +113,12 @@ def dispatch(entries, fallback):
                       "entries": [{"threshold": t, "model": m} for t, m in entries], "fallback": fallback}}
 def model(m):
     return {"type": "minecraft:model", "model": m}
+def in_hand(flat, solid):
+    """2D sprite in the inventory, on the ground and in frames; the 3D model everywhere else (like the spyglass)."""
+    return {"type": "minecraft:select", "property": "minecraft:display_context",
+            "cases": [{"when": ["gui", "ground", "fixed", "on_shelf"], "model": model(flat)}], "fallback": model(solid)}
 
-wjson(f'{MC}/netherite_sword.json', dispatch([(1001, model("customcraft:item/echo_blade")),
+wjson(f'{MC}/netherite_sword.json', dispatch([(1001, in_hand("customcraft:item/echo_blade", "customcraft:item/echo_blade_3d")),
                                               (1007, model("customcraft:item/abyssal_maw")),
                                               (1009, model("customcraft:item/silk_needle"))], model("minecraft:item/netherite_sword")))
 wjson(f'{MC}/netherite_pickaxe.json', dispatch([(1008, model("customcraft:item/clawline_pick"))], model("minecraft:item/netherite_pickaxe")))
@@ -161,7 +166,7 @@ spear_def['swap_animation_scale'] = spear_vanilla.get('swap_animation_scale', 1.
 wjson(f'{MC}/netherite_spear.json', spear_def)
 wjson(f'{MC}/trident.json', dispatch([(1015, long_weapon('great_sea_trident'))],
                                      json.load(open('/home/claude/ref/vanilla/i_trident.json'))['model']))
-wjson(f'{MC}/diamond_axe.json', dispatch([(1002, model("customcraft:item/graviton_hammer"))], model("minecraft:item/diamond_axe")))
+wjson(f'{MC}/diamond_axe.json', dispatch([(1002, in_hand("customcraft:item/graviton_hammer", "customcraft:item/graviton_hammer_3d"))], model("minecraft:item/diamond_axe")))
 wjson(f'{MC}/netherite_hoe.json', dispatch([(1004, model("customcraft:item/soulbinder"))], model("minecraft:item/netherite_hoe")))
 
 def bow_model(prefix):
