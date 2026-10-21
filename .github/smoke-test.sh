@@ -104,9 +104,9 @@ if grep -n 'Error occurred while enabling Forgebound\|Could not load.*Forgebound
   fail "Forgebound failed to load"
 fi
 # any exception that went through our code, and any warning/error the plugin logged itself
-if grep -n 'at cz\.forgebound\.' "$LOG"; then
+if grep -nE 'at .*cz\.forgebound\.' "$LOG"; then
   fail "An exception went through Forgebound's code"
-  grep -B3 -m3 'at cz\.forgebound\.' "$LOG" | head -12 | while IFS= read -r line; do echo "::error::${line:0:400}"; done
+  grep -E -B3 -m3 'at .*cz\.forgebound\.' "$LOG" | head -12 | while IFS= read -r line; do echo "::error::${line:0:400}"; done
 fi
 if grep -nE '(WARN|ERROR)\]: \[Forgebound\]' "$LOG"; then
   fail "Forgebound logged warnings or errors"

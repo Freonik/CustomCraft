@@ -757,7 +757,8 @@ public final class StarManager implements Listener {
                 raising = false;
                 save();
                 end.strikeLightningEffect(center);
-                end.spawnParticle(Particle.DRAGON_BREATH, center, 200, 5, 3, 5, 0.05);
+                end.spawnParticle(Particle.REVERSE_PORTAL, center, 300, 5, 3, 5, 0.3);
+                end.spawnParticle(Particle.END_ROD, center, 80, 4, 3, 4, 0.05);
                 Bukkit.broadcast(plugin.msg("ancient-end-risen",
                         "&5✦ The &dAncient Forge of the End &5has risen! &7Only it can give a weapon its last stars."));
                 for (Player p : Bukkit.getOnlinePlayers()) {
