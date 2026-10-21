@@ -378,4 +378,91 @@ els.append(seg(15.55, 15.85, 1.0, 0.36, 7.84, 8.16, 45, t('bladeside')))
 thread = [(1.0, 1.3), (2.4, 0.8), (4.0, 0.7), (5.6, 1.0), (7.0, 1.3), (8.6, 1.4), (10.0, 1.8), (11.6, 2.3)]
 els += chain(thread, [0.38] * len(thread), 0.16, t('silk'), overlap=0.25)
 write_model('silk_needle', {"t": "customcraft:item/silk_needle_3d"}, els)
+
+# ============================================================ Rimebreaker
+RICE = [(16, 40, 80), (30, 70, 130), (70, 130, 190), (140, 200, 240), (210, 240, 255), (250, 255, 255)]
+RWOOD = [(30, 18, 12), (58, 38, 26), (86, 60, 40)]
+RBAND = [(150, 160, 175), (215, 222, 232), (250, 252, 255)]
+
+s = Sheet('rimebreaker_3d')
+s.paint('ice', 0, 0, 16, 16, lambda x, y, w, h: ramp(RICE, 0.3 + 0.3 * (1 - y / 15) + 0.08 * ((x // 2 + y // 3) % 2)))
+s.paint('edge', 16, 0, 16, 4, lambda x, y, w, h: ramp(RICE, 0.85 + 0.14 * (1 - y / 3)))
+s.paint('frost', 32, 0, 16, 8, lambda x, y, w, h: ramp(RICE, 0.62 + 0.25 * noise(x // 2, y // 2, 80)))
+def rune(x, y, w, h):
+    d = math.hypot(x - 3.5, y - 3.5)
+    if 2.2 <= d <= 3.6:
+        return ramp(RICE, 0.92)
+    if (x, y) in ((2, 3), (5, 3), (3, 5), (4, 5)):
+        return ramp(RICE, 0.1)
+    return ramp(RICE, 0.75 if d < 2.2 else 0.3)
+s.paint('rune', 48, 0, 8, 8, rune)
+s.paint('wood', 0, 16, 8, 40, lambda x, y, w, h: ramp(RWOOD, 0.25 + 0.55 * (1 - abs(x - 3.5) / 3.5)))
+s.paint('band', 8, 16, 8, 8, lambda x, y, w, h: ramp(RBAND, 0.3 + 0.6 * (1 - y / 7)))
+s.save()
+t = lambda k: ("t", s.uv(k))
+els = []
+els.append(seg(1.4, 1.8, 1.7, 1.7, 7.15, 8.85, 45, t('frost')))                                 # ice crystal pommel
+els.append(seg(6.5, 7.0, 13.6, 1.15, 7.42, 8.58, 45, t('wood'), ends=t('band')))                # haft
+for k in (0.2, 0.45, 0.7):
+    p_ = 1.6 + 9.8 * k
+    els.append(seg(p_, p_ + 0.45, 0.6, 1.5, 7.25, 8.75, 45, t('band')))                       # silver bands
+els.append(seg(11.9, 12.3, 1.4, 0.8, 7.6, 8.4, 45, t('frost')))                                 # ice spike on top
+B = (9.5, 10.0)
+al = (math.sqrt(0.5), math.sqrt(0.5))
+pe = (-math.sqrt(0.5), math.sqrt(0.5))
+def at(a, p_):
+    return (B[0] + al[0] * a + pe[0] * p_, B[1] + al[1] * a + pe[1] * p_)
+# the axe blade: rows parallel to the haft, longer the further out (a fan), the outermost row is the bright edge
+# (distance out from the haft, length, shift up the haft): the blade flares out, reaching past the top of the haft
+rows = [(0.9, 2.8, 0.2), (1.8, 3.9, 0.45), (2.7, 4.9, 0.7), (3.6, 5.7, 0.9), (4.4, 6.2, 1.0)]
+for i, (p_, ln, up) in enumerate(rows):
+    cx, cy = at(up, p_)
+    z = 0.48 - i * 0.04
+    els.append(seg(cx, cy, ln + 0.1, 1.05, 8 - z, 8 + z, 45, t('ice')))
+# the curved cutting edge: a straight middle and both ends bending back toward the haft
+mx, my = at(1.0, 5.15)
+els.append(seg(mx, my, 3.8, 0.75, 7.62, 8.38, 45, t('edge')))
+ux, uy = at(3.7, 4.75)
+els.append(seg(ux, uy, 2.0, 0.7, 7.62, 8.38, 22.5, t('edge')))
+lx, ly = at(-1.7, 4.75)
+els.append(seg(lx, ly, 2.0, 0.7, 7.62, 8.38, 67.5, t('edge')))
+rx, ry = at(0.6, 2.6)
+els.append(seg(rx, ry, 1.7, 1.7, 7.47, 8.53, 45, t('rune')))                                   # the frost rune
+# the back spike, shrinking to a point
+for i, (p_, ln) in enumerate([(-0.95, 2.4), (-1.75, 1.6), (-2.45, 0.8)]):
+    cx, cy = at(0.1, p_)
+    els.append(seg(cx, cy, ln, 0.9, 7.6, 8.4, 45, t('frost')))
+write_model('rimebreaker', {"t": "customcraft:item/rimebreaker_3d"}, els)
+
+# ============================================================ Knightfall
+KSTEEL = [(30, 30, 40), (60, 62, 76), (100, 102, 118), (150, 152, 168), (210, 212, 226)]
+KRED = [(70, 6, 12), (130, 14, 26), (200, 30, 40), (250, 90, 90)]
+KGOLD = [(110, 70, 20), (180, 130, 40), (235, 190, 80), (255, 235, 150)]
+
+s = Sheet('knightfall_3d')
+s.paint('head', 0, 0, 16, 16, lambda x, y, w, h: ramp(KSTEEL, 0.1 + 0.35 * (1 - (x + y) / 30) + 0.08 * noise(x // 2, y // 2, 90)))
+s.paint('spike', 16, 0, 8, 8, lambda x, y, w, h: ramp(KSTEEL, 0.6 + 0.38 * (1 - y / 7)))
+s.paint('gem', 24, 0, 8, 8, lambda x, y, w, h: ramp(KRED, min(0.99, 0.4 + 0.5 * (1 - math.hypot(x - 2.5, y - 2.5) / 6))))
+s.paint('gold', 32, 0, 8, 8, lambda x, y, w, h: ramp(KGOLD, 0.3 + 0.6 * (1 - y / 7)))
+s.paint('haft', 0, 16, 8, 40, lambda x, y, w, h: ramp(KGOLD, 0.75) if y % 5 == 0 else ramp(KRED, 0.3 + 0.3 * (1 - abs(x - 3.5) / 3.5)))
+s.save()
+t = lambda k: ("t", s.uv(k))
+els = []
+els.append(seg(1.3, 1.3, 1.6, 1.6, 7.2, 8.8, 45, t('gold')))                                    # gold pommel
+els.append(seg(1.0, 1.0, 0.7, 0.7, 7.1, 8.9, 45, t('gem')))
+els.append(seg(4.1, 4.1, 6.4, 1.15, 7.42, 8.58, 45, t('haft'), ends=t('gold')))                # red and gold haft
+els.append(seg(7.0, 7.0, 1.4, 2.1, 7.0, 9.0, 45, t('gold')))                                    # gold collar
+hc = (9.6, 9.6)
+els.append(seg(hc[0], hc[1], 4.6, 4.6, 6.2, 9.8, 0, t('head')))                                 # the head: a square
+els.append(seg(hc[0], hc[1], 4.6, 4.6, 6.4, 9.6, 45, t('head')))                                # and a turned one = octagon
+els.append(seg(hc[0], hc[1], 2.6, 2.6, 6.05, 9.95, 45, t('gold')))                              # gold setting
+els.append(seg(hc[0], hc[1], 1.8, 1.8, 5.95, 10.05, 45, t('gem')))                              # the red gem
+for k in range(8):                                                                             # spikes all around
+    a = math.radians(k * 45 + 22.5)
+    els.append(seg(hc[0] + math.cos(a) * 3.0, hc[1] + math.sin(a) * 3.0, 1.5, 0.7, 7.65, 8.35,
+                   k * 45 + 22.5, t('spike')))
+for z0, z1 in ((5.2, 6.2), (9.8, 10.8)):                                                       # and front / back
+    els.append({"from": [hc[0] + 1.3, hc[1] + 1.3, z0], "to": [hc[0] + 1.9, hc[1] + 1.9, z1],
+                "faces": {f: {"uv": s.uv('spike'), "texture": "#t"} for f in ("north", "south", "east", "west", "up", "down")}})
+write_model('knightfall', {"t": "customcraft:item/knightfall_3d"}, els)
 print('pair models done')
