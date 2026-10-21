@@ -133,8 +133,18 @@ for _n in [b + st for b in CROSSBOWS for st in STATES]:
     if os.path.exists(_f):
         _XImg.open(_f).transpose(_XImg.FLIP_LEFT_RIGHT).save(_f)
 # Pinning Repeater: same states as the vanilla crossbow
+# The Last Act is a rifle: held upright with the barrel pointing forward, not lying flat like a crossbow
+RIFLE_HOLD = {
+    "thirdperson_righthand": {"rotation": [0, -90, 33], "translation": [0, 3.0, 1.0], "scale": [0.85, 0.85, 0.85]},
+    "thirdperson_lefthand": {"rotation": [0, 90, -33], "translation": [0, 3.0, 1.0], "scale": [0.85, 0.85, 0.85]},
+    "firstperson_righthand": {"rotation": [0, -70, 33], "translation": [1.13, 2.6, 1.13], "scale": [0.68, 0.68, 0.68]},
+    "firstperson_lefthand": {"rotation": [0, 70, -33], "translation": [1.13, 2.6, 1.13], "scale": [0.68, 0.68, 0.68]},
+}
 for n in [b + st for b in CROSSBOWS for st in STATES]:
-    wjson(f'{CC}/models/item/{n}.json', {"parent": "minecraft:item/crossbow", "textures": {"layer0": f"customcraft:item/{n}"}})
+    m = {"parent": "minecraft:item/crossbow", "textures": {"layer0": f"customcraft:item/{n}"}}
+    if n.startswith('the_last_act'):
+        m["display"] = RIFLE_HOLD
+    wjson(f'{CC}/models/item/{n}.json', m)
 def crossbow_states(P):
     return {"type": "minecraft:select", "property": "minecraft:charge_type",
             "cases": [{"when": "arrow", "model": model(P + "_arrow")}, {"when": "rocket", "model": model(P + "_firework")}],
