@@ -283,6 +283,8 @@ public final class StarManager implements Listener {
         }
         String amount = Stars.starCount(loss) + (loss == 2 ? " star" : " stars");
         for (Lost l : lost) {
+            plugin.getLogger().info("[Stars] " + player.getName() + " lost " + amount + " on " + l.ref() + " (now "
+                    + Stars.starCount(l.halves()) + "/5) - " + (pvp ? "killed by " + killer.getName() : "died"));
             if (pvp) {
                 Bukkit.broadcast(plugin.msg("stars-lost-pvp", "&c☠ {item} &7of &c{player} &7lost &c{amount} &7to &c{killer}&7: {stars}",
                         "item", l.name(), "player", player.getName(), "amount", amount,
@@ -294,7 +296,7 @@ public final class StarManager implements Listener {
         }
     }
 
-    private record Lost(Component name, int halves) { }
+    private record Lost(Component name, String ref, int halves) { }
 
     private void lose(ItemStack stack, int loss, List<Lost> lost) {
         ItemManager.Entry entry = items.weaponOf(stack);
@@ -305,7 +307,7 @@ public final class StarManager implements Listener {
         int after = Stars.clamp(before - loss);
         if (after != before) {
             setHalves(stack, entry, after);
-            lost.add(new Lost(ItemManager.nameOf(entry.item), after));
+            lost.add(new Lost(ItemManager.nameOf(entry.item), entry.ref(), after));
         } else {
             setHalves(stack, entry, before);
         }
@@ -343,7 +345,7 @@ public final class StarManager implements Listener {
         while ((s = found.poll()) != null) {
             if (sites.putIfAbsent(s.id(), s) == null) {
                 changed = true;
-                plugin.getLogger().info("An Ancient Forge generated at " + s.world + " " + s.x + " " + s.y + " " + s.z + ".");
+                plugin.getLogger().info("[Stars] An Ancient Forge generated at " + s.world + " " + s.x + " " + s.y + " " + s.z + ".");
             }
         }
         if (changed) {
@@ -587,7 +589,9 @@ public final class StarManager implements Listener {
                 "&6✦ An Ancient Forge {where} &6has awakened: &f{item} &7is ascending to {stars}&7. Ready in &e{time}&7.",
                 "where", ItemManager.color(where(site)), "item", ItemManager.nameOf(weapon.item), "stars", ItemManager.color(Stars.starText(r.target)),
                 "time", RitualManager.format(r.total)));
-        plugin.getLogger().info(player.getName() + " started an ascension of " + weapon.ref() + " at " + site.id());
+        plugin.getLogger().info("[Stars] " + player.getName() + " started an ascension of " + weapon.ref() + " ("
+                + Stars.starCount(halvesOf(hand)) + " -> " + Stars.starCount(r.target) + " stars) at " + site.id()
+                + ", ready in " + RitualManager.format(r.total));
     }
 
     private String where(Site site) {
@@ -621,6 +625,8 @@ public final class StarManager implements Listener {
         }
         r.site.readyAt = System.currentTimeMillis() + cooldownMs();
         save();
+        plugin.getLogger().info("[Stars] " + (entry == null ? "a weapon" : entry.ref()) + " ascended to "
+                + Stars.starCount(r.target) + "/5 at " + r.site.id() + " (started by " + r.name + ")");
         if (core == null) {
             plugin.getLogger().warning("Ascension finished but the world " + r.site.world + " is gone; the weapon is in ancient-forges.yml.");
             return;
@@ -764,7 +770,7 @@ public final class StarManager implements Listener {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 0.7f);
                 }
-                plugin.getLogger().info("The End's Ancient Forge rose at " + site.id());
+                plugin.getLogger().info("[Stars] The End's Ancient Forge rose at " + site.id());
             }
         }.runTaskTimer(plugin, 20L, 1L);
         if (admin != null) {
@@ -998,6 +1004,8 @@ public final class StarManager implements Listener {
         }
         setHalves(hand, entry, (int) Math.round(stars * 2));
         target.getInventory().setItemInMainHand(hand);
+        plugin.getLogger().info("[Stars] " + sender.getName() + " set " + target.getName() + "'s " + entry.ref() + " to "
+                + Stars.starCount(halvesOf(hand)) + "/5 (admin command)");
         sender.sendMessage(ItemManager.color("&7" + target.getName() + "'s ").append(ItemManager.nameOf(hand)));
     }
 
