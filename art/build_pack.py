@@ -39,6 +39,8 @@ run('tank.py', f'{CC}/textures/item', f'{CC}/textures/entity/equipment')
 run('hk.py', f'{CC}/textures/item', f'{CC}/textures/entity/equipment')
 # Knightfall, Rimebreaker, Pinning Repeater, Valkyrie's Lance, Trident of the Great Sea + materials
 run('arsenal.py', f'{CC}/textures/item')
+# The Last Act (rifle on the crossbow) + Gilded Mask Shard
+run('lastact.py', f'{CC}/textures/item')
 for n in os.listdir(f'{CC}/textures/item/gui'):
     os.remove(f'{CC}/textures/item/gui/{n}')
 run('gui.py', f'{CC}/textures/item/gui')
@@ -116,17 +118,17 @@ wjson(f'{MC}/mace.json', dispatch([(1010, model("customcraft:item/knightfall"))]
 # Pinning Repeater: same states as the vanilla crossbow. Vanilla crossbow textures point to the top-left
 # (stock in the bottom-right corner) and the crossbow model's hand rotation expects that, so ours are mirrored.
 from PIL import Image as _XImg
-for _n in ['pinning_repeater', 'pinning_repeater_pulling_0', 'pinning_repeater_pulling_1', 'pinning_repeater_pulling_2',
-           'pinning_repeater_arrow', 'pinning_repeater_firework']:
+CROSSBOWS = ['pinning_repeater', 'the_last_act']
+STATES = ['', '_pulling_0', '_pulling_1', '_pulling_2', '_arrow', '_firework']
+for _n in [b + st for b in CROSSBOWS for st in STATES]:
     _f = f'{CC}/textures/item/{_n}.png'
     if os.path.exists(_f):
         _XImg.open(_f).transpose(_XImg.FLIP_LEFT_RIGHT).save(_f)
 # Pinning Repeater: same states as the vanilla crossbow
-for n in ['pinning_repeater', 'pinning_repeater_pulling_0', 'pinning_repeater_pulling_1', 'pinning_repeater_pulling_2',
-          'pinning_repeater_arrow', 'pinning_repeater_firework']:
+for n in [b + st for b in CROSSBOWS for st in STATES]:
     wjson(f'{CC}/models/item/{n}.json', {"parent": "minecraft:item/crossbow", "textures": {"layer0": f"customcraft:item/{n}"}})
-P = 'customcraft:item/pinning_repeater'
-repeater = {"type": "minecraft:select", "property": "minecraft:charge_type",
+def crossbow_states(P):
+    return {"type": "minecraft:select", "property": "minecraft:charge_type",
             "cases": [{"when": "arrow", "model": model(P + "_arrow")}, {"when": "rocket", "model": model(P + "_firework")}],
             "fallback": {"type": "minecraft:condition", "property": "minecraft:using_item",
                          "on_false": model(P),
@@ -134,7 +136,9 @@ repeater = {"type": "minecraft:select", "property": "minecraft:charge_type",
                                      "entries": [{"threshold": 0.58, "model": model(P + "_pulling_1")},
                                                  {"threshold": 1.0, "model": model(P + "_pulling_2")}],
                                      "fallback": model(P + "_pulling_0")}}}
-wjson(f'{MC}/crossbow.json', dispatch([(1012, repeater)], json.load(open('/home/claude/ref/vanilla/i_crossbow.json'))['model']))
+wjson(f'{MC}/crossbow.json', dispatch([(1012, crossbow_states('customcraft:item/pinning_repeater')),
+                                       (1016, crossbow_states('customcraft:item/the_last_act'))],
+                                      json.load(open('/home/claude/ref/vanilla/i_crossbow.json'))['model']))
 # Valkyrie's Lance + Trident: flat icon in menus / on the ground, a long held model like the vanilla spear in hand
 def long_weapon(name):
     wjson(f'{CC}/models/item/{name}.json', {"parent": "minecraft:item/generated", "textures": {"layer0": f"customcraft:item/{name}"}})
@@ -178,7 +182,8 @@ MATERIALS = [('echo_shard', 1301, 'resonant_shard'), ('heavy_core', 1302, 'gravi
              ('quartz', 1313, 'pale_fragment'), ('armadillo_scute', 1314, 'carapace_shard'),
              ('iron_nugget', 1315, 'deepsteel_claw'), ('string', 1316, 'weavers_silk'),
              ('iron_ingot', 1317, 'fallen_crest'), ('snowball', 1318, 'rime_core'), ('flint', 1319, 'hunters_bolt'),
-             ('feather', 1320, 'valkyrie_plume'), ('nautilus_shell', 1321, 'sea_kings_doubloon')]
+             ('feather', 1320, 'valkyrie_plume'), ('nautilus_shell', 1321, 'sea_kings_doubloon'),
+             ('quartz', 1322, 'gilded_mask_shard')]
 by_item = {}
 for item, cmd, name in MATERIALS:
     wjson(f'{CC}/models/item/{name}.json', {"parent": "minecraft:item/generated", "textures": {"layer0": f"customcraft:item/{name}"}})

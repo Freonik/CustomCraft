@@ -57,6 +57,61 @@
             }
           }
         }
+      },
+      {
+        "threshold": 1016,
+        "model": {
+          "type": "minecraft:select",
+          "property": "minecraft:charge_type",
+          "cases": [
+            {
+              "when": "arrow",
+              "model": {
+                "type": "minecraft:model",
+                "model": "customcraft:item/the_last_act_arrow"
+              }
+            },
+            {
+              "when": "rocket",
+              "model": {
+                "type": "minecraft:model",
+                "model": "customcraft:item/the_last_act_firework"
+              }
+            }
+          ],
+          "fallback": {
+            "type": "minecraft:condition",
+            "property": "minecraft:using_item",
+            "on_false": {
+              "type": "minecraft:model",
+              "model": "customcraft:item/the_last_act"
+            },
+            "on_true": {
+              "type": "minecraft:range_dispatch",
+              "property": "minecraft:crossbow/pull",
+              "entries": [
+                {
+                  "threshold": 0.58,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "customcraft:item/the_last_act_pulling_1"
+                  }
+                },
+                {
+                  "threshold": 1.0,
+                  "model": {
+                    "type": "minecraft:model",
+                    "model": "customcraft:item/the_last_act_pulling_2"
+                  }
+                }
+              ],
+              "fallback": {
+                "type": "minecraft:model",
+                "model": "customcraft:item/the_last_act_pulling_0"
+              }
+            }
+          }
+        }
       }
     ],
     "fallback": {

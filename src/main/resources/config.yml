@@ -204,6 +204,7 @@ craftable:
     pinning_repeater: true
     valkyries_lance: true
     great_sea_trident: true
+    the_last_act: true
   relics:
     stasis_hourglass: true
     angels_wings: true
@@ -235,6 +236,7 @@ craftable:
     hunters_bolt: true
     valkyrie_plume: true
     sea_kings_doubloon: true
+    gilded_mask_shard: true
 
 # ------------------------------------------------------------
 #  FORGE RITUAL (weapons)
@@ -913,6 +915,54 @@ weapons:
       - { item: IRON_BLOCK, amount: 16 }
       - { item: TRIPWIRE_HOOK, amount: 16 }
       - { item: "material:hunters_bolt", amount: 1 }
+
+
+  the_last_act:
+    material: CROSSBOW
+    name: "&6&lThe Last Act"
+    lore:
+      - "&7Every performance needs an ending."
+      - "&7Every &f4th &7bolt is a &6critical &7one."
+    custom-model-data: 1016
+    unbreakable: true
+    enchants:
+      quick_charge: 2
+    abilities:
+      arrow-trail: WAX_ON
+      active:
+        spotlight:
+          type: SPOTLIGHT
+          name: "&eSpotlight"
+          trigger: SWAP
+          cooldown: 14
+          description: ["A long golden shot at the first enemy", "in line. Hit them in the last 4s?", "They're rooted for 1.5s."]
+          range: 45
+          damage: 5
+          mark-seconds: 4
+          root-seconds: 1.5
+        finale:
+          type: FINALE
+          name: "&6&lFinale"
+          trigger: SHIFT_SWAP
+          cooldown: 75
+          description: ["Plant your feet and take aim: 4 shots", "inside a 60° cone (right-click or F).", "More damage the lower their health,", "the 4th shot is critical. Hits slow."]
+          duration: 10
+          shots: 4
+          cone-degrees: 60
+          range: 60
+          damage: 6
+          missing-health-bonus: 2.0
+          last-shot-multiplier: 2.0
+          slow-seconds: 1.5
+          shot-delay: 0.6
+          # passive: every 4th normal bolt does this much more damage
+          fourth-shot-multiplier: 2.0
+    forge:
+      - { item: CROSSBOW, amount: 1 }
+      - { item: GOLD_BLOCK, amount: 16 }
+      - { item: QUARTZ_BLOCK, amount: 32 }
+      - { item: SPYGLASS, amount: 1 }
+      - { item: "material:gilded_mask_shard", amount: 1 }
 
   valkyries_lance:
     material: NETHERITE_SPEAR
@@ -2017,3 +2067,13 @@ materials:
     drops:
       - { loot-table: chests/buried_treasure, chance: 8 }
       - { mob: GUARDIAN, chance: 1 }
+
+  gilded_mask_shard:
+    material: QUARTZ
+    name: "&6&lGilded Mask Shard"
+    lore: ["&7The audience never saw the face behind it.", "&8Legendary material"]
+    custom-model-data: 1322
+    glow: true
+    drops:
+      - { mob: EVOKER, chance: 3 }
+      - { loot-table: chests/woodland_mansion, chance: 8 }

@@ -44,11 +44,11 @@
 
 ## Features
 
-- **13 legendary weapons and tools** (swords, axes, a bow, a crossbow, a spear, a trident, a pickaxe...) with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
+- **14 legendary weapons and tools** (swords, axes, a bow, a crossbow, a rifle, a spear, a trident, a pickaxe...) with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
 - **7 relics** for every slot: helmet, chestplate, leggings, boots and off-hand (stasis, revive, thorns,
   a growing heart, grey health, soul focus, a parrying shield)
 - **Tank builds**: some abilities scale with your **max HP**, so they get stronger with Heartsteel Core
-- **20 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
+- **21 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
 - **Forge rituals**: forging takes 15 minutes on a crafting table and the location is revealed step by step
 - **One of each**: every weapon and relic can exist only once per server
 - **Two new enchantments**: Forge Touch (auto-smelting) and Bounty Hunter I–III, straight from the enchanting table
@@ -228,6 +228,13 @@ On-hit effects need a **charged** hit (no spam-clicking).
 | F | **Pin Bolt** (20 s): your next bolt pins whatever it hits for 2 s (no walking, no jumping), a chain shows where |
 | Shift + F | **Volley** (25 s): 5 bolts at once in a fan, no reload needed |
 
+### <img src="docs/items/the_last_act.png" width="64" alt="" align="center"> The Last Act (rifle)
+| | |
+|---|---|
+| Passive | Quick Charge II; every **4th** bolt is critical (double damage) |
+| F | **Spotlight** (14 s): a long golden shot at the first enemy in line; if you hit them in the last 4 s, they're rooted for 1.5 s |
+| Shift + F | **Finale** (75 s): plant your feet and take aim - **4 shots** inside a 60° cone (right-click or F), more damage the lower the target's health, the 4th is critical; hits slow |
+
 ### <img src="docs/items/valkyries_lance.png" width="64" alt="" align="center"> Valkyrie's Lance (spear)
 | | |
 |---|---|
@@ -302,6 +309,7 @@ Every weapon and relic needs one legendary material. **Nothing is guaranteed**: 
 | <img src="docs/items/weavers_silk.png" width="48" alt=""> | **Weaver's Silk** | Cave Spider 2 % · Spider 1 % · Mineshaft chests 4 % | Silk Needle |
 | <img src="docs/items/rime_core.png" width="48" alt=""> | **Rime Core** | Stray 2 % · Igloo chests 12 % | Rimebreaker |
 | <img src="docs/items/hunters_bolt.png" width="48" alt=""> | **Hunter's Bolt** | Pillager 2 % · Pillager Outpost chests 6 % | Pinning Repeater |
+| <img src="docs/items/gilded_mask_shard.png" width="48" alt=""> | **Gilded Mask Shard** | Evoker 3 % · Woodland Mansion chests 8 % | The Last Act |
 | <img src="docs/items/valkyrie_plume.png" width="48" alt=""> | **Valkyrie Plume** | Vex 2 % · Village weaponsmith chests 4 % | Valkyrie's Lance |
 | <img src="docs/items/sea_kings_doubloon.png" width="48" alt=""> | **Sea King's Doubloon** | Buried treasure 8 % · Guardian 1 % | Trident of the Great Sea |
 

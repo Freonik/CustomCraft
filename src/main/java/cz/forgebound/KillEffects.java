@@ -86,6 +86,13 @@ final class KillEffects {
                 world.spawnParticle(Particle.CRIT, at, 30, 0.4, 0.5, 0.4, 0.4);
                 world.playSound(at, Sound.BLOCK_CHAIN_BREAK, 1.4f, 0.7f);
             }
+            case "the_last_act" -> {        // the curtain falls: gold confetti and a bow of applause
+                world.spawnParticle(Particle.DUST, at, 50, 0.6, 0.8, 0.6, 0, dust(255, 205, 90, 1.2f));
+                world.spawnParticle(Particle.DUST, at, 20, 0.5, 0.7, 0.5, 0, dust(220, 30, 50, 1.4f));
+                world.spawnParticle(Particle.WAX_ON, at, 30, 0.6, 0.8, 0.6, 0.5);
+                world.playSound(at, Sound.BLOCK_NOTE_BLOCK_BELL, 1.4f, 0.6f);
+                world.playSound(at, Sound.BLOCK_NOTE_BLOCK_BELL, 1.4f, 0.9f);
+            }
             case "valkyries_lance" -> {     // carried up to the sky
                 for (int i = 0; i < 30; i++) {
                     world.spawnParticle(Particle.END_ROD, feet.clone().add(0, i * 0.35, 0), 1, 0.05, 0, 0.05, 0);

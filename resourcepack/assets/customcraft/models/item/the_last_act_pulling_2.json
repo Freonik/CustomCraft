@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/crossbow",
+  "textures": {
+    "layer0": "customcraft:item/the_last_act_pulling_2"
+  }
+}

@@ -119,6 +119,7 @@ public final class AbilityManager implements Listener {
     private final NamespacedKey mirrorKey;
     private final NamespacedKey killsKey;
     private final NamespacedKey pinKey;
+    private final NamespacedKey finaleKey;
     private final NamespacedKey pinShotKey;
 
     /** player -> (weapon:ability -> cooldown end in ms) */
@@ -157,6 +158,10 @@ public final class AbilityManager implements Listener {
     private final Map<UUID, AxeState> axes = new HashMap<>();
     /** player -> Pin Bolt armed until; entity -> pinned until */
     private final Map<UUID, Long> pinArmed = new HashMap<>();
+    /** The Last Act: players in the middle of their Finale */
+    private final Map<UUID, Finale> finales = new HashMap<>();
+    /** The Last Act passive: normal bolts shot since the last critical one */
+    private final Map<UUID, Integer> actShots = new HashMap<>();
     private final Map<UUID, Long> pinned = new HashMap<>();
     /** entity -> who froze it with the Rimebreaker (Ice Cold) */
     private final Map<UUID, FrozenBy> frozenBy = new HashMap<>();
@@ -219,6 +224,7 @@ public final class AbilityManager implements Listener {
         this.mirrorKey = Forgebound.key("mirror_shot");
         this.killsKey = Forgebound.key("weapon_kills");
         this.pinKey = Forgebound.key("pinned");
+        this.finaleKey = Forgebound.key("finale_root");
         this.pinShotKey = Forgebound.key("pin_shot");
     }
 
@@ -361,6 +367,20 @@ public final class AbilityManager implements Listener {
                 bar.append(left <= 0 ? "&a✔" : "&c" + seconds(left) + "s");
             }
         }
+        if (weapon.abilities.actives.stream().anyMatch(a -> a.type() == ActiveType.FINALE)) {
+            if (!bar.isEmpty()) {
+                bar.append("  &8┃  ");
+            }
+            Finale f = finales.get(player.getUniqueId());
+            if (f != null) {
+                int left = f.shots - f.fired;
+                bar.append("&6&lFINALE &e").append("◆".repeat(Math.max(0, left))).append("&8").append("◇".repeat(f.fired));
+            } else {
+                int n = actShots.getOrDefault(player.getUniqueId(), 0);
+                bar.append("&6").append("●".repeat(n)).append("&8").append("○".repeat(Math.max(0, 3 - n)))
+                        .append(n == 3 ? " &6&l4" : " &84");
+            }
+        }
         if (weapon.abilities.trackKills) {
             if (!bar.isEmpty()) {
                 bar.append("  &8┃  ");
@@ -395,6 +415,12 @@ public final class AbilityManager implements Listener {
         if (clicked != null && clicked.getType().isInteractable() && !player.isSneaking()) {
             return;
         }
+        if (finales.containsKey(player.getUniqueId())) {
+            event.setUseItemInHand(Event.Result.DENY);         // during the Finale, right-click fires the next shot
+            event.setUseInteractedBlock(Event.Result.DENY);
+            finaleShot(player);
+            return;
+        }
         Trigger trigger = player.isSneaking() ? Trigger.SHIFT_RIGHT_CLICK : Trigger.RIGHT_CLICK;
         if (activate(player, trigger)) {
             event.setUseItemInHand(Event.Result.DENY);
@@ -407,6 +433,11 @@ public final class AbilityManager implements Listener {
         Player player = event.getPlayer();
         ItemManager.Entry weapon = weaponOf(player.getInventory().getItemInMainHand());
         if (weapon == null) {
+            return;
+        }
+        if (finales.containsKey(player.getUniqueId())) {
+            event.setCancelled(true);                          // during the Finale, F fires the next shot
+            finaleShot(player);
             return;
         }
         Trigger trigger = player.isSneaking() ? Trigger.SHIFT_SWAP : Trigger.SWAP;
@@ -549,6 +580,8 @@ public final class AbilityManager implements Listener {
             case JAVELIN -> javelin(player, weapon, p);
             case TIDAL_SURGE -> tidalSurge(player, p);
             case GREAT_TIDE -> greatTide(player, p);
+            case SPOTLIGHT -> spotlight(player, p);
+            case FINALE -> finale(player, weapon, p);
         };
     }
 
@@ -2335,6 +2368,208 @@ public final class AbilityManager implements Listener {
         return true;
     }
 
+    // ================================================================ THE LAST ACT (rifle)
+
+    private static final Particle.DustOptions ACT_GOLD = new Particle.DustOptions(org.bukkit.Color.fromRGB(255, 205, 90), 1.1f);
+    private static final Particle.DustOptions ACT_RED = new Particle.DustOptions(org.bukkit.Color.fromRGB(220, 30, 50), 1.5f);
+
+    private static final class Finale {
+        final Params p;
+        final Vector center;
+        final int shots;
+        final long until;
+        int fired;
+        long nextShot;
+
+        Finale(Params p, Vector center, int shots, long until) {
+            this.p = p;
+            this.center = center;
+            this.shots = shots;
+            this.until = until;
+        }
+    }
+
+    /** Spotlight: a long golden shot at the first enemy in line; someone you hit in the last seconds is rooted. */
+    private boolean spotlight(Player player, Params p) {
+        World world = player.getWorld();
+        Location eye = player.getEyeLocation();
+        Vector dir = eye.getDirection();
+        double range = p.d("range", 45);
+        RayTraceResult ray = world.rayTrace(eye, dir, range, FluidCollisionMode.NEVER, true, 0.6, e -> valid(player, e));
+        Location end = ray != null ? ray.getHitPosition().toLocation(world) : eye.clone().add(dir.clone().multiply(range));
+        line(eye.clone().add(dir.clone().multiply(0.8)), end, 0.5, l -> world.spawnParticle(Particle.DUST, l, 1, 0, 0, 0, 0, ACT_GOLD));
+        world.playSound(eye, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1.2f, 1.4f);
+        world.playSound(eye, Sound.BLOCK_NOTE_BLOCK_CHIME, 1f, 1.6f);
+        if (ray != null && ray.getHitEntity() instanceof LivingEntity target) {
+            Map<UUID, Dealt> mine = dealt.get(player.getUniqueId());
+            Dealt recent = mine == null ? null : mine.get(target.getUniqueId());
+            boolean marked = recent != null && recent.last() >= System.currentTimeMillis() - (long) (p.d("mark-seconds", 4) * 1000);
+            hurt(player, target, p.d("damage", 5));
+            world.spawnParticle(Particle.DUST, target.getLocation().add(0, target.getHeight() / 2, 0), 20, 0.3, 0.4, 0.3, 0, ACT_GOLD);
+            if (marked && target.isValid() && !target.isDead()) {
+                pin(target, target.getLocation(), p.d("root-seconds", 1.5));
+                target.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, (int) (p.d("root-seconds", 1.5) * 20) + 20, 0, false, false));
+                world.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 1.4f, 0.8f);
+            }
+        }
+        return true;
+    }
+
+    /** Finale: rooted in place, 4 shots inside a cone, more damage the lower the target's health, the 4th is critical. */
+    private boolean finale(Player player, ItemManager.Entry weapon, Params p) {
+        Vector center = player.getEyeLocation().getDirection().setY(0);
+        if (center.lengthSquared() < 1.0E-6) {
+            center = new Vector(-Math.sin(Math.toRadians(player.getYaw())), 0, Math.cos(Math.toRadians(player.getYaw())));
+        }
+        center.normalize();
+        long now = System.currentTimeMillis();
+        Finale f = new Finale(p, center, Math.max(1, p.i("shots", 4)), now + (long) (p.d("duration", 10) * 1000));
+        f.nextShot = now + 400;                                // a short moment to aim
+        finales.put(player.getUniqueId(), f);
+        root(player, true);
+        World world = player.getWorld();
+        world.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 1.5f, 0.5f);
+        world.playSound(player.getLocation(), Sound.ENTITY_EVOKER_PREPARE_SUMMON, 1f, 1.4f);
+        player.showTitle(net.kyori.adventure.title.Title.title(net.kyori.adventure.text.Component.empty(),
+                ItemManager.color("&6&lFinale"), net.kyori.adventure.title.Title.Times.times(
+                        java.time.Duration.ZERO, java.time.Duration.ofMillis(900), java.time.Duration.ofMillis(300))));
+        String ref = weapon.ref();
+        repeat(1, (int) (p.d("duration", 10) * 20) + 2, step -> {
+            Finale cur = finales.get(player.getUniqueId());
+            ItemManager.Entry held = weaponOf(player.getInventory().getItemInMainHand());
+            if (cur != f || !player.isOnline() || player.isDead() || held == null || !held.ref().equals(ref)
+                    || System.currentTimeMillis() > f.until || f.fired >= f.shots) {
+                if (cur == f) {
+                    endFinale(player);
+                }
+                return false;
+            }
+            player.setVelocity(new Vector(0, Math.min(0, player.getVelocity().getY()), 0));
+            if (step % 5 == 0) {
+                drawCone(player, f);
+            }
+            return true;
+        });
+        return true;
+    }
+
+    /** The cone everyone can see: two edges and an arc at its far end. */
+    private void drawCone(Player player, Finale f) {
+        World world = player.getWorld();
+        Location base = player.getLocation().add(0, 0.15, 0);
+        double half = Math.toRadians(f.p.d("cone-degrees", 60) / 2);
+        double len = Math.min(24, f.p.d("range", 60));
+        for (double a : new double[] {-half, half}) {
+            Vector edge = rotate(f.center, a);
+            for (double d = 1.5; d <= len; d += 1.0) {
+                world.spawnParticle(Particle.DUST, base.clone().add(edge.clone().multiply(d)), 1, 0, 0, 0, 0, ACT_GOLD);
+            }
+        }
+        for (double a = -half; a <= half + 1.0E-6; a += Math.toRadians(4)) {
+            world.spawnParticle(Particle.DUST, base.clone().add(rotate(f.center, a).multiply(len)), 1, 0, 0, 0, 0, ACT_GOLD);
+        }
+    }
+
+    /** Rotates a flat (y = 0) vector around the vertical axis. */
+    static Vector rotate(Vector flat, double angle) {
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        return new Vector(flat.getX() * cos - flat.getZ() * sin, 0, flat.getX() * sin + flat.getZ() * cos);
+    }
+
+    /** Signed horizontal angle from a to b (radians). */
+    static double angle(Vector a, Vector b) {
+        return Math.atan2(a.getX() * b.getZ() - a.getZ() * b.getX(), a.getX() * b.getX() + a.getZ() * b.getZ());
+    }
+
+    private void finaleShot(Player player) {
+        Finale f = finales.get(player.getUniqueId());
+        long now = System.currentTimeMillis();
+        if (f == null || now < f.nextShot || f.fired >= f.shots) {
+            return;
+        }
+        f.nextShot = now + (long) (f.p.d("shot-delay", 0.6) * 1000);
+        f.fired++;
+        boolean last = f.fired >= f.shots;
+        // aim, kept inside the cone
+        Vector look = player.getEyeLocation().getDirection();
+        Vector flat = look.clone().setY(0);
+        if (flat.lengthSquared() < 1.0E-6) {
+            flat = f.center.clone();
+        }
+        flat.normalize();
+        double half = Math.toRadians(f.p.d("cone-degrees", 60) / 2);
+        double a = Math.max(-half, Math.min(half, angle(f.center, flat)));
+        flat = rotate(f.center, a);
+        double y = Math.max(-0.9, Math.min(0.9, look.getY()));
+        double h = Math.sqrt(1 - y * y);
+        Vector dir = new Vector(flat.getX() * h, y, flat.getZ() * h).normalize();
+
+        World world = player.getWorld();
+        Location eye = player.getEyeLocation();
+        float pitch = new float[] {1.0f, 1.2f, 1.4f, 1.8f}[Math.min(3, f.fired - 1)];
+        world.playSound(eye, Sound.BLOCK_NOTE_BLOCK_BELL, 1.6f, pitch);
+        world.playSound(eye, last ? Sound.ITEM_TRIDENT_THUNDER : Sound.ENTITY_FIREWORK_ROCKET_LARGE_BLAST, last ? 0.8f : 1.4f, last ? 1.4f : 0.9f);
+        double range = f.p.d("range", 60);
+        double damage = f.p.d("damage", 6);
+        double bonus = f.p.d("missing-health-bonus", 2.0);
+        double lastMult = last ? f.p.d("last-shot-multiplier", 2.0) : 1.0;
+        int slowTicks = (int) (f.p.d("slow-seconds", 1.5) * 20);
+        Location pos = eye.clone().add(dir.clone().multiply(0.6));
+        double[] travelled = {0};
+        repeat(1, (int) Math.ceil(range / 4) + 2, step -> {
+            for (int i = 0; i < 4; i++) {
+                pos.add(dir);
+                travelled[0] += 1;
+                if (travelled[0] > range || !pos.isChunkLoaded()) {
+                    return false;
+                }
+                world.spawnParticle(Particle.DUST, pos, last ? 3 : 1, 0.03, 0.03, 0.03, 0, last ? ACT_RED : ACT_GOLD);
+                if (!pos.getBlock().isPassable()) {
+                    world.spawnParticle(Particle.CRIT, pos, 8, 0.1, 0.1, 0.1, 0.2);
+                    return false;
+                }
+                for (Entity e : world.getNearbyEntities(pos, 0.7, 0.9, 0.7, e -> valid(player, e))) {
+                    LivingEntity target = (LivingEntity) e;
+                    double missing = 1 - Math.max(0, Math.min(1, target.getHealth() / maxHealth(target)));
+                    hurt(player, target, damage * (1 + bonus * missing) * lastMult);
+                    target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slowTicks, 2, false, true));
+                    Location at = target.getLocation().add(0, target.getHeight() / 2, 0);
+                    world.spawnParticle(Particle.DUST, at, last ? 40 : 15, 0.3, 0.4, 0.3, 0, last ? ACT_RED : ACT_GOLD);
+                    if (last) {
+                        world.spawnParticle(Particle.EXPLOSION, at, 1, 0, 0, 0, 0);
+                        world.playSound(at, Sound.ENTITY_GENERIC_EXPLODE, 0.6f, 1.6f);
+                    }
+                    return false;                              // one target per shot
+                }
+            }
+            return true;
+        });
+        if (last) {
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> endFinale(player), 10L);
+        }
+    }
+
+    /** Rooted while performing (and free again afterwards). */
+    private void root(Player player, boolean on) {
+        for (Attribute attribute : new Attribute[] {Attribute.MOVEMENT_SPEED, Attribute.JUMP_STRENGTH}) {
+            AttributeInstance inst = player.getAttribute(attribute);
+            if (inst != null) {
+                inst.removeModifier(finaleKey);
+                if (on) {
+                    inst.addTransientModifier(new org.bukkit.attribute.AttributeModifier(finaleKey, -1,
+                            org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1));
+                }
+            }
+        }
+    }
+
+    private void endFinale(Player player) {
+        if (finales.remove(player.getUniqueId()) != null || player.isOnline()) {
+            root(player, false);
+        }
+    }
+
     // ================================================================ VALKYRIE'S LANCE (spear)
 
     /** Lunge: dash forward, piercing everyone in the way. */
@@ -2493,6 +2728,21 @@ public final class AbilityManager implements Listener {
         }
         Entity projectile = event.getProjectile();
         projectile.getPersistentDataContainer().set(arrowKey, PersistentDataType.STRING, weapon.ref());
+        Active finale = weapon.abilities.actives.stream().filter(a -> a.type() == ActiveType.FINALE).findFirst().orElse(null);
+        if (finale != null && projectile instanceof AbstractArrow arrow) {
+            // The Last Act: every 4th bolt is critical
+            int n = actShots.merge(player.getUniqueId(), 1, Integer::sum);
+            if (n >= 4) {
+                actShots.put(player.getUniqueId(), 0);
+                arrow.setDamage(arrow.getDamage() * finale.params().d("fourth-shot-multiplier", 2.0));
+                arrow.setCritical(true);
+                World w = player.getWorld();
+                w.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 1.2f, 2.0f);
+                w.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1f, 0.7f);
+                w.spawnParticle(Particle.DUST, player.getEyeLocation().add(player.getEyeLocation().getDirection()),
+                        12, 0.15, 0.15, 0.15, 0, ACT_RED);
+            }
+        }
         if (pinArmed.remove(player.getUniqueId()) != null) {
             projectile.getPersistentDataContainer().set(pinShotKey, PersistentDataType.BYTE, (byte) 1);
             player.getWorld().playSound(player.getLocation(), Sound.BLOCK_CHAIN_BREAK, 1f, 0.8f);
@@ -2883,6 +3133,8 @@ public final class AbilityManager implements Listener {
         dropAxeState(event.getPlayer());
         uncloak(id);
         unpin(event.getPlayer());
+        endFinale(event.getPlayer());
+        actShots.remove(id);
         pinArmed.remove(id);
         seaKing.remove(id);
         chargeUse.remove(id);

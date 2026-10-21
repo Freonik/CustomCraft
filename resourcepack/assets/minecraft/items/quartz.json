@@ -9,6 +9,13 @@
           "type": "minecraft:model",
           "model": "customcraft:item/pale_fragment"
         }
+      },
+      {
+        "threshold": 1322,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/gilded_mask_shard"
+        }
       }
     ],
     "fallback": {
