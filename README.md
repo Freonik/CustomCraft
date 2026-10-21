@@ -321,7 +321,7 @@ of their sets too.
   (feather wings at the ankles, a heartbeat on the chest, thorn bursts).
 - Relics and weapons can't be used in a smithing table (no trims, no netherite upgrade).
 
-<p align="center"><img src="docs/armor.png" alt="Worn relic armor" width="560"></p>
+<p align="center"><img src="docs/armor.png" alt="The four armor sets worn: Heartsteel, Thorn, Thick Hide, Pale Seraph (front, side, back)" width="460"></p>
 
 ---
 
@@ -756,7 +756,7 @@ The plugin works without it, but the pack is what makes it look legendary:
 
 - animated 32×32 textures for all weapons, relics and materials
 - the Hexbow's own draw animation
-- worn looks for Thorn Plate, Heartsteel and Angel's Wings
+- worn looks for all four armor sets (Heartsteel, Thorn, Thick Hide, Pale Seraph)
 - a forge-themed menu (stone panel, gold result slots, ember arrows, FORGE / CLOSE buttons)
 
 The pack's source is in [`resourcepack/`](resourcepack). GitHub Actions zips it and attaches it to every release.
