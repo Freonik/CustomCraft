@@ -65,8 +65,29 @@ public final class AdvancementManager implements Listener {
                     "Carry 3 legendary items at once", "goal", false, 0),
             new Def("the_unique", "arsenal", "weapon:knightfall", "The Unique",
                     "Carry 5 legendary items at once", "challenge", true, 100),
-            new Def("five_stars", "forgemaster", "weapon:the_last_act", "Five Stars",
+            // stars and the Ancient Forges
+            new Def("ascension", "forgemaster", "anvil", "Ascension",
+                    "Give a legend weapon a star at an Ancient Forge", "goal", false, 0),
+            new Def("five_stars", "ascension", "weapon:the_last_act", "Five Stars",
                     "Ascend a legend weapon to five stars at an Ancient Forge", "challenge", false, 100),
+            new Def("pilgrim", "ascension", "compass", "Pilgrim",
+                    "Use all three Ancient Forges: the Scorched Lands, the Nether and the End", "challenge", false, 75),
+            new Def("out_of_the_void", "ascension", "end_crystal", "Out of the Void",
+                    "Be in the End when its Ancient Forge rises", "goal", false, 0),
+            new Def("starfall", "ascension", "nether_star", "Starfall",
+                    "Kill a player and knock the stars off a five-star legend", "challenge", false, 50),
+            new Def("hubris", "five_stars", "feather", "Hubris",
+                    "Lose stars from a five-star legend without anyone's help", "task", true, 0),
+            // sets
+            new Def("full_set", "forgemaster", "relic:heartsteel_core", "Full Set",
+                    "Wear all four pieces of a relic set", "goal", false, 0),
+            new Def("wardrobe", "full_set", "armor_stand", "Wardrobe",
+                    "Wear every relic set complete at least once", "challenge", false, 100),
+            // the Scorched Lands
+            new Def("scorched_earth", "root", "magma_block", "Scorched Earth",
+                    "Set foot in the Scorched Lands", "task", false, 0),
+            new Def("ruin_raider", "scorched_earth", "iron_axe", "Ruin Raider",
+                    "Defeat a guard of the ruins", "task", false, 0),
             // weapons
             new Def("not_today", "forgemaster", "weapon:echo_blade", "Not Today",
                     "Rewind away from death with less than 2 hearts", "task", false, 0),
@@ -181,7 +202,8 @@ public final class AdvancementManager implements Listener {
         ItemStack stack = ref.equals("trophy") ? trophy(null) : null;
         if (stack == null) {
             ItemManager.Entry entry = items.get(ref);
-            stack = entry == null ? new ItemStack(Material.NETHER_STAR) : entry.item;
+            Material vanilla = entry == null ? Material.matchMaterial(ref) : null;
+            stack = entry != null ? entry.item : new ItemStack(vanilla != null && vanilla.isItem() ? vanilla : Material.NETHER_STAR);
         }
         icon.addProperty("id", stack.getType().getKey().toString());
         ItemMeta meta = stack.getItemMeta();
@@ -220,6 +242,23 @@ public final class AdvancementManager implements Listener {
         }
         reward(player, id);
         return true;
+    }
+
+    /**
+     * Counts distinct things towards an advancement (forges used, sets completed) and awards it at `need`.
+     * Works for offline players too (awarded when they join).
+     */
+    public void progress(UUID player, String id, String part, int need) {
+        String path = "progress." + player + "." + id;
+        List<String> done = new ArrayList<>(data.getStringList(path));
+        if (!done.contains(part)) {
+            done.add(part);
+            data.set(path, done);
+            save();
+        }
+        if (done.size() >= need) {
+            awardLater(player, id);
+        }
     }
 
     /** Awards now if the player is online, otherwise the next time they join. */

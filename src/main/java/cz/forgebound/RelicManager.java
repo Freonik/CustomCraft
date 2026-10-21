@@ -318,7 +318,38 @@ public final class RelicManager implements Listener {
     }
 
     /** Action bar part for the player's relics (cooldowns, Heartsteel stacks). Empty if none. */
+    /** Last complete set seen on each player (so Full Set / Wardrobe are checked only when it changes). */
+    private final Map<UUID, String> fullSet = new HashMap<>();
+
+    /** Full Set and Wardrobe: wearing all four pieces of a set. */
+    private void checkFullSet(Player player) {
+        Map<String, Integer> counts = new HashMap<>();
+        for (Relic.Slot slot : Relic.Slot.values()) {
+            ItemManager.Entry entry = items.relicOf(player.getInventory().getItem(slot.equipment));
+            if (entry != null && entry.relic.slot() == slot && entry.relic.set() != null) {
+                counts.merge(entry.relic.set(), 1, Integer::sum);
+            }
+        }
+        String full = counts.entrySet().stream().filter(e -> e.getValue() >= 4).map(Map.Entry::getKey).findFirst().orElse("");
+        if (full.equals(fullSet.getOrDefault(player.getUniqueId(), ""))) {
+            return;
+        }
+        fullSet.put(player.getUniqueId(), full);
+        if (full.isEmpty() || plugin.advancements() == null) {
+            return;
+        }
+        plugin.award(player, "full_set");
+        java.util.Set<String> sets = new java.util.HashSet<>();
+        for (ItemManager.Entry e : items.all(ItemManager.Kind.RELIC)) {
+            if (e.relic != null && e.relic.set() != null) {
+                sets.add(e.relic.set());
+            }
+        }
+        plugin.advancements().progress(player.getUniqueId(), "wardrobe", full, sets.size());
+    }
+
     public String hud(Player player) {
+        checkFullSet(player);
         // which effects the worn relics give (a set piece gives all of its set's effects), in slot order
         java.util.Set<Relic.Type> types = new java.util.LinkedHashSet<>();
         ItemStack hourglass = null;
@@ -1233,6 +1264,7 @@ public final class RelicManager implements Listener {
             player.setHealth(Math.max(1, player.getHealth() - pool));
         }
         lastSneak.remove(id);
+        fullSet.remove(id);
         soul.remove(id);
         focus.remove(id);
         focusAnchor.remove(id);

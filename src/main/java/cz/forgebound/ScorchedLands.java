@@ -101,6 +101,29 @@ public final class ScorchedLands implements Listener {
         for (World world : Bukkit.getWorlds()) {
             attach(world);
         }
+        // Scorched Earth: someone walked into the biome (checked every 5 s)
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            Biome b = biome;
+            if (b == null || plugin.advancements() == null) {
+                return;
+            }
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                Location l = p.getLocation();
+                if (wanted(p.getWorld()) && l.getWorld().getBiome(l.getBlockX(), l.getBlockY(), l.getBlockZ()).equals(b)) {
+                    plugin.award(p, "scorched_earth");
+                }
+            }
+        }, 200L, 100L);
+    }
+
+    /** Ruin Raider: a player killed a ruin guard. */
+    @EventHandler
+    public void onGuardDeath(org.bukkit.event.entity.EntityDeathEvent event) {
+        Player killer = event.getEntity().getKiller();
+        if (killer != null && plugin.advancements() != null
+                && event.getEntity().getPersistentDataContainer().has(guardKey, PersistentDataType.BYTE)) {
+            plugin.award(killer, "ruin_raider");
+        }
     }
 
     @EventHandler

@@ -593,7 +593,15 @@ a toast pops up, the chat announces it, and progress is saved with the player. C
 | <img src="docs/items/stasis_hourglass.png" width="40" alt=""> | **Frozen in Time** | survive a deadly hit inside the Stasis Hourglass |
 | <img src="docs/items/heartsteel_core.png" width="40" alt=""> | **Heart of Steel** | grow the Heartsteel Core to its full size *(challenge, 50 XP)* |
 | <img src="docs/items/stitchguard.png" width="40" alt=""> | **Perfect Parry** | parry 10 hits with the Stitchguard *(challenge, 50 XP)* |
+| <img src="docs/items/graviton_hammer.png" width="40" alt=""> | **Ascension** | give a legend weapon a star at an Ancient Forge |
 | <img src="docs/items/the_last_act.png" width="40" alt=""> | **Five Stars** | ascend a legend weapon to ★★★★★ at an Ancient Forge *(challenge, 100 XP)* |
+| <img src="docs/items/recon_spyglass.png" width="40" alt=""> | **Pilgrim** | use all three Ancient Forges: the Scorched Lands, the Nether and the End *(challenge, 75 XP)* |
+| <img src="docs/items/seraph_feather.png" width="40" alt=""> | **Out of the Void** | be in the End when its Ancient Forge rises |
+| <img src="docs/items/bounty_token.png" width="40" alt=""> | **Starfall** | kill a player and knock the stars off a five-star legend *(challenge, 50 XP)* |
+| <img src="docs/items/heartsteel_core.png" width="40" alt=""> | **Full Set** | wear all four pieces of a relic set |
+| <img src="docs/items/hide_mantle.png" width="40" alt=""> | **Wardrobe** | wear every relic set complete at least once *(challenge, 100 XP)* |
+| <img src="docs/items/graviton_core.png" width="40" alt=""> | **Scorched Earth** | set foot in the Scorched Lands |
+| <img src="docs/items/butcher_cleaver.png" width="40" alt=""> | **Ruin Raider** | defeat a guard of the ruins |
 
 *Some advancements are hidden until someone earns them...*
 

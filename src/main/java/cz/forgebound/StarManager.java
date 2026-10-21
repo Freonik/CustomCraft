@@ -268,6 +268,7 @@ public final class StarManager implements Listener {
             return;
         }
         List<Lost> lost = new ArrayList<>();
+        lostFromFive = false;
         for (ItemStack stack : event.getDrops()) {
             lose(stack, loss, lost);
         }
@@ -280,6 +281,13 @@ public final class StarManager implements Listener {
         }
         if (lost.isEmpty()) {
             return;
+        }
+        if (lostFromFive && plugin.advancements() != null) {
+            if (pvp) {
+                plugin.award(killer, "starfall");
+            } else {
+                plugin.award(player, "hubris");
+            }
         }
         String amount = Stars.starCount(loss) + (loss == 2 ? " star" : " stars");
         for (Lost l : lost) {
@@ -298,6 +306,9 @@ public final class StarManager implements Listener {
 
     private record Lost(Component name, String ref, int halves) { }
 
+    /** Set while a death is processed: one of the weapons had five stars before it lost some. */
+    private boolean lostFromFive;
+
     private void lose(ItemStack stack, int loss, List<Lost> lost) {
         ItemManager.Entry entry = items.weaponOf(stack);
         if (entry == null) {
@@ -305,6 +316,9 @@ public final class StarManager implements Listener {
         }
         int before = halvesOf(stack);
         int after = Stars.clamp(before - loss);
+        if (before >= 10 && after < before) {
+            lostFromFive = true;
+        }
         if (after != before) {
             setHalves(stack, entry, after);
             lost.add(new Lost(ItemManager.nameOf(entry.item), entry.ref(), after));
@@ -646,8 +660,14 @@ public final class StarManager implements Listener {
         world.playSound(c, Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 0.9f);
         Bukkit.broadcast(plugin.msg("ancient-done", "&6✦ {item} &7has ascended to {stars} &7at an Ancient Forge {where}&7!",
                 "item", ItemManager.nameOf(r.weapon), "stars", ItemManager.color(Stars.starText(r.target)), "where", ItemManager.color(where(r.site))));
-        if (r.target >= 10 && plugin.advancements() != null) {
-            plugin.advancements().awardLater(r.player, "five_stars");
+        if (plugin.advancements() != null) {
+            plugin.advancements().awardLater(r.player, "ascension");
+            World fw = Bukkit.getWorld(r.site.world);
+            plugin.advancements().progress(r.player, "pilgrim",
+                    fw == null ? "overworld" : fw.getEnvironment().name().toLowerCase(java.util.Locale.ROOT), 3);
+            if (r.target >= 10) {
+                plugin.advancements().awardLater(r.player, "five_stars");
+            }
         }
     }
 
@@ -765,6 +785,9 @@ public final class StarManager implements Listener {
                 end.strikeLightningEffect(center);
                 end.spawnParticle(Particle.REVERSE_PORTAL, center, 300, 5, 3, 5, 0.3);
                 end.spawnParticle(Particle.END_ROD, center, 80, 4, 3, 4, 0.05);
+                for (Player p : end.getPlayers()) {
+                    plugin.award(p, "out_of_the_void");
+                }
                 Bukkit.broadcast(plugin.msg("ancient-end-risen",
                         "&5✦ The &dAncient Forge of the End &5has risen! &7Only it can give a weapon its last stars."));
                 for (Player p : Bukkit.getOnlinePlayers()) {
