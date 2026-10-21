@@ -33,6 +33,8 @@ run('hex_bow.py', f'{CC}/textures/item')
 run('soulbinder.py', f'{CC}/textures/item/soulbinder.png')
 # relics (icons + worn armor), gui, menu
 run('relics.py', f'{CC}/textures/item', f'{CC}/textures/entity/equipment/humanoid')
+# relic sets: the other Heartsteel / Thorn pieces, their leggings layers, helmet and boot details
+run('sets.py', f'{CC}/textures/item', f'{CC}/textures/entity/equipment')
 # Butcher's Cleaver, Abyssal Maw, Thick Hide (+ worn leggings) and their materials
 run('tank.py', f'{CC}/textures/item', f'{CC}/textures/entity/equipment')
 # Clawline Pick, Silk Needle, Soul Vessel Mask (+ worn), Stitchguard and their materials
@@ -52,11 +54,16 @@ for n in ['echo_blade', 'graviton_hammer', 'soulbinder', 'butcher_cleaver', 'aby
     wjson(f'{CC}/models/item/{n}.json', {"parent": "minecraft:item/handheld", "textures": {"layer0": f"customcraft:item/{n}"}})
 for n in ['hex_bow', 'hex_bow_pulling_0', 'hex_bow_pulling_1', 'hex_bow_pulling_2']:
     wjson(f'{CC}/models/item/{n}.json', {"parent": "minecraft:item/bow", "textures": {"layer0": f"customcraft:item/{n}"}})
-for n in ['stasis_hourglass', 'angels_wings', 'thorn_plate', 'heartsteel_core', 'thick_hide', 'soul_vessel_mask']:
+for n in ['stasis_hourglass', 'angels_wings', 'thorn_plate', 'heartsteel_core', 'thick_hide', 'soul_vessel_mask',
+          'heartsteel_helm', 'heartsteel_greaves', 'heartsteel_treads', 'thorn_crown', 'thorn_greaves', 'thorn_treads']:
     wjson(f'{CC}/models/item/{n}.json', {"parent": "minecraft:item/generated", "textures": {"layer0": f"customcraft:item/{n}"}})
 wjson(f'{CC}/models/item/hydra_edge.json', {"parent": "minecraft:item/handheld", "textures": {"layer0": "customcraft:item/hydra_edge"}})
-for n in ['thorn_plate', 'angels_wings', 'heartsteel']:
+for n in ['angels_wings']:
     wjson(f'{CC}/equipment/{n}.json', {"layers": {"humanoid": [{"texture": f"customcraft:{n}"}]}})
+# set armor: helmet / chestplate / boots use the humanoid layer, leggings their own layer
+for n in ['thorn_plate', 'heartsteel']:
+    wjson(f'{CC}/equipment/{n}.json', {"layers": {"humanoid": [{"texture": f"customcraft:{n}"}],
+                                                  "humanoid_leggings": [{"texture": f"customcraft:{n}"}]}})
 wjson(f'{CC}/equipment/thick_hide.json', {"layers": {"humanoid_leggings": [{"texture": "customcraft:thick_hide"}]}})
 wjson(f'{CC}/equipment/soul_mask.json', {"layers": {"humanoid": [{"texture": "customcraft:soul_mask"}]}})
 # Stitchguard: a real 3D shield (same shape and hand poses as the vanilla shield), normal + blocking
@@ -203,12 +210,18 @@ def trimmed(name, piece):
             "fallback": model(f"customcraft:item/{name}")}
 
 for item, entries in [('clock', [(1201, model('customcraft:item/stasis_hourglass'))]),
-                      ('netherite_boots', [(1202, model('customcraft:item/angels_wings'))]),
+                      ('netherite_boots', [(1202, model('customcraft:item/angels_wings')),
+                                           (1211, model('customcraft:item/heartsteel_treads')),
+                                           (1214, model('customcraft:item/thorn_treads'))]),
                       ('netherite_chestplate', [(1203, model('customcraft:item/thorn_plate')),
                                                 (1204, model('customcraft:item/heartsteel_core'))]),
                       ('iron_sword', [(1205, model('customcraft:item/hydra_edge'))]),
-                      ('netherite_leggings', [(1206, model('customcraft:item/thick_hide'))]),
-                      ('netherite_helmet', [(1207, model('customcraft:item/soul_vessel_mask'))]),
+                      ('netherite_leggings', [(1206, model('customcraft:item/thick_hide')),
+                                              (1210, model('customcraft:item/heartsteel_greaves')),
+                                              (1213, model('customcraft:item/thorn_greaves'))]),
+                      ('netherite_helmet', [(1207, model('customcraft:item/soul_vessel_mask')),
+                                            (1209, model('customcraft:item/heartsteel_helm')),
+                                            (1212, model('customcraft:item/thorn_crown'))]),
                       ('shield', [(1208, {"type": "minecraft:condition", "property": "minecraft:using_item",
                                           "on_false": model('customcraft:item/stitchguard'),
                                           "on_true": model('customcraft:item/stitchguard_blocking')})])]:

@@ -9,6 +9,20 @@
           "type": "minecraft:model",
           "model": "customcraft:item/angels_wings"
         }
+      },
+      {
+        "threshold": 1211,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/heartsteel_treads"
+        }
+      },
+      {
+        "threshold": 1214,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/thorn_treads"
+        }
       }
     ],
     "fallback": {

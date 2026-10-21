@@ -46,7 +46,7 @@
 ## Features
 
 - **14 legendary weapons and tools** (swords, axes, a bow, a crossbow, a rifle, a spear, a trident, a pickaxe...) with original abilities on **F** and **Shift + F**, plus on-hit effects and passives
-- **7 relics** for every slot: helmet, chestplate, leggings, boots and off-hand (stasis, revive, thorns,
+- **13 relics** for every slot, including two **4-piece armor sets** (Heartsteel, Thorn): helmet, chestplate, leggings, boots and off-hand (stasis, revive, thorns,
   a growing heart, grey health, soul focus, a parrying shield)
 - **Tank builds**: some abilities scale with your **max HP**, so they get stronger with Heartsteel Core
 - **21 legendary materials** that drop from bosses and rare mobs or hide in structure chests, **45 % max chance**
@@ -272,11 +272,23 @@ and **off-hand**.
 |---|---|---|---|
 | <img src="docs/items/stasis_hourglass.png" width="48" alt=""> | **Stasis Hourglass** | off-hand | Right-click: golden statue for 2.5 s. Nothing can hurt you, but you can't move or attack (120 s cooldown) |
 | <img src="docs/items/angels_wings.png" width="48" alt=""> | **Angel's Wings** | boots | When you would die, you come back with 50 % HP and 3 s of protection (600 s cooldown). Half fall damage |
-| <img src="docs/items/thorn_plate.png" width="48" alt=""> | **Thorn Plate** | chestplate | Reflects 2 + 25 % of melee damage; attackers get **Grievous Wounds** (no healing for 3 s) |
-| <img src="docs/items/heartsteel_core.png" width="48" alt=""> | **Heartsteel Core** | chestplate | A charged hit on a **player** deals bonus damage and **permanently** adds max HP (up to +10 hearts, stored on the item). Mobs don't count |
 | <img src="docs/items/soul_vessel_mask.png" width="48" alt=""> | **Soul Vessel Mask** | helmet | Charged hits fill your **Soul** (max 99). Hold **Shift** and stand still for 1.5 s to turn 33 Soul into 3 hearts. Getting hit breaks the focus; Soul is lost on death |
 | <img src="docs/items/stitchguard.png" width="48" alt=""> | **Stitchguard** | off-hand (shield) | **Parry**: raise the shield right before a hit (0.35 s window) and the hit is cancelled, then you stitch through to the attacker's back for 8 damage. **Shell**: while blocking, 3 hits from *any* side are absorbed (regrows 20 s after it cracks) |
 | <img src="docs/items/thick_hide.png" width="48" alt=""> | **Thick Hide** | leggings | 40 % of the damage you take becomes **grey health** that is lost over ~3 s (up to 50 % of your max HP). **Double-tap Shift** to shrug the grey health off so you never lose it (20 s cooldown) |
+
+### Armor sets
+
+**Heartsteel** and **Thorn** are full sets: a helmet, a chestplate, leggings and boots that look alike. Every piece is
+its own legend (forged with its own ritual, one of each per server). **Each piece gives 1/4 of the set's effect;
+all four together give 5/4.** You can mix pieces of different sets, but the full set is clearly the strongest.
+
+| Set | Pieces | Effect (full numbers, before the 1/4 or 5/4) |
+|---|---|---|
+| **Heartsteel** | <img src="docs/items/heartsteel_helm.png" width="40" alt=""> Helm · <img src="docs/items/heartsteel_core.png" width="40" alt=""> Core · <img src="docs/items/heartsteel_greaves.png" width="40" alt=""> Greaves · <img src="docs/items/heartsteel_treads.png" width="40" alt=""> Treads | A charged hit on a **player** deals 3 + 5 % of your max HP extra and **permanently** grows your max HP (up to +10 hearts; every piece stores its share). Once per player every 30 s. Mobs don't count |
+| **Thorn** | <img src="docs/items/thorn_crown.png" width="40" alt=""> Crown · <img src="docs/items/thorn_plate.png" width="40" alt=""> Plate · <img src="docs/items/thorn_greaves.png" width="40" alt=""> Greaves · <img src="docs/items/thorn_treads.png" width="40" alt=""> Treads | Reflects 2 + 25 % of melee damage (half vs. arrows); attackers get **Grievous Wounds** (no healing for 3 s) |
+
+The action bar shows how many pieces you wear (`2/4`, `4/4 ✦`). A Heartsteel Core forged before the sets keeps a quarter
+of the max HP it had grown, like every other piece.
 
 - Cooldowns and Heartsteel stacks are stored on the item itself.
 - The armor relics have their own look when worn and small particle effects

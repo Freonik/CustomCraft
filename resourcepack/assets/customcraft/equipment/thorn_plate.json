@@ -4,6 +4,11 @@
       {
         "texture": "customcraft:thorn_plate"
       }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "customcraft:thorn_plate"
+      }
     ]
   }
 }

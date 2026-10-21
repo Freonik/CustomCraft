@@ -138,7 +138,9 @@ public final class ItemManager {
                     throw new IllegalArgumentException("id may only contain a-z, 0-9 and _");
                 }
                 WeaponAbilities abilities = kind == Kind.WEAPON ? abilities(id, section) : WeaponAbilities.NONE;
-                Relic relic = kind == Kind.RELIC ? Relic.parse(section.getConfigurationSection("relic")) : null;
+                Relic relic = kind == Kind.RELIC ? Relic.parse(section.getConfigurationSection("relic"),
+                        plugin.getConfig().getDefaults() == null ? null
+                                : plugin.getConfig().getDefaults().getString("relics." + id + ".relic.set")) : null;
                 List<String> extraLore = kind == Kind.WEAPON ? abilities.loreLines()
                         : kind == Kind.RELIC ? relic.loreLines() : List.of();
                 ItemStack item = buildItem(kind, id, section, extraLore, relic);

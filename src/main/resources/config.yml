@@ -213,6 +213,12 @@ craftable:
     thick_hide: true
     soul_vessel_mask: true
     stitchguard: true
+    heartsteel_helm: true
+    heartsteel_greaves: true
+    heartsteel_treads: true
+    thorn_crown: true
+    thorn_greaves: true
+    thorn_treads: true
   materials:
     resonant_shard: true
     graviton_core: true
@@ -1656,6 +1662,9 @@ advancements:
 # Small visual effects for worn relics (wing feathers at the ankles, heartbeat, spores)
 relic-settings:
   particles: true
+  # set relics (relic.set): each worn piece gives this share of the effect, all four pieces together set-full
+  set-piece: 0.25
+  set-full: 1.25
 
 # ------------------------------------------------------------
 #  RELICS - armor and off-hand items with a special effect
@@ -1663,6 +1672,9 @@ relic-settings:
 #  A relic only works in its own slot ("relic.slot"): OFFHAND, HEAD, CHEST, LEGS or FEET,
 #  so you can wear one chestplate relic, one boots relic and hold one off-hand relic.
 #  (Thorn Plate and Heartsteel are both chestplates - pick one.)
+#  SETS: "relic.set" makes a relic one piece of a 4-piece set (helmet, chestplate, leggings, boots).
+#  Each piece gives 1/4 of the set's effect, all four together 5/4 (relic-settings.set-piece / set-full).
+#  The numbers in a set relic's section are the FULL effect (before the 1/4 or 5/4).
 #
 #  relic.type: STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD
 #  attributes: stats that only count in the relic's slot (armor, armor_toughness,
@@ -1732,11 +1744,12 @@ relics:
     relic:
       type: THORNS
       slot: CHEST
+      set: thorn
       reflect-flat: 2
       reflect-percent: 25
       wound-seconds: 3
       heal-reduction: 100
-      description: ["Reflects 2 + 25% of melee damage", "(half vs. arrows). Attackers get", "Grievous Wounds: no healing for 3s."]
+      description: ["Thorn set: reflects 2 + 25% of melee", "damage (half vs. arrows). Attackers get", "Grievous Wounds: no healing for 3s."]
     forge:
       - { item: NETHERITE_CHESTPLATE, amount: 1 }
       - { item: CACTUS, amount: 64 }
@@ -1759,6 +1772,7 @@ relics:
     relic:
       type: HEARTSTEEL
       slot: CHEST
+      set: heartsteel
       bonus-damage: 3
       bonus-percent-max-hp: 5
       target-cooldown: 30
@@ -1766,13 +1780,181 @@ relics:
       max-bonus-health: 20
       # true = big mobs (20+ max HP) also trigger it and grow your max HP
       stack-from-mobs: false
-      description: ["A charged hit on a player deals", "3 + 5% of your max HP and", "PERMANENTLY grows your max HP", "(+½ heart, up to +10 hearts).", "Once per player every 30s."]
+      description: ["Heartsteel set: a charged hit on a player", "deals 3 + 5% of your max HP and", "PERMANENTLY grows your max HP", "(+½ heart, up to +10 hearts).", "Once per player every 30s."]
     forge:
       - { item: NETHERITE_CHESTPLATE, amount: 1 }
       - { item: HEART_OF_THE_SEA, amount: 1 }
       - { item: ENCHANTED_GOLDEN_APPLE, amount: 2 }
       - { item: REDSTONE_BLOCK, amount: 32 }
       - { item: "material:crimson_heart", amount: 1 }
+
+  heartsteel_helm:
+    material: NETHERITE_HELMET
+    name: "&c&lHeartsteel Helm"
+    lore:
+      - "&7The heartbeat is loudest in your ears."
+    custom-model-data: 1209
+    unbreakable: true
+    equipment-model: "customcraft:heartsteel"
+    attributes:
+      armor: 3
+      armor_toughness: 3
+      knockback_resistance: 0.1
+    relic:
+      type: HEARTSTEEL
+      slot: HEAD
+      set: heartsteel
+      bonus-damage: 3
+      bonus-percent-max-hp: 5
+      target-cooldown: 30
+      health-per-stack: 1
+      max-bonus-health: 20
+      stack-from-mobs: false
+      description: ["Heartsteel set: charged hits on players", "deal bonus damage and grow your max HP."]
+    forge:
+      - { item: NETHERITE_HELMET, amount: 1 }
+      - { item: REDSTONE_BLOCK, amount: 16 }
+      - { item: GOLDEN_APPLE, amount: 4 }
+      - { item: "material:crimson_heart", amount: 1 }
+
+  heartsteel_greaves:
+    material: NETHERITE_LEGGINGS
+    name: "&c&lHeartsteel Greaves"
+    lore:
+      - "&7Steel that remembers every fight."
+    custom-model-data: 1210
+    unbreakable: true
+    equipment-model: "customcraft:heartsteel"
+    attributes:
+      armor: 6
+      armor_toughness: 3
+      knockback_resistance: 0.1
+    relic:
+      type: HEARTSTEEL
+      slot: LEGS
+      set: heartsteel
+      bonus-damage: 3
+      bonus-percent-max-hp: 5
+      target-cooldown: 30
+      health-per-stack: 1
+      max-bonus-health: 20
+      stack-from-mobs: false
+      description: ["Heartsteel set: charged hits on players", "deal bonus damage and grow your max HP."]
+    forge:
+      - { item: NETHERITE_LEGGINGS, amount: 1 }
+      - { item: REDSTONE_BLOCK, amount: 24 }
+      - { item: GOLDEN_APPLE, amount: 6 }
+      - { item: "material:crimson_heart", amount: 1 }
+
+  heartsteel_treads:
+    material: NETHERITE_BOOTS
+    name: "&c&lHeartsteel Treads"
+    lore:
+      - "&7Every step a heartbeat."
+    custom-model-data: 1211
+    unbreakable: true
+    equipment-model: "customcraft:heartsteel"
+    attributes:
+      armor: 3
+      armor_toughness: 3
+      knockback_resistance: 0.1
+    relic:
+      type: HEARTSTEEL
+      slot: FEET
+      set: heartsteel
+      bonus-damage: 3
+      bonus-percent-max-hp: 5
+      target-cooldown: 30
+      health-per-stack: 1
+      max-bonus-health: 20
+      stack-from-mobs: false
+      description: ["Heartsteel set: charged hits on players", "deal bonus damage and grow your max HP."]
+    forge:
+      - { item: NETHERITE_BOOTS, amount: 1 }
+      - { item: REDSTONE_BLOCK, amount: 16 }
+      - { item: GOLDEN_APPLE, amount: 4 }
+      - { item: "material:crimson_heart", amount: 1 }
+
+  thorn_crown:
+    material: NETHERITE_HELMET
+    name: "&2&lThorn Crown"
+    lore:
+      - "&7Heavy is the head."
+    custom-model-data: 1212
+    unbreakable: true
+    equipment-model: "customcraft:thorn_plate"
+    attributes:
+      armor: 3
+      armor_toughness: 3
+      knockback_resistance: 0.1
+    relic:
+      type: THORNS
+      slot: HEAD
+      set: thorn
+      reflect-flat: 2
+      reflect-percent: 25
+      wound-seconds: 3
+      heal-reduction: 100
+      description: ["Thorn set: reflects melee damage and", "gives attackers Grievous Wounds."]
+    forge:
+      - { item: NETHERITE_HELMET, amount: 1 }
+      - { item: CACTUS, amount: 32 }
+      - { item: POINTED_DRIPSTONE, amount: 16 }
+      - { item: "material:thornheart_seed", amount: 1 }
+
+  thorn_greaves:
+    material: NETHERITE_LEGGINGS
+    name: "&2&lThorn Greaves"
+    lore:
+      - "&7Brambles grow where you stand."
+    custom-model-data: 1213
+    unbreakable: true
+    equipment-model: "customcraft:thorn_plate"
+    attributes:
+      armor: 6
+      armor_toughness: 3
+      knockback_resistance: 0.1
+    relic:
+      type: THORNS
+      slot: LEGS
+      set: thorn
+      reflect-flat: 2
+      reflect-percent: 25
+      wound-seconds: 3
+      heal-reduction: 100
+      description: ["Thorn set: reflects melee damage and", "gives attackers Grievous Wounds."]
+    forge:
+      - { item: NETHERITE_LEGGINGS, amount: 1 }
+      - { item: CACTUS, amount: 48 }
+      - { item: POINTED_DRIPSTONE, amount: 24 }
+      - { item: "material:thornheart_seed", amount: 1 }
+
+  thorn_treads:
+    material: NETHERITE_BOOTS
+    name: "&2&lThorn Treads"
+    lore:
+      - "&7Leave a trail of thorns."
+    custom-model-data: 1214
+    unbreakable: true
+    equipment-model: "customcraft:thorn_plate"
+    attributes:
+      armor: 3
+      armor_toughness: 3
+      knockback_resistance: 0.1
+    relic:
+      type: THORNS
+      slot: FEET
+      set: thorn
+      reflect-flat: 2
+      reflect-percent: 25
+      wound-seconds: 3
+      heal-reduction: 100
+      description: ["Thorn set: reflects melee damage and", "gives attackers Grievous Wounds."]
+    forge:
+      - { item: NETHERITE_BOOTS, amount: 1 }
+      - { item: CACTUS, amount: 32 }
+      - { item: POINTED_DRIPSTONE, amount: 16 }
+      - { item: "material:thornheart_seed", amount: 1 }
 
   thick_hide:
     material: NETHERITE_LEGGINGS

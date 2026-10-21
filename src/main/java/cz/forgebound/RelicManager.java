@@ -80,6 +80,7 @@ public final class RelicManager implements Listener {
     private final NamespacedKey readyKey;
     private final NamespacedKey stacksKey;
     private final NamespacedKey heartKey;
+    private final NamespacedKey setScaledKey = Forgebound.key("heartsteel_set");
 
     /** player -> stasis end (ms) */
     private final Map<UUID, Long> stasis = new HashMap<>();
@@ -166,6 +167,42 @@ public final class RelicManager implements Listener {
         return null;
     }
 
+    /** Pieces of one relic type worn in their own slots, and how strong that makes the effect. */
+    record SetWear(ItemManager.Entry entry, int count, double factor) { }
+
+    /**
+     * Set relics: each piece gives 1/4 of the effect, all four together 5/4 (relic-settings.set-piece / set-full).
+     * A relic without a set works fully on its own.
+     */
+    private SetWear setWear(Player player, Relic.Type type) {
+        ItemManager.Entry first = null;
+        int count = 0;
+        boolean set = false;
+        for (Relic.Slot slot : Relic.Slot.values()) {
+            ItemManager.Entry entry = items.relicOf(player.getInventory().getItem(slot.equipment));
+            if (entry != null && entry.relic.type() == type && entry.relic.slot() == slot) {
+                count++;
+                first = first == null ? entry : first;
+                set |= entry.relic.set() != null;
+            }
+        }
+        if (first == null) {
+            return null;
+        }
+        return new SetWear(first, count, set ? setFactor(count) : 1.0);
+    }
+
+    double setFactor(int pieces) {
+        double piece = plugin.getConfig().getDouble("relic-settings.set-piece", 0.25);
+        double full = plugin.getConfig().getDouble("relic-settings.set-full", 1.25);
+        return factor(pieces, piece, full);
+    }
+
+    /** 1 piece = piece, 2 = 2x piece ..., 4 = full. */
+    static double factor(int pieces, double piece, double full) {
+        return pieces <= 0 ? 0 : pieces >= 4 ? full : pieces * piece;
+    }
+
     private ItemStack stackOf(Player player, ItemManager.Entry entry) {
         return player.getInventory().getItem(entry.relic.slot().equipment);
     }
@@ -212,6 +249,14 @@ public final class RelicManager implements Listener {
         return max == null ? 20 : max.getValue();
     }
 
+    /** " (2/4)" for set relics, "" otherwise. */
+    private static String setLabel(SetWear w) {
+        if (w == null || w.entry().relic.set() == null) {
+            return "";
+        }
+        return w.count() >= 4 ? " &6(4/4 ✦)" : " &8(" + w.count() + "/4)";
+    }
+
     private static String seconds(long ms) {
         return ((ms + 999) / 1000) + "s";
     }
@@ -219,6 +264,7 @@ public final class RelicManager implements Listener {
     /** Action bar part for the player's relics (cooldowns, Heartsteel stacks). Empty if none. */
     public String hud(Player player) {
         StringBuilder bar = new StringBuilder();
+        java.util.Set<Relic.Type> shownSets = java.util.EnumSet.noneOf(Relic.Type.class);
         for (Relic.Slot slot : Relic.Slot.values()) {
             ItemStack stack = player.getInventory().getItem(slot.equipment);
             ItemManager.Entry entry = items.relicOf(stack);
@@ -232,7 +278,28 @@ public final class RelicManager implements Listener {
                     String name = entry.relic.type() == Relic.Type.STASIS ? "&6⧗" : "&f✦";
                     part = name + " " + (left <= 0 ? "&a✔" : "&c" + seconds(left));
                 }
-                case HEARTSTEEL -> part = "&c❤ &f+" + trim(heartBonus(stack));
+                case HEARTSTEEL -> {
+                    migrateHeartsteel(stack, entry);
+                    if (shownSets.add(Relic.Type.HEARTSTEEL)) {
+                        double total = 0;
+                        for (Relic.Slot s2 : Relic.Slot.values()) {
+                            ItemStack st = player.getInventory().getItem(s2.equipment);
+                            ItemManager.Entry e2 = items.relicOf(st);
+                            if (e2 != null && e2.relic.type() == Relic.Type.HEARTSTEEL && e2.relic.slot() == s2) {
+                                total += heartBonus(st);
+                            }
+                        }
+                        SetWear w = setWear(player, Relic.Type.HEARTSTEEL);
+                        part = "&c❤ &f+" + trim(total) + setLabel(w);
+                    }
+                }
+                case THORNS -> {
+                    if (shownSets.add(Relic.Type.THORNS)) {
+                        SetWear w = setWear(player, Relic.Type.THORNS);
+                        String label = setLabel(w);
+                        part = label.isEmpty() ? null : "&2✹" + label;
+                    }
+                }
                 case SOUL_VESSEL -> {
                     int cost = Math.max(1, entry.relic.params().i("focus-cost", 33));
                     int max = Math.max(cost, entry.relic.params().i("max-soul", 99));
@@ -548,14 +615,17 @@ public final class RelicManager implements Listener {
                 attacker = shooter;
                 share = 0.5;
             }
-            ItemManager.Entry thorns = attacker == null ? null : equipped(wearer, Relic.Type.THORNS);
+            SetWear thornSet = attacker == null ? null : setWear(wearer, Relic.Type.THORNS);
+            ItemManager.Entry thorns = thornSet == null ? null : thornSet.entry();
             if (thorns != null && !attacker.equals(wearer)
                     && !(attacker instanceof Player hitter && plugin.teams() != null && plugin.teams().allies(wearer, hitter))) {
                 WeaponAbilities.Params p = thorns.relic.params();
-                double reflect = (p.d("reflect-flat", 2) + event.getDamage() * p.d("reflect-percent", 25) / 100.0) * share;
+                double reflect = (p.d("reflect-flat", 2) + event.getDamage() * p.d("reflect-percent", 25) / 100.0) * share
+                        * thornSet.factor();
                 LivingEntity target = attacker;
                 DamageGuard.run(() -> target.damage(reflect, wearer));
-                wounded.put(attacker.getUniqueId(), System.currentTimeMillis() + (long) (p.d("wound-seconds", 3) * 1000));
+                wounded.put(attacker.getUniqueId(), System.currentTimeMillis()
+                        + (long) (p.d("wound-seconds", 3) * 1000 * Math.min(1.25, thornSet.factor())));
                 Location at = attacker.getLocation().add(0, attacker.getHeight() / 2, 0);
                 attacker.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, at, 4, 0.3, 0.4, 0.3, 0.1);
                 attacker.getWorld().spawnParticle(Particle.DUST, at, 10, 0.3, 0.4, 0.3, 0, BLOOD);
@@ -586,7 +656,8 @@ public final class RelicManager implements Listener {
         }
 
         // Heartsteel Core: big hit on a worthy target, grows your max HP for good
-        ItemManager.Entry heart = equipped(player, Relic.Type.HEARTSTEEL);
+        SetWear heartSet = setWear(player, Relic.Type.HEARTSTEEL);
+        ItemManager.Entry heart = heartSet == null ? null : heartSet.entry();
         // only players count (stack-from-mobs: true lets big mobs with 20+ max HP count too)
         if (heart != null && (victim instanceof Player
                 || (heart.relic.params().b("stack-from-mobs", false) && maxHealth(victim) >= 20))) {
@@ -596,8 +667,9 @@ public final class RelicManager implements Listener {
             if (until == null || until <= now) {
                 WeaponAbilities.Params p = heart.relic.params();
                 ready.put(victim.getUniqueId(), now + (long) (p.d("target-cooldown", 30) * 1000));
-                event.setDamage(event.getDamage() + p.d("bonus-damage", 3) + maxHealth(player) * p.d("bonus-percent-max-hp", 5) / 100.0);
-                growHeartsteel(player, heart);
+                event.setDamage(event.getDamage() + (p.d("bonus-damage", 3) + maxHealth(player) * p.d("bonus-percent-max-hp", 5) / 100.0)
+                        * heartSet.factor());
+                growHeartsteel(player, heartSet);
                 Location at = victim.getLocation().add(0, victim.getHeight() / 2, 0);
                 victim.getWorld().spawnParticle(Particle.DUST, at, 25, 0.4, 0.5, 0.4, 0, BLOOD);
                 victim.getWorld().spawnParticle(Particle.HEART, player.getLocation().add(0, 2.1, 0), 3, 0.3, 0.1, 0.3, 0);
@@ -615,28 +687,67 @@ public final class RelicManager implements Listener {
         return bonus == null ? 0 : bonus;
     }
 
-    /** +max HP stored on the Heartsteel item itself (as an off-hand attribute modifier). */
-    private void growHeartsteel(Player player, ItemManager.Entry entry) {
-        WeaponAbilities.Params p = entry.relic.params();
-        EquipmentSlot slot = entry.relic.slot().equipment;
-        ItemStack stack = player.getInventory().getItem(slot);
-        double bonus = Math.min(p.d("max-bonus-health", 20), heartBonus(stack) + p.d("health-per-stack", 1));
-        if (bonus >= p.d("max-bonus-health", 20)) {
+    /**
+     * +max HP stored on each worn Heartsteel piece itself (an attribute modifier for its slot). Every piece grows by
+     * its share: 1/4 of the stack each, 5/16 each with the full set; each piece holds its share of max-bonus-health.
+     */
+    private void growHeartsteel(Player player, SetWear set) {
+        WeaponAbilities.Params p = set.entry().relic.params();
+        double max = p.d("max-bonus-health", 20);
+        double share = set.entry().relic.set() == null ? 1.0 : set.factor() / set.count();
+        double total = 0;
+        for (Relic.Slot slot : Relic.Slot.values()) {
+            ItemStack stack = player.getInventory().getItem(slot.equipment);
+            ItemManager.Entry entry = items.relicOf(stack);
+            if (entry == null || entry.relic.type() != Relic.Type.HEARTSTEEL || entry.relic.slot() != slot) {
+                continue;
+            }
+            migrateHeartsteel(stack, entry);
+            double cap = max * share;
+            double bonus = Math.min(Math.max(cap, heartBonus(stack)), heartBonus(stack) + p.d("health-per-stack", 1) * share);
+            ItemMeta meta = stack.getItemMeta();
+            int stacks = meta.getPersistentDataContainer().getOrDefault(stacksKey, PersistentDataType.INTEGER, 0) + 1;
+            meta.getPersistentDataContainer().set(stacksKey, PersistentDataType.INTEGER, stacks);
+            setHeartBonus(meta, entry, slot, bonus, stacks);
+            stack.setItemMeta(meta);
+            player.getInventory().setItem(slot.equipment, stack);
+            total += bonus;
+        }
+        if (total >= max - 0.01) {
             plugin.award(player, "heart_of_steel");
         }
-        ItemMeta meta = stack.getItemMeta();
-        int stacks = meta.getPersistentDataContainer().getOrDefault(stacksKey, PersistentDataType.INTEGER, 0) + 1;
-        meta.getPersistentDataContainer().set(stacksKey, PersistentDataType.INTEGER, stacks);
+    }
+
+    private void setHeartBonus(ItemMeta meta, ItemManager.Entry entry, Relic.Slot slot, double bonus, int stacks) {
         meta.getPersistentDataContainer().set(heartKey, PersistentDataType.DOUBLE, bonus);
         meta.removeAttributeModifier(Attribute.MAX_HEALTH);
-        meta.addAttributeModifier(Attribute.MAX_HEALTH, new AttributeModifier(Forgebound.key("heartsteel_bonus"),
-                bonus, AttributeModifier.Operation.ADD_NUMBER, entry.relic.slot().group));
+        // one id per slot: several pieces with the same id would replace each other
+        meta.addAttributeModifier(Attribute.MAX_HEALTH, new AttributeModifier(
+                Forgebound.key("heartsteel_bonus_" + slot.name().toLowerCase(java.util.Locale.ROOT)),
+                bonus, AttributeModifier.Operation.ADD_NUMBER, slot.group));
         java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>(
                 entry.item.getItemMeta().lore() == null ? java.util.List.of() : entry.item.getItemMeta().lore());
         lore.add(ItemManager.color("&c❤ Stacks: &f" + stacks + " &8• &c+" + trim(bonus) + " max HP"));
         meta.lore(lore);
+    }
+
+    /**
+     * Heartsteel became a set: a Core made before keeps a quarter of the max HP it had grown
+     * (like every other piece, it's now 1/4 of the set). Done once per item.
+     */
+    private void migrateHeartsteel(ItemStack stack, ItemManager.Entry entry) {
+        if (entry.relic.set() == null || stack == null || !stack.hasItemMeta()
+                || stack.getPersistentDataContainer().has(setScaledKey, PersistentDataType.BYTE)) {
+            return;
+        }
+        ItemMeta meta = stack.getItemMeta();
+        double bonus = heartBonus(stack);
+        if (bonus > 0) {
+            int stacks = meta.getPersistentDataContainer().getOrDefault(stacksKey, PersistentDataType.INTEGER, 0);
+            setHeartBonus(meta, entry, entry.relic.slot(), bonus * plugin.getConfig().getDouble("relic-settings.set-piece", 0.25), stacks);
+        }
+        meta.getPersistentDataContainer().set(setScaledKey, PersistentDataType.BYTE, (byte) 1);
         stack.setItemMeta(meta);
-        player.getInventory().setItem(slot, stack);
     }
 
     /** Grievous Wounds also reduce natural and potion healing. */

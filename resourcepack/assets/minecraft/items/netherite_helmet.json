@@ -9,6 +9,20 @@
           "type": "minecraft:model",
           "model": "customcraft:item/soul_vessel_mask"
         }
+      },
+      {
+        "threshold": 1209,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/heartsteel_helm"
+        }
+      },
+      {
+        "threshold": 1212,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/thorn_crown"
+        }
       }
     ],
     "fallback": {

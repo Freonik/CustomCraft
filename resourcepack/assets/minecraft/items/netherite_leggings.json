@@ -9,6 +9,20 @@
           "type": "minecraft:model",
           "model": "customcraft:item/thick_hide"
         }
+      },
+      {
+        "threshold": 1210,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/heartsteel_greaves"
+        }
+      },
+      {
+        "threshold": 1213,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/thorn_greaves"
+        }
       }
     ],
     "fallback": {

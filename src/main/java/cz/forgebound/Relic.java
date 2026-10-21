@@ -15,11 +15,13 @@ import java.util.Locale;
  *   type: STASIS        # STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD
  *   slot: OFFHAND       # OFFHAND, HEAD, CHEST, LEGS, FEET - the relic only works in this slot
  *   cooldown: 120
+ *   set: heartsteel     # optional: one piece of a 4-piece set (each piece 1/4 of the effect, all 4 = 5/4)
  *   description: [...]
  *   ...type specific numbers
  * </pre>
  */
-public record Relic(Type type, Slot slot, int cooldown, List<String> description, WeaponAbilities.Params params) {
+public record Relic(Type type, Slot slot, int cooldown, List<String> description, WeaponAbilities.Params params,
+                    String set) {
 
     public enum Type { STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD }
 
@@ -42,6 +44,11 @@ public record Relic(Type type, Slot slot, int cooldown, List<String> description
     }
 
     public static Relic parse(ConfigurationSection s) {
+        return parse(s, null);
+    }
+
+    /** defaultSet: the set from the bundled config, for configs written before sets existed. */
+    public static Relic parse(ConfigurationSection s, String defaultSet) {
         if (s == null) {
             throw new IllegalArgumentException("missing 'relic' section");
         }
@@ -60,8 +67,9 @@ public record Relic(Type type, Slot slot, int cooldown, List<String> description
         Object desc = s.get("description");
         List<String> description = desc instanceof List<?> list ? list.stream().map(String::valueOf).toList()
                 : desc == null ? List.of() : List.of(String.valueOf(desc));
+        String set = s.getString("set", defaultSet);
         return new Relic(type, slot, Math.max(0, s.getInt("cooldown", 0)), description,
-                new WeaponAbilities.Params(s.getValues(false)));
+                new WeaponAbilities.Params(s.getValues(false)), set == null || set.isBlank() ? null : set.toLowerCase(Locale.ROOT));
     }
 
     /** Lore lines describing the relic (added to the item automatically). */
@@ -74,6 +82,10 @@ public record Relic(Type type, Slot slot, int cooldown, List<String> description
         }
         if (cooldown > 0) {
             lore.add("&8Cooldown: " + cooldown + "s");
+        }
+        if (set != null) {
+            String name = Character.toUpperCase(set.charAt(0)) + set.substring(1).replace('_', ' ');
+            lore.add("&6Set: &f" + name + " &8(each piece 1/4, all 4 pieces 5/4)");
         }
         return lore;
     }
