@@ -1,5 +1,10 @@
 {
   "layers": {
+    "humanoid": [
+      {
+        "texture": "customcraft:thick_hide"
+      }
+    ],
     "humanoid_leggings": [
       {
         "texture": "customcraft:thick_hide"

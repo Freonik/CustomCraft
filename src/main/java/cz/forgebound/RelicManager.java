@@ -97,7 +97,7 @@ public final class RelicManager implements Listener {
     /** true while Thick Hide itself deals the last bit of grey damage */
     private boolean draining;
     /** Soul Vessel Mask: player -> soul (0-99), focus progress in ticks, last position */
-    private final Map<UUID, Integer> soul = new HashMap<>();
+    private final Map<UUID, Double> soul = new HashMap<>();
     private final Map<UUID, Integer> focus = new HashMap<>();
     private final Map<UUID, Location> focusAnchor = new HashMap<>();
     /** Stitchguard: parry window end, last raise, shell hits left, shell broken until */
@@ -172,24 +172,53 @@ public final class RelicManager implements Listener {
 
     /**
      * Set relics: each piece gives 1/4 of the effect, all four together 5/4 (relic-settings.set-piece / set-full).
+     * A set has the effects of all its pieces (Pale Seraph = Soul Vessel + Angel's Wings), so every worn piece of the
+     * set counts toward each of them; the numbers come from the set's piece of that type.
      * A relic without a set works fully on its own.
      */
     private SetWear setWear(Player player, Relic.Type type) {
-        ItemManager.Entry first = null;
-        int count = 0;
-        boolean set = false;
+        ItemManager.Entry plain = null;
+        Map<String, Integer> counts = new HashMap<>();
         for (Relic.Slot slot : Relic.Slot.values()) {
             ItemManager.Entry entry = items.relicOf(player.getInventory().getItem(slot.equipment));
-            if (entry != null && entry.relic.type() == type && entry.relic.slot() == slot) {
-                count++;
-                first = first == null ? entry : first;
-                set |= entry.relic.set() != null;
+            if (entry == null || entry.relic.slot() != slot) {
+                continue;
+            }
+            if (entry.relic.set() != null) {
+                counts.merge(entry.relic.set(), 1, Integer::sum);
+            } else if (entry.relic.type() == type && plain == null) {
+                plain = entry;
             }
         }
-        if (first == null) {
+        SetWear best = null;
+        for (Map.Entry<String, Integer> e : counts.entrySet()) {
+            ItemManager.Entry provider = provider(e.getKey(), type);
+            if (provider != null && (best == null || e.getValue() > best.count())) {
+                best = new SetWear(provider, e.getValue(), setFactor(e.getValue()));
+            }
+        }
+        if (best != null) {
+            return best;
+        }
+        return plain == null ? null : new SetWear(plain, 1, 1.0);
+    }
+
+    /** The piece of this set that has the effect of this type, or null. */
+    private ItemManager.Entry provider(String set, Relic.Type type) {
+        if (type == Relic.Type.SET) {
             return null;
         }
-        return new SetWear(first, count, set ? setFactor(count) : 1.0);
+        for (ItemManager.Entry e : items.all(ItemManager.Kind.RELIC)) {
+            if (e.relic != null && e.relic.type() == type && set.equals(e.relic.set())) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    /** Does this relic take part in the effect of this type (its own type, or one its set has)? */
+    private boolean partOf(ItemManager.Entry entry, Relic.Type type) {
+        return entry.relic.type() == type || (entry.relic.set() != null && provider(entry.relic.set(), type) != null);
     }
 
     double setFactor(int pieces) {
@@ -201,10 +230,6 @@ public final class RelicManager implements Listener {
     /** 1 piece = piece, 2 = 2x piece ..., 4 = full. */
     static double factor(int pieces, double piece, double full) {
         return pieces <= 0 ? 0 : pieces >= 4 ? full : pieces * piece;
-    }
-
-    private ItemStack stackOf(Player player, ItemManager.Entry entry) {
-        return player.getInventory().getItem(entry.relic.slot().equipment);
     }
 
     /** Remaining cooldown of the relic item in ms. */
@@ -227,6 +252,37 @@ public final class RelicManager implements Listener {
                 System.currentTimeMillis() + entry.relic.cooldown() * 1000L);
         stack.setItemMeta(meta);
         player.getInventory().setItem(slot, stack);
+    }
+
+    /** Set relics share one cooldown: the longest one left on any worn piece of that type. */
+    private long setCooldownLeft(Player player, Relic.Type type) {
+        long left = 0;
+        for (Relic.Slot slot : Relic.Slot.values()) {
+            ItemStack stack = player.getInventory().getItem(slot.equipment);
+            ItemManager.Entry entry = items.relicOf(stack);
+            if (entry != null && entry.relic.slot() == slot && partOf(entry, type)) {
+                left = Math.max(left, cooldownLeft(stack));
+            }
+        }
+        return left;
+    }
+
+    /** Starts the cooldown on every worn piece of that type (seconds). */
+    private void startSetCooldown(Player player, Relic.Type type, double seconds) {
+        if (seconds <= 0 || player.hasPermission("forgebound.nocooldown")) {
+            return;
+        }
+        long ready = System.currentTimeMillis() + (long) (seconds * 1000);
+        for (Relic.Slot slot : Relic.Slot.values()) {
+            ItemStack stack = player.getInventory().getItem(slot.equipment);
+            ItemManager.Entry entry = items.relicOf(stack);
+            if (entry != null && entry.relic.slot() == slot && partOf(entry, type)) {
+                ItemMeta meta = stack.getItemMeta();
+                meta.getPersistentDataContainer().set(readyKey, PersistentDataType.LONG, ready);
+                stack.setItemMeta(meta);
+                player.getInventory().setItem(slot.equipment, stack);
+            }
+        }
     }
 
     private boolean valid(Player source, Entity entity) {
@@ -263,71 +319,35 @@ public final class RelicManager implements Listener {
 
     /** Action bar part for the player's relics (cooldowns, Heartsteel stacks). Empty if none. */
     public String hud(Player player) {
-        StringBuilder bar = new StringBuilder();
-        java.util.Set<Relic.Type> shownSets = java.util.EnumSet.noneOf(Relic.Type.class);
+        // which effects the worn relics give (a set piece gives all of its set's effects), in slot order
+        java.util.Set<Relic.Type> types = new java.util.LinkedHashSet<>();
+        ItemStack hourglass = null;
         for (Relic.Slot slot : Relic.Slot.values()) {
             ItemStack stack = player.getInventory().getItem(slot.equipment);
             ItemManager.Entry entry = items.relicOf(stack);
             if (entry == null || entry.relic.slot() != slot) {
                 continue;
             }
-            String part = null;
-            switch (entry.relic.type()) {
-                case STASIS, REVIVE -> {
-                    long left = cooldownLeft(stack);
-                    String name = entry.relic.type() == Relic.Type.STASIS ? "&6⧗" : "&f✦";
-                    part = name + " " + (left <= 0 ? "&a✔" : "&c" + seconds(left));
-                }
-                case HEARTSTEEL -> {
-                    migrateHeartsteel(stack, entry);
-                    if (shownSets.add(Relic.Type.HEARTSTEEL)) {
-                        double total = 0;
-                        for (Relic.Slot s2 : Relic.Slot.values()) {
-                            ItemStack st = player.getInventory().getItem(s2.equipment);
-                            ItemManager.Entry e2 = items.relicOf(st);
-                            if (e2 != null && e2.relic.type() == Relic.Type.HEARTSTEEL && e2.relic.slot() == s2) {
-                                total += heartBonus(st);
-                            }
-                        }
-                        SetWear w = setWear(player, Relic.Type.HEARTSTEEL);
-                        part = "&c❤ &f+" + trim(total) + setLabel(w);
-                    }
-                }
-                case THORNS -> {
-                    if (shownSets.add(Relic.Type.THORNS)) {
-                        SetWear w = setWear(player, Relic.Type.THORNS);
-                        String label = setLabel(w);
-                        part = label.isEmpty() ? null : "&2✹" + label;
-                    }
-                }
-                case SOUL_VESSEL -> {
-                    int cost = Math.max(1, entry.relic.params().i("focus-cost", 33));
-                    int max = Math.max(cost, entry.relic.params().i("max-soul", 99));
-                    int have = soulOf(player);
-                    StringBuilder vessel = new StringBuilder("&f◉ ");
-                    for (int i = 0; i < max / cost; i++) {
-                        vessel.append(have >= (i + 1) * cost ? "&f◆" : have > i * cost ? "&7◈" : "&8◇");
-                    }
-                    if (focus.containsKey(player.getUniqueId())) {
-                        vessel.append(" &bfocusing...");
-                    }
-                    part = vessel.toString();
-                }
-                case STITCHGUARD -> {
-                    int max = Math.max(1, entry.relic.params().i("shell-hits", 3));
-                    int left = shellOf(player, entry.relic.params());
-                    Long broken = shellBroken.get(player.getUniqueId());
-                    part = "&e⛉ " + (left > 0 ? "&f" + "◆".repeat(left) + "&8" + "◇".repeat(Math.max(0, max - left))
-                            : "&c" + seconds(broken == null ? 0 : broken - System.currentTimeMillis()));
-                }
-                case THICK_HIDE -> {
-                    long left = cooldownLeft(stack);
-                    double pool = grey.getOrDefault(player.getUniqueId(), 0.0);
-                    part = "&7⛨ " + (left <= 0 ? "&a✔" : "&c" + seconds(left))
-                            + (pool > 0.05 ? " &8(&7-" + trim(Math.ceil(pool) / 2) + " ❤&8)" : "");
-                }
-                default -> { }
+            if (entry.relic.type() == Relic.Type.HEARTSTEEL) {
+                migrateHeartsteel(stack, entry);
             }
+            if (entry.relic.type() == Relic.Type.STASIS) {
+                hourglass = stack;
+            }
+            if (entry.relic.type() != Relic.Type.SET) {
+                types.add(entry.relic.type());
+            }
+            if (entry.relic.set() != null) {
+                for (Relic.Type t : Relic.Type.values()) {
+                    if (t != Relic.Type.SET && provider(entry.relic.set(), t) != null) {
+                        types.add(t);
+                    }
+                }
+            }
+        }
+        StringBuilder bar = new StringBuilder();
+        for (Relic.Type type : types) {
+            String part = hudPart(player, type, hourglass);
             if (part != null) {
                 if (!bar.isEmpty()) {
                     bar.append("  &8┃  ");
@@ -336,6 +356,70 @@ public final class RelicManager implements Listener {
             }
         }
         return bar.toString();
+    }
+
+    private String hudPart(Player player, Relic.Type type, ItemStack hourglass) {
+        SetWear w = setWear(player, type);
+        if (w == null && type != Relic.Type.STASIS) {
+            return null;
+        }
+        switch (type) {
+            case STASIS -> {
+                long left = cooldownLeft(hourglass);
+                return "&6⧗ " + (left <= 0 ? "&a✔" : "&c" + seconds(left));
+            }
+            case REVIVE -> {
+                long left = setCooldownLeft(player, Relic.Type.REVIVE);
+                return "&f✦ " + (left <= 0 ? "&a✔" : "&c" + seconds(left)) + setLabel(w);
+            }
+            case HEARTSTEEL -> {
+                double total = 0;
+                for (Relic.Slot s2 : Relic.Slot.values()) {
+                    ItemStack st = player.getInventory().getItem(s2.equipment);
+                    ItemManager.Entry e2 = items.relicOf(st);
+                    if (e2 != null && e2.relic.type() == Relic.Type.HEARTSTEEL && e2.relic.slot() == s2) {
+                        total += heartBonus(st);
+                    }
+                }
+                return "&c❤ &f+" + trim(total) + setLabel(w);
+            }
+            case THORNS -> {
+                String label = setLabel(w);
+                return label.isEmpty() ? null : "&2✹" + label;
+            }
+            case SOUL_VESSEL -> {
+                WeaponAbilities.Params p = w.entry().relic.params();
+                int cost = Math.max(1, p.i("focus-cost", 33));
+                int max = Math.max(cost, p.i("max-soul", 99));
+                int have = soulOf(player);
+                StringBuilder vessel = new StringBuilder("&f◉ ");
+                for (int i = 0; i < max / cost; i++) {
+                    vessel.append(have >= (i + 1) * cost ? "&f◆" : have > i * cost ? "&7◈" : "&8◇");
+                }
+                vessel.append(setLabel(w));
+                if (focus.containsKey(player.getUniqueId())) {
+                    vessel.append(" &bfocusing...");
+                }
+                return vessel.toString();
+            }
+            case STITCHGUARD -> {
+                WeaponAbilities.Params p = w.entry().relic.params();
+                int max = Math.max(1, p.i("shell-hits", 3));
+                int left = shellOf(player, p);
+                Long broken = shellBroken.get(player.getUniqueId());
+                return "&e⛉ " + (left > 0 ? "&f" + "◆".repeat(left) + "&8" + "◇".repeat(Math.max(0, max - left))
+                        : "&c" + seconds(broken == null ? 0 : broken - System.currentTimeMillis()));
+            }
+            case THICK_HIDE -> {
+                long left = setCooldownLeft(player, Relic.Type.THICK_HIDE);
+                double pool = grey.getOrDefault(player.getUniqueId(), 0.0);
+                return "&7⛨ " + (left <= 0 ? "&a✔" : "&c" + seconds(left)) + setLabel(w)
+                        + (pool > 0.05 ? " &8(&7-" + trim(Math.ceil(pool) / 2) + " ❤&8)" : "");
+            }
+            default -> {
+                return null;
+            }
+        }
     }
 
     private static String trim(double v) {
@@ -372,7 +456,7 @@ public final class RelicManager implements Listener {
         org.bukkit.util.Vector right = new org.bukkit.util.Vector(-Math.cos(yaw), 0, -Math.sin(yaw));
 
         // Angel's Wings: little feather wings flap at the ankles while sprinting or in the air
-        if (ticks % 2 == 0 && (player.isSprinting() || !player.isOnGround()) && equipped(player, Relic.Type.REVIVE) != null) {
+        if (ticks % 2 == 0 && (player.isSprinting() || !player.isOnGround()) && setWear(player, Relic.Type.REVIVE) != null) {
             double flap = 0.08 * Math.sin(ticks * 0.9);
             for (int side = -1; side <= 1; side += 2) {
                 Location ankle = loc.clone().add(right.clone().multiply(0.17 * side)).add(0, 0.2, 0)
@@ -522,12 +606,14 @@ public final class RelicManager implements Listener {
         if (!event.isCancelled() || !(event.getEntity() instanceof Player player)) {
             return; // a totem already saves them
         }
-        ItemManager.Entry entry = equipped(player, Relic.Type.REVIVE);
-        if (entry == null || cooldownLeft(stackOf(player, entry)) > 0) {
+        SetWear set = setWear(player, Relic.Type.REVIVE);
+        if (set == null || setCooldownLeft(player, Relic.Type.REVIVE) > 0) {
             return;
         }
+        ItemManager.Entry entry = set.entry();
         event.setCancelled(false);
-        startCooldown(player, entry);
+        // set: fewer pieces = a longer cooldown (1 piece 4x, the full set 0.8x)
+        startSetCooldown(player, Relic.Type.REVIVE, entry.relic.cooldown() / Math.max(0.05, set.factor()));
         plugin.award(player, "saved_by_an_angel");
         double heal = entry.relic.params().d("heal-percent", 50) / 100.0;
         int protect = entry.relic.params().i("protection-seconds", 3);
@@ -583,9 +669,10 @@ public final class RelicManager implements Listener {
         if (event.getCause() != EntityDamageEvent.DamageCause.FALL || !(event.getEntity() instanceof Player player)) {
             return;
         }
-        ItemManager.Entry entry = equipped(player, Relic.Type.REVIVE);
-        if (entry != null) {
-            event.setDamage(event.getDamage() * (1 - entry.relic.params().d("fall-reduction", 50) / 100.0));
+        SetWear set = setWear(player, Relic.Type.REVIVE);
+        if (set != null) {
+            double cut = Math.min(95, set.entry().relic.params().d("fall-reduction", 50) * set.factor());
+            event.setDamage(event.getDamage() * (1 - cut / 100.0));
         }
     }
 
@@ -772,18 +859,18 @@ public final class RelicManager implements Listener {
     // ================================================================ SOUL VESSEL MASK
 
     private int soulOf(Player player) {
-        return soul.getOrDefault(player.getUniqueId(), 0);
+        return (int) Math.floor(soul.getOrDefault(player.getUniqueId(), 0.0) + 1.0E-6);
     }
 
     /** Called every 2 ticks: sneaking still with enough soul slowly focuses it into health. */
     private void focusTick(Player player) {
         UUID id = player.getUniqueId();
-        ItemManager.Entry mask = equipped(player, Relic.Type.SOUL_VESSEL);
-        if (mask == null) {
+        SetWear vessel = setWear(player, Relic.Type.SOUL_VESSEL);
+        if (vessel == null) {
             focus.remove(id);
             return;
         }
-        WeaponAbilities.Params p = mask.relic.params();
+        WeaponAbilities.Params p = vessel.entry().relic.params();
         int cost = Math.max(1, p.i("focus-cost", 33));
         Location here = player.getLocation();
         Location anchor = focusAnchor.get(id);
@@ -810,7 +897,7 @@ public final class RelicManager implements Listener {
         }
         if (ticks >= need) {
             focus.remove(id);
-            soul.put(id, soulOf(player) - cost);
+            soul.put(id, Math.max(0, soul.getOrDefault(id, 0.0) - cost));
             double max = maxHealth(player);
             player.setHealth(Math.min(max, player.getHealth() + adjustHeal(player, p.d("focus-heal", 6))));
             world.spawnParticle(Particle.DUST, chest, 25, 0.35, 0.5, 0.35, 0, SOUL_BIG);
@@ -822,15 +909,16 @@ public final class RelicManager implements Listener {
 
     /** Charged hits fill the Soul Vessel. */
     private void gainSoul(Player player) {
-        ItemManager.Entry mask = equipped(player, Relic.Type.SOUL_VESSEL);
-        if (mask == null) {
+        SetWear set = setWear(player, Relic.Type.SOUL_VESSEL);
+        if (set == null) {
             return;
         }
-        WeaponAbilities.Params p = mask.relic.params();
+        WeaponAbilities.Params p = set.entry().relic.params();
         int max = Math.max(1, p.i("max-soul", 99));
         int before = soulOf(player);
-        int now = Math.min(max, before + p.i("soul-per-hit", 11));
-        soul.put(player.getUniqueId(), now);
+        soul.put(player.getUniqueId(), Math.min(max,
+                soul.getOrDefault(player.getUniqueId(), 0.0) + p.d("soul-per-hit", 11) * set.factor()));
+        int now = soulOf(player);
         int cost = Math.max(1, p.i("focus-cost", 33));
         if (now / cost > before / cost) {
             player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_CHIME, 0.8f, 1.8f);
@@ -1022,7 +1110,7 @@ public final class RelicManager implements Listener {
                 || inStasis(player)) {
             return;
         }
-        ItemManager.Entry hide = equipped(player, Relic.Type.THICK_HIDE);
+        SetWear hide = setWear(player, Relic.Type.THICK_HIDE);
         if (hide == null) {
             return;
         }
@@ -1030,10 +1118,10 @@ public final class RelicManager implements Listener {
         if (full <= 0.05) {
             return;
         }
-        WeaponAbilities.Params p = hide.relic.params();
-        double cap = maxHealth(player) * p.d("max-grey-percent", 50) / 100.0;
+        WeaponAbilities.Params p = hide.entry().relic.params();
+        double cap = maxHealth(player) * Math.min(90, p.d("max-grey-percent", 50) * hide.factor()) / 100.0;
         double pool = grey.getOrDefault(player.getUniqueId(), 0.0);
-        double defer = Math.min(full * p.d("grey-percent", 40) / 100.0, Math.max(0, cap - pool));
+        double defer = Math.min(full * Math.min(90, p.d("grey-percent", 40) * hide.factor()) / 100.0, Math.max(0, cap - pool));
         if (defer <= 0.05) {
             return;
         }
@@ -1110,14 +1198,14 @@ public final class RelicManager implements Listener {
         if (pool <= 0.05 || inStasis(player)) {
             return;
         }
-        long left = cooldownLeft(stackOf(player, hide));
+        long left = setCooldownLeft(player, Relic.Type.THICK_HIDE);
         if (left > 0) {
             player.sendActionBar(plugin.raw("relic-cooldown", "&c{relic} &7is recharging: &c{time}",
                     "relic", ItemManager.nameOf(hide.item), "time", seconds(left)));
             return;
         }
         grey.remove(player.getUniqueId());
-        startCooldown(player, hide);
+        startSetCooldown(player, Relic.Type.THICK_HIDE, hide.relic.cooldown());
         int resist = hide.relic.params().i("resistance-ticks", 20);
         if (resist > 0) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, resist, 1, false, true, true));

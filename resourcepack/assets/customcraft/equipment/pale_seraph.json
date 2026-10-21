@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "customcraft:pale_seraph"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "customcraft:pale_seraph"
+      }
+    ]
+  }
+}

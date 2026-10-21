@@ -12,7 +12,7 @@ import java.util.Locale;
  *
  * <pre>
  * relic:
- *   type: STASIS        # STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD
+ *   type: STASIS        # STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD, SET
  *   slot: OFFHAND       # OFFHAND, HEAD, CHEST, LEGS, FEET - the relic only works in this slot
  *   cooldown: 120
  *   set: heartsteel     # optional: one piece of a 4-piece set (each piece 1/4 of the effect, all 4 = 5/4)
@@ -23,7 +23,8 @@ import java.util.Locale;
 public record Relic(Type type, Slot slot, int cooldown, List<String> description, WeaponAbilities.Params params,
                     String set) {
 
-    public enum Type { STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD }
+    /** SET: a set piece without an effect of its own - it only counts toward its set (whose other pieces have the effects). */
+    public enum Type { STASIS, REVIVE, THORNS, HEARTSTEEL, THICK_HIDE, SOUL_VESSEL, STITCHGUARD, SET }
 
     public enum Slot {
         OFFHAND(EquipmentSlot.OFF_HAND, EquipmentSlotGroup.OFFHAND, "Off-hand"),
@@ -84,7 +85,12 @@ public record Relic(Type type, Slot slot, int cooldown, List<String> description
             lore.add("&8Cooldown: " + cooldown + "s");
         }
         if (set != null) {
-            String name = Character.toUpperCase(set.charAt(0)) + set.substring(1).replace('_', ' ');
+            StringBuilder name = new StringBuilder();
+            for (String word : set.split("_")) {
+                if (!word.isEmpty()) {
+                    name.append(name.isEmpty() ? "" : " ").append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+                }
+            }
             lore.add("&6Set: &f" + name + " &8(each piece 1/4, all 4 pieces 5/4)");
         }
         return lore;

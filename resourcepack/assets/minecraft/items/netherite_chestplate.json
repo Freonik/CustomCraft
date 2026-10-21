@@ -16,6 +16,20 @@
           "type": "minecraft:model",
           "model": "customcraft:item/heartsteel_core"
         }
+      },
+      {
+        "threshold": 1216,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/hide_mantle"
+        }
+      },
+      {
+        "threshold": 1218,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/seraph_mantle"
+        }
       }
     ],
     "fallback": {

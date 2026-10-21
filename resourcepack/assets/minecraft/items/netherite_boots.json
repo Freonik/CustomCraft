@@ -23,6 +23,13 @@
           "type": "minecraft:model",
           "model": "customcraft:item/thorn_treads"
         }
+      },
+      {
+        "threshold": 1217,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/hide_stompers"
+        }
       }
     ],
     "fallback": {

@@ -23,6 +23,13 @@
           "type": "minecraft:model",
           "model": "customcraft:item/thorn_crown"
         }
+      },
+      {
+        "threshold": 1215,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/hide_cowl"
+        }
       }
     ],
     "fallback": {
