@@ -6,8 +6,26 @@
       {
         "threshold": 1004,
         "model": {
-          "type": "minecraft:model",
-          "model": "customcraft:item/soulbinder"
+          "type": "minecraft:select",
+          "property": "minecraft:display_context",
+          "cases": [
+            {
+              "when": [
+                "gui",
+                "ground",
+                "fixed",
+                "on_shelf"
+              ],
+              "model": {
+                "type": "minecraft:model",
+                "model": "customcraft:item/soulbinder"
+              }
+            }
+          ],
+          "fallback": {
+            "type": "minecraft:model",
+            "model": "customcraft:item/soulbinder_3d"
+          }
         }
       }
     ],

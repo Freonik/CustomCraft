@@ -119,14 +119,14 @@ def in_hand(flat, solid):
             "cases": [{"when": ["gui", "ground", "fixed", "on_shelf"], "model": model(flat)}], "fallback": model(solid)}
 
 wjson(f'{MC}/netherite_sword.json', dispatch([(1001, in_hand("customcraft:item/echo_blade", "customcraft:item/echo_blade_3d")),
-                                              (1007, model("customcraft:item/abyssal_maw")),
-                                              (1009, model("customcraft:item/silk_needle"))], model("minecraft:item/netherite_sword")))
-wjson(f'{MC}/netherite_pickaxe.json', dispatch([(1008, model("customcraft:item/clawline_pick"))], model("minecraft:item/netherite_pickaxe")))
-wjson(f'{MC}/netherite_axe.json', dispatch([(1006, model("customcraft:item/butcher_cleaver")),
-                                            (1011, model("customcraft:item/rimebreaker")),
+                                              (1007, in_hand("customcraft:item/abyssal_maw", "customcraft:item/abyssal_maw_3d")),
+                                              (1009, in_hand("customcraft:item/silk_needle", "customcraft:item/silk_needle_3d"))], model("minecraft:item/netherite_sword")))
+wjson(f'{MC}/netherite_pickaxe.json', dispatch([(1008, in_hand("customcraft:item/clawline_pick", "customcraft:item/clawline_pick_3d"))], model("minecraft:item/netherite_pickaxe")))
+wjson(f'{MC}/netherite_axe.json', dispatch([(1006, in_hand("customcraft:item/butcher_cleaver", "customcraft:item/butcher_cleaver_3d")),
+                                            (1011, in_hand("customcraft:item/rimebreaker", "customcraft:item/rimebreaker_3d")),
                                             (1014, model("customcraft:item/rimebreaker_thrown"))], model("minecraft:item/netherite_axe")))
 # Knightfall (mace)
-wjson(f'{MC}/mace.json', dispatch([(1010, model("customcraft:item/knightfall"))],
+wjson(f'{MC}/mace.json', dispatch([(1010, in_hand("customcraft:item/knightfall", "customcraft:item/knightfall_3d"))],
                                   json.load(open('/home/claude/ref/vanilla/i_mace.json'))['model']))
 # Pinning Repeater: same states as the vanilla crossbow. Vanilla crossbow textures point to the top-left
 # (stock in the bottom-right corner) and the crossbow model's hand rotation expects that, so ours are mirrored.
@@ -167,7 +167,7 @@ wjson(f'{MC}/netherite_spear.json', spear_def)
 wjson(f'{MC}/trident.json', dispatch([(1015, long_weapon('great_sea_trident'))],
                                      json.load(open('/home/claude/ref/vanilla/i_trident.json'))['model']))
 wjson(f'{MC}/diamond_axe.json', dispatch([(1002, in_hand("customcraft:item/graviton_hammer", "customcraft:item/graviton_hammer_3d"))], model("minecraft:item/diamond_axe")))
-wjson(f'{MC}/netherite_hoe.json', dispatch([(1004, model("customcraft:item/soulbinder"))], model("minecraft:item/netherite_hoe")))
+wjson(f'{MC}/netherite_hoe.json', dispatch([(1004, in_hand("customcraft:item/soulbinder", "customcraft:item/soulbinder_3d"))], model("minecraft:item/netherite_hoe")))
 
 def bow_model(prefix):
     return {"type": "minecraft:condition", "property": "minecraft:using_item",
@@ -224,7 +224,7 @@ for item, entries in [('clock', [(1201, model('customcraft:item/stasis_hourglass
                                                 (1204, model('customcraft:item/heartsteel_core')),
                                                 (1216, model('customcraft:item/hide_mantle')),
                                                 (1218, model('customcraft:item/seraph_mantle'))]),
-                      ('iron_sword', [(1205, model('customcraft:item/hydra_edge'))]),
+                      ('iron_sword', [(1205, in_hand("customcraft:item/hydra_edge", "customcraft:item/hydra_edge_3d"))]),
                       ('netherite_leggings', [(1206, model('customcraft:item/thick_hide')),
                                               (1210, model('customcraft:item/heartsteel_greaves')),
                                               (1213, model('customcraft:item/thorn_greaves')),

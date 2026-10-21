@@ -176,11 +176,12 @@ abilities) and its ability cooldowns:
 All abilities use **F** (swap hands) and **Shift + F**. Cooldowns show in the action bar while you hold the weapon.
 On-hit effects need a **charged** hit (no spam-clicking).
 
-The Echo Blade and the Graviton Hammer also have **effects made of display entities** on top of the particles:
-the Graviton Hammer cracks the ground open in a wave when it slams, Gravity Anchor spins a ring of runes on the ground
-with rubble circling it, and Upheaval tears chunks of the ground up with its victims. The Echo Blade's echo is a ghost
-of the blade that hangs next to the target and then cuts through it, Resonance sends out a ring and slashes, and
-Rewind leaves an afterimage of you behind. (`ability-settings.display-effects: false` turns them off.)
+Most abilities also have **effects made of display entities** on top of the particles: the ground cracking open
+in a wave (Graviton Hammer, Clawline Pick's Dive, Great Tide), a spinning ring of runes with rubble circling it
+(Gravity Anchor), ghosts and afterimages (Echo Blade, Valkyrie's Lance, the Trident's Surge, Bloodrush), drawn
+slashes in each weapon's colour, the Soulbinder and the Hydra Edge sweeping a full circle, ice spikes bursting out
+of the ground (Frost Wave) and jaws snapping shut (Devour). Thrown weapons fly as their 3D model.
+(`ability-settings.display-effects: false` turns them off.)
 
 ### <img src="docs/items/echo_blade.png" width="64" alt="" align="center"> Echo Blade (sword)
 | | |
@@ -690,7 +691,7 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/forge update [on\|off\|now]` | `forgebound.admin` | auto-update on/off, or check for a new version now |
 | `/forge scorched` | `forgebound.admin` | where the nearest Scorched Lands are (click to teleport) |
 | `/forge ancient [here\|end\|finish\|cool]` | `forgebound.admin` | list the Ancient Forges (click to teleport), build one where you stand, raise the End forge now, finish running rituals, reset cooldowns |
-| `/forge fx <effect>` | `forgebound.admin` | show an ability effect in front of you (shockwave, ring, field, slash, ghost, afterimage) |
+| `/forge fx <effect>` | `forgebound.admin` | show an ability effect in front of you (shockwave, ring, field, slash, ghost, afterimage, spikes, sweep, jaws, blood/silk/soul/venom/frost slashes) |
 | `/forge stars <player> <1-5>` | `forgebound.admin` | set the stars of the weapon in a player's hand (half steps like 3.5 work) |
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
@@ -762,7 +763,8 @@ Every ability, relic and drop has its own numbers (damage, radius, cooldown, cha
 The plugin works without it, but the pack is what makes it look legendary:
 
 - animated 32×32 textures for all weapons, relics and materials
-- **3D models in the hand** for the Echo Blade and the Graviton Hammer (the inventory keeps the 2D icon, like the spyglass)
+- **3D models in the hand** for every melee legend: Echo Blade, Graviton Hammer, Soulbinder, Hydra Edge, Butcher's Cleaver,
+  Abyssal Maw, Clawline Pick, Silk Needle, Rimebreaker and Knightfall (the inventory keeps the 2D icon, like the spyglass)
 - textures for the ability effects made of display entities (slashes, rings)
 - the Hexbow's own draw animation
 - worn looks for all four armor sets (Heartsteel, Thorn, Thick Hide, Pale Seraph)

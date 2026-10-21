@@ -189,13 +189,18 @@ final class Fx {
 
     /** A slash: a drawn crescent in front of the player that sweeps around and fades out. */
     void slash(Location at, float yaw, float tilt, float size) {
+        slash(at, yaw, tilt, size, "echo");
+    }
+
+    /** kind: echo, blood, silk, soul, venom, frost. */
+    void slash(Location at, float yaw, float tilt, float size, String kind) {
         if (!enabled()) {
             return;
         }
         float face = (float) (Math.PI - Math.toRadians(yaw));
         Quaternionf start = new Quaternionf().rotateY(face - 0.6f).rotateX((float) -Math.PI / 2 + tilt);
         Quaternionf end = new Quaternionf().rotateY(face + 0.6f).rotateX((float) -Math.PI / 2 + tilt);
-        ItemDisplay d = item(at, sprite("echo_slash"), tf(0, 0, 0, start, size * 0.7f), null);
+        ItemDisplay d = item(at, sprite(kind + "_slash"), tf(0, 0, 0, start, size * 0.7f), null);
         animate(d, 1, 3, tf(0, 0, 0, end, size));
         animate(d, 5, 3, tf(0, 0, 0, end, 0.01f));
         removeLater(d, 10);
@@ -349,6 +354,93 @@ final class Fx {
                 t += 10;
             }
         }.runTaskTimer(plugin, 8L, 10L);
+    }
+
+    /** Spikes of a block (ice) bursting out of the ground at a spot, then sinking back. */
+    void spikes(Location at, BlockData data, int count, double spread, float height) {
+        if (!enabled()) {
+            return;
+        }
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        for (int i = 0; i < count; i++) {
+            Location p = at.clone().add((r.nextDouble() - 0.5) * spread * 2, 0, (r.nextDouble() - 0.5) * spread * 2);
+            Block g = ground(p.getWorld(), p.getX(), p.getY(), p.getZ());
+            if (g == null) {
+                continue;
+            }
+            Location base = new Location(p.getWorld(), p.getX(), g.getY() + 1, p.getZ());
+            float w = (float) (0.3 + r.nextDouble() * 0.25);
+            float h = height * (float) (0.6 + r.nextDouble() * 0.6);
+            Quaternionf lean = new Quaternionf().rotateY((float) (r.nextDouble() * Math.PI))
+                    .rotateX((float) (r.nextDouble() - 0.5) * 0.6f);
+            BlockDisplay d = block(base, data, new Transformation(new Vector3f(-w / 2, -h, -w / 2), lean,
+                    new Vector3f(w, h, w), new Quaternionf()));
+            animate(d, 1, 2, new Transformation(new Vector3f(-w / 2, 0, -w / 2), lean, new Vector3f(w, h, w), new Quaternionf()));
+            animate(d, 22 + r.nextInt(8), 6, new Transformation(new Vector3f(-w / 2, -h, -w / 2), lean,
+                    new Vector3f(w, h, w), new Quaternionf()));
+            removeLater(d, 38);
+        }
+    }
+
+    /** The weapon itself sweeps once around the player (a scythe reaping in a full circle). */
+    void sweep(Player player, ItemStack weapon, double radius, int ticks) {
+        if (!enabled() || weapon == null || weapon.getType().isAir()) {
+            return;
+        }
+        Location center = player.getLocation().add(0, 1.0, 0);
+        float start = (float) Math.toRadians(-player.getLocation().getYaw());
+        ItemDisplay d = item(center, weapon.clone(), tf((float) radius, 0, 0,
+                new Quaternionf().rotateY(start).rotateZ((float) -Math.PI / 4), 1.6f), Color.fromRGB(120, 220, 240));
+        d.setTeleportDuration(1);
+        new BukkitRunnable() {
+            int t;
+
+            @Override
+            public void run() {
+                t++;
+                if (!d.isValid() || t > ticks) {
+                    if (d.isValid()) {
+                        d.remove();
+                    }
+                    alive.remove(d);
+                    cancel();
+                    return;
+                }
+                float a = start + (float) (2 * Math.PI * t / ticks);
+                // the blade lies flat and points outward, turning with the sweep
+                d.setInterpolationDelay(0);
+                d.setInterpolationDuration(1);
+                Vector3f off = new Vector3f((float) Math.cos(a) * (float) radius, 0, (float) -Math.sin(a) * (float) radius);
+                d.setTransformation(new Transformation(off, new Quaternionf().rotateY(a).rotateX((float) Math.PI / 2)
+                        .rotateZ((float) -Math.PI / 4), new Vector3f(1.6f), new Quaternionf()));
+                d.teleport(player.getLocation().add(0, 1.0, 0));
+            }
+        }.runTaskTimer(plugin, 1L, 1L);
+    }
+
+    /** Rows of fangs close on a target from above and below (Devour). */
+    void jaws(LivingEntity target) {
+        if (!enabled()) {
+            return;
+        }
+        Location c = target.getLocation().add(0, target.getHeight() / 2, 0);
+        BlockData bone = Material.BONE_BLOCK.createBlockData();
+        double h = target.getHeight() / 2 + 0.7;
+        for (int row = -1; row <= 1; row += 2) {
+            for (int i = 0; i < 6; i++) {
+                double a = Math.PI * 2 * i / 6;
+                float s = 0.28f;
+                Location at = c.clone().add(Math.cos(a) * 0.7, 0, Math.sin(a) * 0.7);
+                Quaternionf point = new Quaternionf().rotateX(row > 0 ? (float) Math.PI : 0);
+                BlockDisplay d = block(at, bone, new Transformation(new Vector3f(-s / 2, (float) (row * h), -s / 2), point,
+                        new Vector3f(s, 0.7f, s), new Quaternionf()));
+                animate(d, 1, 3, new Transformation(new Vector3f(-s / 2, (float) (row * 0.25), -s / 2), point,
+                        new Vector3f(s, 0.7f, s), new Quaternionf()));
+                animate(d, 7, 4, new Transformation(new Vector3f(-s / 2, (float) (row * 0.25), -s / 2), point,
+                        new Vector3f(0.01f, 0.01f, 0.01f), new Quaternionf()));
+                removeLater(d, 13);
+            }
+        }
     }
 
     /** A chunk of the ground that rises under a lifted enemy and stays with them (Upheaval). */

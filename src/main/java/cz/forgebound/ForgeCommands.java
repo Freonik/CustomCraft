@@ -184,7 +184,8 @@ final class ForgeCommands {
                 })));
         root.then(Commands.literal("fx").requires(ForgeCommands::admin)
                 .then(Commands.argument("effect", StringArgumentType.word())
-                        .suggests(suggest(() -> List.of("shockwave", "ring", "field", "slash", "ghost", "afterimage")))
+                        .suggests(suggest(() -> List.of("shockwave", "ring", "field", "slash", "ghost", "afterimage", "spikes", "sweep", "jaws",
+                                "blood", "silk", "soul", "venom", "frost")))
                         .executes(ctx -> player(ctx, p -> plugin.abilities()
                                 .previewFx(p, StringArgumentType.getString(ctx, "effect"))))));
         root.then(Commands.literal("stars").requires(ForgeCommands::admin)
