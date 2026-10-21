@@ -217,6 +217,9 @@ public final class RitualManager implements Listener {
         r.stage = stageIndex(0);
         spawnVisuals(r, weapon);
         save();
+        plugin.getLogger().info("[Rituals] " + player.getName() + " started forging " + weapon.ref() + " at "
+                + table.getWorld().getName() + " " + table.getX() + " " + table.getY() + " " + table.getZ()
+                + ", ready in " + format(duration));
 
         Bukkit.broadcast(plugin.msg("ritual-started",
                 "&5⚒ &d{player} &7started forging {item}&7{where}&7! Ready in &d{time}&7.",
@@ -271,7 +274,7 @@ public final class RitualManager implements Listener {
         for (Player online : Bukkit.getOnlinePlayers()) {
             online.playSound(online.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1f);
         }
-        plugin.getLogger().info("Ritual finished: " + r.weapon + " by " + r.name + " (item " + drop.getUniqueId() + ")");
+        plugin.getLogger().info("[Rituals] " + r.weapon + " was forged by " + r.name + " (item " + drop.getUniqueId() + ")");
         if (plugin.advancements() != null) {
             plugin.advancements().awardLater(r.player, "forgemaster");
         }
@@ -538,6 +541,8 @@ public final class RitualManager implements Listener {
         save();
         Bukkit.broadcast(plugin.msg("weapon-destroyed", "&7{item} &7was destroyed and can be forged again!",
                 "item", ItemManager.nameOf(weapon.item)));
+        plugin.getLogger().info("[Rituals] " + weapon.ref() + " was destroyed (" + cause.name().toLowerCase(Locale.ROOT)
+                + ") and can be forged again");
     }
 
     // ---------------------------------------------------------------- helpers

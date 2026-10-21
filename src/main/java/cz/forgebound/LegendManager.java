@@ -90,6 +90,9 @@ public final class LegendManager implements Listener {
                     saveStats();
                     saveLegends();
                 }
+                if (ticks == 2400 || ticks % 216_000 == 0) {     // 2 minutes after start, then every 3 hours
+                    logHolders();
+                }
             }
         }.runTaskTimer(plugin, 60L, 40L);
     }
@@ -184,6 +187,9 @@ public final class LegendManager implements Listener {
             legends.set("holder." + key(entry.ref()) + ".uuid", player.getUniqueId().toString());
             legends.set("holder." + key(entry.ref()) + ".name", player.getName());
             legends.set("holder." + key(entry.ref()) + ".seen", now);
+            if (entry.kind == ItemManager.Kind.WEAPON && plugin.stars() != null && plugin.stars().enabled()) {
+                legends.set("holder." + key(entry.ref()) + ".stars", plugin.stars().halvesOf(contents[i]));
+            }
         }
         // time with the legend in use: weapon in the main hand, relic in its slot
         ItemManager.Entry hand = items.weaponOf(player.getInventory().getItemInMainHand());
@@ -196,6 +202,42 @@ public final class LegendManager implements Listener {
                 add(player, relic.ref(), "seconds", 2);
             }
         }
+    }
+
+    /**
+     * One console line with who holds which legend (for the logs / the morning check):
+     * "[Legends] holders: weapon:echo_blade=Steve (3/5, online), ... | forging: ... | free: ...".
+     */
+    public void logHolders() {
+        List<String> held = new ArrayList<>();
+        List<String> forging = new ArrayList<>();
+        List<String> free = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        for (ItemManager.Entry entry : allLegends()) {
+            ForgeData.Claim claim = plugin.rituals().claim(entry);
+            if (claim == null) {
+                free.add(entry.ref());
+                continue;
+            }
+            if (claim.state() == ForgeData.State.RITUAL) {
+                forging.add(entry.ref() + " (" + claim.name() + ")");
+                continue;
+            }
+            String base = "holder." + key(entry.ref());
+            String name = legends.getString(base + ".name", claim.name());
+            String uuid = legends.getString(base + ".uuid", claim.player().toString());
+            Player online = Bukkit.getPlayer(UUID.fromString(uuid));
+            StringBuilder sb = new StringBuilder(entry.ref()).append('=').append(name).append(" (");
+            if (legends.isSet(base + ".stars")) {
+                sb.append(Stars.starCount(legends.getInt(base + ".stars"))).append("/5, ");
+            }
+            long seen = legends.getLong(base + ".seen", claim.time());
+            sb.append(online != null ? "online" : "seen " + RitualManager.format(Math.max(0, now - seen)) + " ago").append(')');
+            held.add(sb.toString());
+        }
+        plugin.getLogger().info("[Legends] holders: " + (held.isEmpty() ? "nobody" : String.join(", ", held))
+                + " | forging: " + (forging.isEmpty() ? "-" : String.join(", ", forging))
+                + " | free: " + (free.isEmpty() ? "-" : String.join(", ", free)));
     }
 
     /** Legends whose holder hasn't been online for a long time go back to the forge. */
@@ -228,7 +270,7 @@ public final class LegendManager implements Listener {
             Bukkit.broadcast(plugin.msg("legend-abandoned",
                     "&7{item} &7was abandoned for {days} days and returned to the forge. It can be forged again!",
                     "item", ItemManager.nameOf(entry.item), "days", String.valueOf(days)));
-            plugin.getLogger().info(entry.ref() + " returned to the forge (holder " + holder.getName() + " inactive)");
+            plugin.getLogger().info("[Rituals] " + entry.ref() + " returned to the forge (holder " + holder.getName() + " inactive)");
         }
     }
 
