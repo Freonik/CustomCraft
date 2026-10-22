@@ -548,7 +548,7 @@ public final class GhostManager implements Listener {
         if (attackCooldown > 0) {
             attackCooldown--;
         }
-        double reach = cfg("attack-reach", 2.5);
+        double reach = cfg("attack-reach", 2.0);
         if (inReach(me, victim.getLocation(), reach) && attackCooldown == 0 && body.hasLineOfSight(victim)) {
             attackCooldown = 12;
             body.swingMainHand();

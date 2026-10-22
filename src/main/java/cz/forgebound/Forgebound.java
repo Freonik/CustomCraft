@@ -437,6 +437,19 @@ public final class Forgebound extends JavaPlugin implements Listener {
                 seenChanged |= seen.add(path);
             }
         }
+        // changed defaults: a value that was never touched (still the old default) moves to the new one, once
+        String[][] changedDefaults = {{"doppelganger.attack-reach", "2.5", "2.0"}};
+        for (String[] c : changedDefaults) {
+            String mark = "changed:" + c[0] + "=" + c[2];
+            if (seen.contains(mark)) {
+                continue;
+            }
+            if (getConfig().isSet(c[0]) && Math.abs(getConfig().getDouble(c[0]) - Double.parseDouble(c[1])) < 1e-9) {
+                getConfig().set(c[0], Double.parseDouble(c[2]));
+                added.add(c[0] + " (" + c[1] + " -> " + c[2] + ")");
+            }
+            seenChanged |= seen.add(mark);
+        }
         if (!added.isEmpty()) {
             saveConfig();
             getLogger().info("Added new default config entries: " + String.join(", ", added));
