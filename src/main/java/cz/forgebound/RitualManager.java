@@ -298,6 +298,9 @@ public final class RitualManager implements Listener {
         }
         boolean had = data.release(weapon) != null || r != null;
         save();
+        if (plugin.legends() != null) {
+            plugin.legends().forgetHolder(weapon);
+        }
         return had;
     }
 
@@ -539,6 +542,9 @@ public final class RitualManager implements Listener {
         }
         data.release(weapon.ref());
         save();
+        if (plugin.legends() != null) {
+            plugin.legends().forgetHolder(weapon.ref());
+        }
         Bukkit.broadcast(plugin.msg("weapon-destroyed", "&7{item} &7was destroyed and can be forged again!",
                 "item", ItemManager.nameOf(weapon.item)));
         plugin.getLogger().info("[Rituals] " + weapon.ref() + " was destroyed (" + cause.name().toLowerCase(Locale.ROOT)

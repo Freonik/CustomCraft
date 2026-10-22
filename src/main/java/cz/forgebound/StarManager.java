@@ -840,6 +840,9 @@ public final class StarManager implements Listener {
     private void tick() {
         ticks++;
         drainFound();
+        if (ticks % 4 == 0) {
+            buildMissing();
+        }
         long now = System.currentTimeMillis();
         for (Running r : new ArrayList<>(running.values())) {
             if (now >= r.endsAt) {
@@ -990,12 +993,18 @@ public final class StarManager implements Listener {
     /** /forge ancient here: builds an Ancient Forge in front of the admin (the anvil 6 blocks ahead). */
     public void buildHere(Player player) {
         Location at = player.getLocation();
-        World world = at.getWorld();
+        Site site = build(at.getWorld(), at.getBlockX(), at.getBlockY() - 1, at.getBlockZ());
+        player.teleport(new Location(at.getWorld(), site.x + 0.5, site.y - 3, site.z - 13.5, 0, 0));
+        player.sendMessage(ItemManager.color("&6✦ &7Ancient Forge built. &8(sneak-break the anvil in creative to remove it)"));
+    }
+
+    /** Builds an Ancient Forge with its anvil above (cx, floor, cz) in a world that's already generated. */
+    private Site build(World world, int cx, int floor, int cz) {
         boolean nether = world.getEnvironment() == World.Environment.NETHER;
         boolean endWorld = world.getEnvironment() == World.Environment.THE_END;
-        int x0 = at.getBlockX() - 12;
-        int y0 = at.getBlockY() - 1;
-        int z0 = at.getBlockZ() - 12;
+        int x0 = cx - 12;
+        int y0 = floor;
+        int z0 = cz - 12;
         ForgeRuins.Canvas canvas = new ForgeRuins.Canvas() {
             @Override
             public void set(int x, int y, int z, String block) {
@@ -1009,12 +1018,74 @@ public final class StarManager implements Listener {
         };
         ForgeRuins.Result result = ForgeRuins.build(endWorld ? ForgeRuins.Type.ANCIENT_END
                         : nether ? ForgeRuins.Type.ANCIENT_NETHER : ForgeRuins.Type.ANCIENT,
-                canvas, x0, y0, z0, new java.util.SplittableRandom(at.getBlockX() * 31L + at.getBlockZ()));
+                canvas, x0, y0, z0, new java.util.SplittableRandom(cx * 31L + cz));
+        for (int[] chest : result.bigChests) {
+            if (world.getBlockAt(chest[0], chest[1], chest[2]).getState() instanceof org.bukkit.block.Chest c) {
+                c.setLootTable(Bukkit.getLootTable(ScorchedLands.LOOT_BIG), cx * 7919L + cz);
+                c.update(true, false);
+            }
+        }
         Site site = new Site(world.getName(), result.core[0], result.core[1], result.core[2]);
         sites.put(site.id(), site);
         save();
-        player.teleport(new Location(world, x0 + 12.5, y0 + 1, z0 - 1.5, 0, 0));
-        player.sendMessage(ItemManager.color("&6✦ &7Ancient Forge built. &8(sneak-break the anvil in creative to remove it)"));
+        return site;
+    }
+
+    // ================================================================ guaranteed forges in land that was already explored
+
+    /** planned spot -> the check it was first seen loaded without a forge */
+    private final Map<String, Integer> missing = new java.util.HashMap<>();
+
+    /**
+     * A guaranteed forge only generates with NEW chunks. If its spot was explored before (e.g. the Nether around a
+     * portal near spawn), it's built the moment a player comes close instead.
+     */
+    private void buildMissing() {
+        if (plugin.scorched() == null) {
+            return;
+        }
+        for (World w : Bukkit.getWorlds()) {
+            for (int[] p : plugin.scorched().plannedForges(w)) {
+                boolean have = sites.values().stream().anyMatch(s -> s.world.equals(w.getName())
+                        && Math.abs(s.x - p[0]) < 24 && Math.abs(s.z - p[1]) < 24);
+                String key = w.getName() + ";" + p[0] + ";" + p[1];
+                if (have || !w.isChunkLoaded(p[0] >> 4, p[1] >> 4)
+                        || !anyoneNear(new Location(w, p[0], w.getEnvironment() == World.Environment.NETHER ? 64 : 80, p[1]), 96)) {
+                    missing.remove(key);
+                    continue;
+                }
+                // wait a moment: a chunk that's generating right now registers its forge itself
+                int first = missing.computeIfAbsent(key, k -> ticks);
+                if (ticks - first < 6) {
+                    continue;
+                }
+                missing.remove(key);
+                int floor = floorAt(w, p[0], p[1]);
+                Site site = build(w, p[0], floor, p[1]);
+                plugin.getLogger().info("[Stars] An Ancient Forge generated at " + w.getName() + " " + site.x + " " + site.y + " "
+                        + site.z + " (built late: that land was explored before)");
+            }
+        }
+    }
+
+    /** Where the forge's floor goes: the surface in the overworld, an open cave floor (or y 64) in the Nether. */
+    private static int floorAt(World w, int x, int z) {
+        if (w.getEnvironment() == World.Environment.NETHER) {
+            for (int y = 32; y <= 100; y++) {
+                if (!w.getBlockAt(x, y, z).getType().isSolid()) {
+                    continue;
+                }
+                boolean open = true;
+                for (int up = 1; up <= 8 && open; up++) {
+                    open = w.getBlockAt(x, y + up, z).getType().isAir();
+                }
+                if (open) {
+                    return y;
+                }
+            }
+            return 64;
+        }
+        return w.getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING_NO_LEAVES);
     }
 
     /** /forge stars <player> <stars>: sets the stars of the weapon in the player's hand. */

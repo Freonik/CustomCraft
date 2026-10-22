@@ -209,35 +209,60 @@ public final class LegendManager implements Listener {
      * "[Legends] holders: weapon:echo_blade=Steve (3/5, online), ... | forging: ... | free: ...".
      */
     public void logHolders() {
+        // who carries what right now (online players), so copies held by two players at once show up
+        java.util.Map<String, List<String>> carriedBy = new java.util.HashMap<>();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            java.util.Set<String> mine = new java.util.HashSet<>();
+            for (ItemStack stack : p.getInventory().getContents()) {
+                ItemManager.Entry entry = items.customOf(stack);
+                if (isLegend(entry) && mine.add(entry.ref())) {
+                    carriedBy.computeIfAbsent(entry.ref(), k -> new ArrayList<>()).add(p.getName());
+                }
+            }
+        }
         List<String> held = new ArrayList<>();
         List<String> forging = new ArrayList<>();
         List<String> free = new ArrayList<>();
         long now = System.currentTimeMillis();
         for (ItemManager.Entry entry : allLegends()) {
             ForgeData.Claim claim = plugin.rituals().claim(entry);
-            if (claim == null) {
-                free.add(entry.ref());
-                continue;
-            }
-            if (claim.state() == ForgeData.State.RITUAL) {
+            if (claim != null && claim.state() == ForgeData.State.RITUAL) {
                 forging.add(entry.ref() + " (" + claim.name() + ")");
                 continue;
             }
             String base = "holder." + key(entry.ref());
-            String name = legends.getString(base + ".name", claim.name());
-            String uuid = legends.getString(base + ".uuid", claim.player().toString());
-            Player online = Bukkit.getPlayer(UUID.fromString(uuid));
-            StringBuilder sb = new StringBuilder(entry.ref()).append('=').append(name).append(" (");
-            if (legends.isSet(base + ".stars")) {
-                sb.append(Stars.starCount(legends.getInt(base + ".stars"))).append("/5, ");
+            List<String> online = carriedBy.getOrDefault(entry.ref(), List.of());
+            boolean known = legends.isSet(base + ".name");
+            if (claim == null && online.isEmpty() && !known) {
+                free.add(entry.ref());
+                continue;
             }
-            long seen = legends.getLong(base + ".seen", claim.time());
-            sb.append(online != null ? "online" : "seen " + RitualManager.format(Math.max(0, now - seen)) + " ago").append(')');
-            held.add(sb.toString());
+            StringBuilder sb = new StringBuilder(entry.ref()).append('=');
+            if (online.size() > 1) {
+                sb.append(String.join(" + ", online)).append(" (COPIES: ").append(online.size()).append(" players have one");
+            } else {
+                String name = !online.isEmpty() ? online.getFirst() : legends.getString(base + ".name", claim == null ? "?" : claim.name());
+                sb.append(name).append(" (");
+                if (legends.isSet(base + ".stars")) {
+                    sb.append(Stars.starCount(legends.getInt(base + ".stars"))).append("/5, ");
+                }
+                long seen = legends.getLong(base + ".seen", claim == null ? now : claim.time());
+                sb.append(!online.isEmpty() ? "online" : "seen " + RitualManager.format(Math.max(0, now - seen)) + " ago");
+            }
+            if (claim == null) {
+                sb.append(", given by an admin");                   // nobody forged it: /forge give
+            }
+            held.add(sb.append(')').toString());
         }
         plugin.getLogger().info("[Legends] holders: " + (held.isEmpty() ? "nobody" : String.join(", ", held))
                 + " | forging: " + (forging.isEmpty() ? "-" : String.join(", ", forging))
                 + " | free: " + (free.isEmpty() ? "-" : String.join(", ", free)));
+    }
+
+    /** The legend is gone (destroyed, released): nobody holds it any more. */
+    public void forgetHolder(String ref) {
+        legends.set("holder." + key(ref), null);
+        saveLegends();
     }
 
     /** Legends whose holder hasn't been online for a long time go back to the forge. */
