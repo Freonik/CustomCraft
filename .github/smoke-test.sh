@@ -93,6 +93,16 @@ else
   wait_for '\[Legends\] holders:' 150 || fail "the [Legends] holder list wasn't logged"
   echo "forge ancient end" >&3
   wait_for "The End's Ancient Forge rose at" 60 || fail "the End's Ancient Forge didn't rise"
+  # big events: planning works, the boss rises and can be stopped, the others need players
+  echo "forge bigevent plan hunt +2h" >&3
+  wait_for '\[BigEvent\] CONSOLE planned hunt' 20 || fail "/forge bigevent plan didn't plan anything"
+  echo "forge bigevent start boss" >&3
+  wait_for '\[BigEvent\] boss started' 30 || fail "the world boss didn't start"
+  sleep 12
+  echo "forge bigevent stop" >&3
+  wait_for '\[BigEvent\] CONSOLE stopped boss' 20 || fail "/forge bigevent stop didn't stop the boss"
+  echo "forge bigevent start border" >&3
+  wait_for 'border could not start: not enough players' 20 || fail "the border event started without players"
 fi
 
 echo "stop" >&3

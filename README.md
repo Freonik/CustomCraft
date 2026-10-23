@@ -30,6 +30,8 @@
 - [PvP](#pvp)
 - [Token shop](#token-shop)
 - [Events](#events)
+- [Big events and mythic weapons](#big-events-and-mythic-weapons)
+- [Quests](#quests)
 - [Meteors](#meteors)
 - [Scorched Lands](#scorched-lands)
 - [The Forge Warden](#the-forge-warden)
@@ -524,6 +526,46 @@ Every event can be switched off on its own, or all of them with `events.enabled:
 
 ---
 
+## Big events and mythic weapons
+
+Big events never start on their own: an admin plans them ahead with `/forge bigevent plan`, and the whole server
+is told a day, an hour, 10 minutes and a minute before. The last 10 minutes count down in a bar at the top.
+
+| Event | What happens | Who wins |
+|---|---|---|
+| ☠ **The Closing World** | the world border shrinks around one spot (2000 → 100 blocks in 25 minutes). Dying, logging out or leaving the world puts you out | the last one standing |
+| ⚔ **The Hunt** | for 30 minutes everyone shows on the locator bar | the most player kills |
+| ☠ **The Forge Colossus** | a giant world boss rises: it slams, throws fire, drags in whoever keeps their distance and calls skeletons. Only players can hurt it | the most damage |
+
+The winner gets a **mythic weapon**, everyone who took part gets Bounty Tokens (the top three of the Hunt and the
+Colossus more, plus legendary materials). Prizes for players who are offline wait until they join.
+
+### ✦ Mythic weapons
+Far stronger than the legends - but they **fade after 7 days**, wherever they are. No stars, no forge, no serial
+numbers: there can be many of them, and each one is only a short reign.
+
+| | Weapon | From | Abilities |
+|---|---|---|---|
+| <img src="docs/items/worldsplitter.png" width="40" alt=""> | **Worldsplitter** (axe) | The Closing World | Crushing Weight, *Split the World* (a bigger Upheaval), *Event Horizon* (a bigger Gravity Anchor), Resistance + Strength |
+| <img src="docs/items/bloodfang.png" width="40" alt=""> | **Bloodfang** (sword) | The Hunt | lifesteal + Cleave, *Blood Crescent*, *Feeding Frenzy*, Speed II and regeneration at low health |
+| <img src="docs/items/titans_echo.png" width="40" alt=""> | **Titan's Echo** (greatsword) | The Forge Colossus | a 60 % Echo on every hit, *Titan's Return* (Rewind), *Colossal Resonance*, Resistance |
+
+Everything is under `big-events:` in the config; the weapons themselves are in `weapons:` with `mythic: true`.
+
+---
+
+## Quests
+
+The **Questmaster** stands where an admin put him (`/forge npc set`). Every day there are **3 daily quests** and
+every week **one weekly quest** - the same for everybody: kill monsters, mine ores, chop logs, fish, travel,
+bring him items, kill players. Progress counts anywhere (`/quests` shows it); the reward - Bounty Tokens,
+legendary materials, XP - is claimed at the Questmaster. All three daily quests in one day give a bonus.
+Blocks you placed yourself don't count for mining quests, and every player counts only once for kill quests.
+
+The quest pools, amounts and rewards are under `quests:` in the config.
+
+---
+
 ## Meteors
 Every **2 to 4 hours** (with at least 3 players online) a meteor falls somewhere within 2500 blocks of spawn.
 A boss bar counts down five minutes and the impact site is revealed step by step:
@@ -619,6 +661,9 @@ a toast pops up, the chat announces it, and progress is saved with the player. C
 | <img src="docs/items/recon_spyglass.png" width="40" alt=""> | **Pilgrim** | use all three Ancient Forges: the Scorched Lands, the Nether and the End *(challenge, 75 XP)* |
 | <img src="docs/items/seraph_feather.png" width="40" alt=""> | **Out of the Void** | be in the End when its Ancient Forge rises |
 | <img src="docs/items/bounty_token.png" width="40" alt=""> | **Starfall** | kill a player and knock the stars off a five-star legend *(challenge, 50 XP)* |
+| <img src="docs/items/titans_echo.png" width="40" alt=""> | **Champion** | win a big event and claim a mythic weapon *(challenge, 100 XP)* |
+| <img src="docs/items/bounty_token.png" width="40" alt=""> | **Odd Jobs** | finish a quest for the Questmaster |
+| <img src="docs/items/bounty_token.png" width="40" alt=""> | **Above and Beyond** | finish a weekly quest |
 | <img src="docs/items/valkyries_lance.png" width="40" alt=""> | **Clash of Legends** | kill a player carrying a legend with a legend in your hand |
 | <img src="docs/items/heartsteel_core.png" width="40" alt=""> | **Full Set** | wear all four pieces of a relic set |
 | <img src="docs/items/hide_mantle.png" width="40" alt=""> | **Wardrobe** | wear every relic set complete at least once *(challenge, 100 XP)* |
@@ -701,6 +746,7 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/codex` | everyone | open the Forge Codex |
 | `/hud` | everyone | hide or show your sidebar |
 | `/events` | everyone | which events are running right now |
+| `/quests` | everyone | your daily and weekly quests (rewards are claimed at the Questmaster) |
 | `/shop` | everyone | the token shop (alias `/store`) |
 | `/pay [<player> <amount>]` | everyone | send Bounty Tokens to another player (without arguments: a window to pick the player and the amount) |
 | `/forge status` | `forgebound.admin` | which weapons and relics exist or are being forged (with real names) |
@@ -710,6 +756,9 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/forge reload` | `forgebound.admin` | reload `config.yml` |
 | `/forge meteor` | `forgebound.admin` | drop a meteor now |
 | `/forge event <blood_moon\|rift\|legend_hunt\|happy_hour\|forge_market\|golden_shipment\|stop>` | `forgebound.admin` | start an event now (or stop them all) |
+| `/forge bigevent plan <border\|hunt\|boss> <time>` | `forgebound.admin` | plan a big event: `20:00`, `25.10 20:00` or `+2h` (the boss rises where you stand) |
+| `/forge bigevent [list\|start <type>\|cancel <id>\|stop]` | `forgebound.admin` | list the planned events, start one now, cancel one, end the running one without prizes |
+| `/forge npc <set\|remove>` | `forgebound.admin` | put the Questmaster where you stand, or take him away |
 | `/forge season <start\|preview\|cancel>` | `forgebound.admin` | season start ceremony (countdown, "Welcome to ... SMP", a beam into the sky, everyone scattered into the world); `preview` skips the teleport; without an argument it opens a panel with the theme and the buttons |
 | `/forge update [on\|off\|now]` | `forgebound.admin` | auto-update on/off, or check for a new version now |
 | `/forge scorched` | `forgebound.admin` | where the nearest Scorched Lands are (click to teleport) |

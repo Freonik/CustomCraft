@@ -129,6 +129,12 @@ public final class StarManager implements Listener {
 
     // ================================================================ stars on items
 
+    /** A weapon that has stars (mythic event weapons don't). */
+    private ItemManager.Entry starWeapon(ItemStack stack) {
+        ItemManager.Entry entry = items.weaponOf(stack);
+        return entry == null || entry.mythic ? null : entry;
+    }
+
     /** The weapon's stars in halves (2 = ★, 10 = ★★★★★). Weapons from before stars count as legacy-stars. */
     public int halvesOf(ItemStack stack) {
         if (stack == null || !stack.hasItemMeta()) {
@@ -159,7 +165,7 @@ public final class StarManager implements Listener {
                 || stack.getPersistentDataContainer().has(starsKey, PersistentDataType.INTEGER)) {
             return false;
         }
-        ItemManager.Entry entry = items.weaponOf(stack);
+        ItemManager.Entry entry = starWeapon(stack);
         if (entry == null) {
             return false;
         }
@@ -202,7 +208,7 @@ public final class StarManager implements Listener {
 
     public double cooldownMultiplier(Player player) {
         ItemStack hand = player.getInventory().getItemInMainHand();
-        if (!enabled() || items.weaponOf(hand) == null) {
+        if (!enabled() || starWeapon(hand) == null) {
             return 1;
         }
         return Stars.cooldownMultiplier(halvesOf(hand), perStar());
@@ -246,7 +252,7 @@ public final class StarManager implements Listener {
             return;
         }
         ItemStack hand = player.getInventory().getItemInMainHand();
-        if (items.weaponOf(hand) == null) {
+        if (starWeapon(hand) == null) {
             return;
         }
         event.setDamage(event.getDamage() * Stars.damageMultiplier(halvesOf(hand), perStar()));
@@ -310,7 +316,7 @@ public final class StarManager implements Listener {
     private boolean lostFromFive;
 
     private void lose(ItemStack stack, int loss, List<Lost> lost) {
-        ItemManager.Entry entry = items.weaponOf(stack);
+        ItemManager.Entry entry = starWeapon(stack);
         if (entry == null) {
             return;
         }
@@ -471,7 +477,7 @@ public final class StarManager implements Listener {
             return;
         }
         ItemStack hand = player.getInventory().getItemInMainHand();
-        ItemManager.Entry weapon = items.weaponOf(hand);
+        ItemManager.Entry weapon = starWeapon(hand);
         if (weapon == null) {
             player.sendMessage(plugin.msg("ancient-hint", "&6✦ Ancient Forge &7- use the anvil while holding a legend weapon to give it another star."));
             return;
@@ -561,7 +567,7 @@ public final class StarManager implements Listener {
 
     private void begin(Player player, Site site, ItemManager.Entry expected) {
         ItemStack hand = player.getInventory().getItemInMainHand();
-        ItemManager.Entry weapon = items.weaponOf(hand);
+        ItemManager.Entry weapon = starWeapon(hand);
         Location core = site.location();
         if (weapon == null || weapon != expected || core == null || running.containsKey(site.id())
                 || site.readyAt > System.currentTimeMillis() || !player.getWorld().equals(core.getWorld())
@@ -633,7 +639,7 @@ public final class StarManager implements Listener {
         running.remove(r.site.id());
         removeVisuals(r);
         Location core = r.site.location();
-        ItemManager.Entry entry = items.weaponOf(r.weapon);
+        ItemManager.Entry entry = starWeapon(r.weapon);
         if (entry != null) {
             setHalves(r.weapon, entry, r.target);
         }
@@ -1091,7 +1097,7 @@ public final class StarManager implements Listener {
     /** /forge stars <player> <stars>: sets the stars of the weapon in the player's hand. */
     public void setCommand(CommandSender sender, Player target, double stars) {
         ItemStack hand = target.getInventory().getItemInMainHand();
-        ItemManager.Entry entry = items.weaponOf(hand);
+        ItemManager.Entry entry = starWeapon(hand);
         if (entry == null) {
             sender.sendMessage(ItemManager.color("&c" + target.getName() + " isn't holding a legend weapon."));
             return;

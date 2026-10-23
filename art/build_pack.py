@@ -44,6 +44,8 @@ run('sets2.py', f'{CC}/textures/item', f'{CC}/textures/entity/equipment')
 run('arsenal.py', f'{CC}/textures/item')
 # The Last Act (rifle on the crossbow) + Gilded Mask Shard
 run('lastact.py', f'{CC}/textures/item')
+# mythic event weapons: Worldsplitter, Bloodfang, Titan's Echo
+run('mythics.py', f'{CC}/textures/item')
 for n in os.listdir(f'{CC}/textures/item/gui'):
     os.remove(f'{CC}/textures/item/gui/{n}')
 run('gui.py', f'{CC}/textures/item/gui')
@@ -51,7 +53,7 @@ run('menu.py', f'{CC}/textures/font')
 
 # ---- models
 for n in ['echo_blade', 'graviton_hammer', 'soulbinder', 'butcher_cleaver', 'abyssal_maw', 'clawline_pick', 'silk_needle',
-          'knightfall', 'rimebreaker', 'rimebreaker_thrown']:
+          'knightfall', 'rimebreaker', 'rimebreaker_thrown', 'worldsplitter', 'bloodfang', 'titans_echo']:
     wjson(f'{CC}/models/item/{n}.json', {"parent": "minecraft:item/handheld", "textures": {"layer0": f"customcraft:item/{n}"}})
 for n in ['hex_bow', 'hex_bow_pulling_0', 'hex_bow_pulling_1', 'hex_bow_pulling_2']:
     wjson(f'{CC}/models/item/{n}.json', {"parent": "minecraft:item/bow", "textures": {"layer0": f"customcraft:item/{n}"}})
@@ -115,11 +117,14 @@ def model(m):
 
 wjson(f'{MC}/netherite_sword.json', dispatch([(1001, model("customcraft:item/echo_blade")),
                                               (1007, model("customcraft:item/abyssal_maw")),
-                                              (1009, model("customcraft:item/silk_needle"))], model("minecraft:item/netherite_sword")))
+                                              (1009, model("customcraft:item/silk_needle")),
+                                              (1102, model("customcraft:item/bloodfang")),
+                                              (1103, model("customcraft:item/titans_echo"))], model("minecraft:item/netherite_sword")))
 wjson(f'{MC}/netherite_pickaxe.json', dispatch([(1008, model("customcraft:item/clawline_pick"))], model("minecraft:item/netherite_pickaxe")))
 wjson(f'{MC}/netherite_axe.json', dispatch([(1006, model("customcraft:item/butcher_cleaver")),
                                             (1011, model("customcraft:item/rimebreaker")),
-                                            (1014, model("customcraft:item/rimebreaker_thrown"))], model("minecraft:item/netherite_axe")))
+                                            (1014, model("customcraft:item/rimebreaker_thrown")),
+                                            (1101, model("customcraft:item/worldsplitter"))], model("minecraft:item/netherite_axe")))
 # Knightfall (mace)
 wjson(f'{MC}/mace.json', dispatch([(1010, model("customcraft:item/knightfall"))],
                                   json.load(open('/home/claude/ref/vanilla/i_mace.json'))['model']))

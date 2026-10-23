@@ -66,6 +66,8 @@ public final class ItemManager {
         public WeaponAbilities abilities = WeaponAbilities.NONE;
         /** Relic effect (relics only). */
         public Relic relic;
+        /** Mythic weapon: only from big events, fades after a few days, no stars, not a legend. */
+        public boolean mythic;
 
         Entry(String id, Kind kind, ItemStack item) {
             this.id = id;
@@ -147,6 +149,7 @@ public final class ItemManager {
                 Entry entry = new Entry(id, kind, item);
                 entry.abilities = abilities;
                 entry.relic = relic;
+                entry.mythic = kind == Kind.WEAPON && section.getBoolean("mythic", false);
                 entries.put(entry.ref(), entry);
             } catch (RuntimeException ex) {
                 plugin.getLogger().warning(kind.prefix + rawId + ": " + ex.getMessage());
@@ -383,8 +386,14 @@ public final class ItemManager {
 
     // ---------------------------------------------------------------- queries
 
+    /** Every weapon / relic / material of a kind (without the mythic event weapons). */
     public List<Entry> all(Kind kind) {
-        return entries.values().stream().filter(e -> e.kind == kind).toList();
+        return entries.values().stream().filter(e -> e.kind == kind && !e.mythic).toList();
+    }
+
+    /** The mythic weapons (only from big events). */
+    public List<Entry> mythics() {
+        return entries.values().stream().filter(e -> e.mythic).toList();
     }
 
     /**

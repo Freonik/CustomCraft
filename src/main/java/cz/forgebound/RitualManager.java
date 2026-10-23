@@ -161,7 +161,7 @@ public final class RitualManager implements Listener {
     }
 
     public boolean isUnique(ItemManager.Entry weapon) {
-        return plugin.getConfig().getBoolean(ItemManager.configPath(weapon) + ".unique", true);
+        return !weapon.mythic && plugin.getConfig().getBoolean(ItemManager.configPath(weapon) + ".unique", true);
     }
 
     public Claim claim(ItemManager.Entry weapon) {

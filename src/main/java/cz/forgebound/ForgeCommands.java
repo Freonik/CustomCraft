@@ -58,6 +58,8 @@ final class ForgeCommands {
             commands.register(topTree().build(), "Leaderboards", List.of("leaderboard", "leaderboards"));
             commands.register(simple("codex", (s, a) -> plugin.codex().onCommand(s, a)).build(),
                     "Opens the Forge Codex (how everything works)", List.of("guide"));
+            commands.register(Commands.literal("quests").executes(ctx -> player(ctx, p -> plugin.quests().open(p, false))).build(),
+                    "Your daily and weekly quests (rewards are claimed at the Questmaster)", List.of("quest"));
             commands.register(simple("hud", (s, a) -> plugin.hud().onCommand(s, a)).build(),
                     "Hide or show your sidebar", List.of("sidebar"));
         });
@@ -145,6 +147,45 @@ final class ForgeCommands {
         root.then(Commands.literal("event").requires(ForgeCommands::admin)
                 .then(Commands.argument("event", StringArgumentType.word()).suggests(suggest(EventManager::names))
                         .executes(ctx -> forge(ctx, "event", StringArgumentType.getString(ctx, "event")))));
+        var big = Commands.literal("bigevent").requires(ForgeCommands::admin).executes(ctx -> {
+            plugin.bigEvents().list(ctx.getSource().getSender());
+            return Command.SINGLE_SUCCESS;
+        });
+        big.then(Commands.literal("plan")
+                .then(Commands.argument("type", StringArgumentType.word()).suggests(suggest(() -> BigEventManager.TYPES))
+                        .then(Commands.argument("time", StringArgumentType.greedyString())
+                                .executes(ctx -> {
+                                    plugin.bigEvents().plan(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "type"),
+                                            StringArgumentType.getString(ctx, "time"));
+                                    return Command.SINGLE_SUCCESS;
+                                }))));
+        big.then(Commands.literal("start")
+                .then(Commands.argument("type", StringArgumentType.word()).suggests(suggest(() -> BigEventManager.TYPES))
+                        .executes(ctx -> {
+                            plugin.bigEvents().startNow(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "type"));
+                            return Command.SINGLE_SUCCESS;
+                        })));
+        big.then(Commands.literal("cancel")
+                .then(Commands.argument("id", StringArgumentType.word()).suggests(suggest(() -> plugin.bigEvents().ids()))
+                        .executes(ctx -> {
+                            plugin.bigEvents().cancel(ctx.getSource().getSender(), StringArgumentType.getString(ctx, "id"));
+                            return Command.SINGLE_SUCCESS;
+                        })));
+        big.then(Commands.literal("stop").executes(ctx -> {
+            plugin.bigEvents().stop(ctx.getSource().getSender());
+            return Command.SINGLE_SUCCESS;
+        }));
+        big.then(Commands.literal("list").executes(ctx -> {
+            plugin.bigEvents().list(ctx.getSource().getSender());
+            return Command.SINGLE_SUCCESS;
+        }));
+        root.then(big);
+        root.then(Commands.literal("npc").requires(ForgeCommands::admin)
+                .then(Commands.literal("set").executes(ctx -> player(ctx, p -> plugin.quests().setNpc(p))))
+                .then(Commands.literal("remove").executes(ctx -> {
+                    plugin.quests().removeNpc(ctx.getSource().getSender());
+                    return Command.SINGLE_SUCCESS;
+                })));
         var season = Commands.literal("season").requires(ForgeCommands::admin).executes(ctx -> forge(ctx, "season"));
         for (String sub : List.of("start", "preview", "cancel")) {
             season.then(Commands.literal(sub).executes(ctx -> forge(ctx, "season", sub)));

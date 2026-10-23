@@ -230,7 +230,7 @@ public final class PvpManager implements Listener {
         }
         ItemStack hand = killer.getInventory().getItemInMainHand();
         ItemManager.Entry weapon = items.weaponOf(hand);
-        if (weapon == null || !carriesLegend(victim, event)) {
+        if (weapon == null || weapon.mythic || !carriesLegend(victim, event)) {
             return;
         }
         long now = System.currentTimeMillis();
@@ -263,13 +263,15 @@ public final class PvpManager implements Listener {
 
     private boolean carriesLegend(Player victim, PlayerDeathEvent event) {
         for (ItemStack stack : event.getDrops()) {
-            if (items.weaponOf(stack) != null) {
+            ItemManager.Entry e = items.weaponOf(stack);
+            if (e != null && !e.mythic) {
                 return true;
             }
         }
         if (event.getKeepInventory()) {
             for (ItemStack stack : victim.getInventory().getContents()) {
-                if (items.weaponOf(stack) != null) {
+                ItemManager.Entry e = items.weaponOf(stack);
+                if (e != null && !e.mythic) {
                     return true;
                 }
             }

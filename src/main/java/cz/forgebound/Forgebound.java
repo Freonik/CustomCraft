@@ -37,6 +37,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private ScorchedLands scorched;
     private StarManager stars;
     private PvpManager pvp;
+    private MythicManager mythics;
+    private BigEventManager bigEvents;
+    private QuestManager quests;
     private boolean papi;
 
     /** Writes data files one after another in the background, so saving never stalls the server. */
@@ -197,6 +200,15 @@ public final class Forgebound extends JavaPlugin implements Listener {
         pvp = new PvpManager(this, items);
         getServer().getPluginManager().registerEvents(pvp, this);
         pvp.start();
+        mythics = new MythicManager(this, items);
+        getServer().getPluginManager().registerEvents(mythics, this);
+        mythics.start();
+        bigEvents = new BigEventManager(this);
+        getServer().getPluginManager().registerEvents(bigEvents, this);
+        bigEvents.start();
+        quests = new QuestManager(this, items);
+        getServer().getPluginManager().registerEvents(quests, this);
+        quests.start();
         scorched = new ScorchedLands(this);
         getServer().getPluginManager().registerEvents(scorched, this);
         scorched.start();
@@ -252,6 +264,12 @@ public final class Forgebound extends JavaPlugin implements Listener {
         if (pvp != null) {
             pvp.shutdown();
         }
+        if (bigEvents != null) {
+            bigEvents.shutdown();
+        }
+        if (quests != null) {
+            quests.shutdown();
+        }
         if (stars != null) {
             stars.shutdown();
         }
@@ -302,6 +320,18 @@ public final class Forgebound extends JavaPlugin implements Listener {
 
     public PvpManager pvp() {
         return pvp;
+    }
+
+    public MythicManager mythics() {
+        return mythics;
+    }
+
+    public BigEventManager bigEvents() {
+        return bigEvents;
+    }
+
+    public QuestManager quests() {
+        return quests;
     }
 
     public ScorchedLands scorched() {
@@ -403,7 +433,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     /** Sections where new default entries (new weapons, relics, materials, messages...) are added automatically. */
     private static final java.util.List<String> MERGED_SECTIONS = java.util.List.of("weapons", "relics", "materials",
             "craftable.weapons", "craftable.relics", "craftable.materials", "messages", "ability-settings", "relic-settings",
-            "ritual", "combat", "combat.duel", "bounty", "meteor", "warden", "economy", "economy.rewards",
+            "ritual", "combat", "combat.duel", "big-events", "big-events.border", "big-events.hunt", "big-events.boss", "quests", "bounty", "meteor", "warden", "economy", "economy.rewards",
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",

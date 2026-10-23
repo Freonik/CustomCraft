@@ -1064,6 +1064,149 @@ weapons:
       - { item: GOLD_BLOCK, amount: 8 }
       - { item: "material:sea_kings_doubloon", amount: 1 }
 
+  # ---------------- MYTHIC WEAPONS: only the winners of big events get them (see big-events), they fade after
+  # big-events.mythic-days. Not legends: no stars, no forge, no serial numbers.
+  worldsplitter:
+    mythic: true
+    material: NETHERITE_AXE
+    name: "&5&k|&r &d&lWorldsplitter &5&k|"
+    lore:
+      - "&7The world closed in. This is what was left."
+    custom-model-data: 1101
+    unbreakable: true
+    attack-damage: 14
+    attack-speed: 1.0
+    enchants:
+      sharpness: 6
+    abilities:
+      passive:
+        effects: { resistance: 0, strength: 0 }
+        description: "Resistance I, Strength I"
+      on-hit:
+        - type: CRUSH
+          chance: 100
+          damage-per-block: 2
+          max-bonus: 10
+          fall-damage-per-block: 1.2
+          max-fall-bonus: 24
+          landing-window-ms: 700
+          slam: 1.8
+          slow-ticks: 40
+          description: ["Crushing Weight: fall onto the target for", "+1.2 dmg per block fallen (max +24).", "Standing above it: +2 per block (max +10)."]
+      active:
+        upheaval:
+          type: UPHEAVAL
+          name: "&d&lSplit the World"
+          trigger: SWAP
+          cooldown: 25
+          description: ["Lift every enemy around you into the air,", "then slam them down (max 16 damage)."]
+          radius: 8
+          lift-ticks: 25
+          base-damage: 6
+          damage-per-block: 1.2
+          max-damage: 16
+        anchor:
+          type: GRAVITY_ANCHOR
+          name: "&5Event Horizon"
+          trigger: SHIFT_SWAP
+          cooldown: 30
+          description: ["A 9-block gravity field for 7s.", "Enemies inside are slowed and", "yanked back if they try to leave."]
+          radius: 9
+          duration: 7
+          pull: 0.6
+          slow-level: 3
+
+  bloodfang:
+    mythic: true
+    material: NETHERITE_SWORD
+    name: "&4&k|&r &c&lBloodfang &4&k|"
+    lore:
+      - "&7Taken from the last hunter standing."
+    custom-model-data: 1102
+    unbreakable: true
+    attack-damage: 11
+    attack-speed: 1.8
+    enchants:
+      sharpness: 6
+    abilities:
+      passive:
+        effects: { speed: 1 }
+        low-health-regen: { below-percent: 35, percent-per-second: 2 }
+        description: ["Speed II. Below 35% HP you regenerate", "2% of your max HP every second."]
+      on-hit:
+        - type: LIFESTEAL
+          chance: 100
+          percent: 20
+          description: "Heals 20% of damage dealt"
+        - type: CLEAVE
+          chance: 100
+          percent: 40
+          radius: 3
+          lifesteal: 10
+          wrath-multiplier: 2
+          description: ["Cleave: charged hits deal 40% damage", "to everyone within 3 blocks."]
+      active:
+        crescent:
+          type: CRESCENT
+          name: "&cBlood Crescent"
+          trigger: SWAP
+          cooldown: 8
+          description: ["Spin a full circle: 10 damage to", "everyone around you, +1.5 hearts", "healed per enemy hit."]
+          radius: 5
+          damage: 10
+          heal-per-target: 3
+        bloodrush:
+          type: BLOODRUSH
+          name: "&4&lFeeding Frenzy"
+          trigger: SHIFT_SWAP
+          cooldown: 50
+          description: ["Pay 10% of your current health, then", "regenerate 50% of your MAX health over", "8s with Speed III. Debuffs don't stick."]
+          duration: 8
+          heal-percent-max-hp: 50
+          health-cost-percent: 10
+          speed-level: 3
+
+  titans_echo:
+    mythic: true
+    material: NETHERITE_SWORD
+    name: "&6&k|&r &e&lTitan's Echo &6&k|"
+    lore:
+      - "&7Torn from the Forge Colossus."
+    custom-model-data: 1103
+    unbreakable: true
+    attack-damage: 12
+    attack-speed: 1.6
+    enchants:
+      sharpness: 6
+    abilities:
+      passive:
+        effects: { resistance: 0 }
+        description: "Resistance I"
+      on-hit:
+        - type: ECHO
+          chance: 100
+          percent: 60
+          delay-ticks: 25
+          description: ["Echo: 1.25s later the hit repeats", "for 60% of its damage."]
+      active:
+        rewind:
+          type: REWIND
+          name: "&6Titan's Return"
+          trigger: SWAP
+          cooldown: 20
+          description: ["Snap back to where you stood 5s ago", "and regain the health you had then."]
+          seconds: 5
+        resonance:
+          type: RESONANCE
+          name: "&e&lColossal Resonance"
+          trigger: SHIFT_SWAP
+          cooldown: 30
+          description: ["Everyone you hurt in the last 10s", "takes 70% of that damage again (max 20)."]
+          radius: 16
+          percent: 70
+          window: 10
+          max-damage: 20
+
 # ------------------------------------------------------------
 #  LEGENDS
 #  Every forged weapon / relic copy has a hidden serial number, so only the real copy works.
@@ -1694,6 +1837,96 @@ teams:
   share-spots: true
   # Killing a teammate pays out their bounty
   bounty-on-teammates: false
+
+# ------------------------------------------------------------
+#  BIG EVENTS - only started by an admin, planned ahead:
+#    /forge bigevent plan <border|hunt|boss> <20:00 | 25.10 20:00 | +2h>   (the boss rises where you stand)
+#    /forge bigevent start <type>   /forge bigevent list   /forge bigevent cancel <id>   /forge bigevent stop
+#  Everyone is told a day, an hour, 10 minutes and a minute before; the last 10 minutes count down in a bar.
+#  The winner gets a MYTHIC weapon (see the weapons section) that fades after mythic-days.
+#  Prizes for players who are offline when an event ends wait until they join.
+#  border: The Closing World - the world border shrinks around center; whoever leaves the world, logs out or
+#          dies is out. The last one standing wins (more left at the end: most kills). The border goes back after.
+#  hunt:   The Hunt - everyone shows on the locator bar; the most player kills wins (the same victim counts
+#          again only after same-victim-minutes).
+#  boss:   The Forge Colossus - a world boss; only players can hurt it. The most damage wins.
+# ------------------------------------------------------------
+big-events:
+  timezone: "Europe/Prague"
+  announce-minutes: [1440, 60, 10, 1]
+  min-players: 2
+  mythic-days: 7
+  border:
+    center: [0, 0]
+    start-size: 2000
+    final-size: 100
+    shrink-minutes: 25
+    final-minutes: 5
+    damage-per-block: 1.0
+    winner-tokens: 10
+    player-tokens: 2
+    mythic: worldsplitter
+  hunt:
+    minutes: 30
+    same-victim-minutes: 5
+    top-tokens: [10, 6, 4]
+    player-tokens: 1
+    mythic: bloodfang
+  boss:
+    name: "&4&lThe Forge Colossus"
+    health: 800
+    health-per-player: 200
+    damage: 14
+    slam-damage: 8
+    scale: 2.5
+    minutes: 30
+    xp: 1500
+    top-tokens: [12, 8, 5]
+    # everyone else with at least 2% of the damage
+    player-tokens: 3
+    material-chance: 30
+    mythic: titans_echo
+
+# ------------------------------------------------------------
+#  QUESTS - the Questmaster (an NPC): /forge npc set puts it where you stand, /forge npc remove.
+#  Every day daily-count quests from "daily", every week (from Monday) weekly-count from "weekly" - the same for
+#  everybody. Progress counts anywhere (/quests shows it), the reward is claimed at the Questmaster.
+#  type: KILL (target: entity types or ANY_MONSTER), KILL_PLAYER (each victim once), MINE (target: blocks or a
+#  #block_tag like #logs; blocks you placed don't count), FISH, TRAVEL (blocks on foot), DELIVER (target: item;
+#  handed over at the NPC). Rewards: tokens (Bounty Tokens), materials (random legendary materials), xp.
+#  icon: optional item shown in the menu. enabled: false takes a quest out of the pool.
+# ------------------------------------------------------------
+quests:
+  enabled: true
+  npc-name: "&6&lQuestmaster"
+  daily-count: 3
+  weekly-count: 1
+  # bonus for finishing all daily quests of a day
+  all-daily-bonus-tokens: 2
+  daily:
+    zombies: { type: KILL, target: "ZOMBIE,HUSK,DROWNED,ZOMBIE_VILLAGER", amount: 30, name: "Kill 30 zombies", tokens: 1, xp: 100 }
+    skeletons: { type: KILL, target: "SKELETON,STRAY,BOGGED", amount: 25, name: "Kill 25 skeletons", tokens: 1, xp: 100 }
+    creepers: { type: KILL, target: CREEPER, amount: 15, name: "Kill 15 creepers", tokens: 1, xp: 100 }
+    endermen: { type: KILL, target: ENDERMAN, amount: 10, name: "Kill 10 endermen", tokens: 2 }
+    blazes: { type: KILL, target: BLAZE, amount: 15, name: "Kill 15 blazes", tokens: 2 }
+    monsters: { type: KILL, target: ANY_MONSTER, amount: 60, name: "Kill 60 monsters", tokens: 2 }
+    diamonds: { type: MINE, target: "DIAMOND_ORE,DEEPSLATE_DIAMOND_ORE", amount: 8, name: "Mine 8 diamond ores", tokens: 2, icon: DIAMOND }
+    iron: { type: MINE, target: "IRON_ORE,DEEPSLATE_IRON_ORE", amount: 32, name: "Mine 32 iron ores", tokens: 1, icon: RAW_IRON }
+    logs: { type: MINE, target: "#logs", amount: 128, name: "Chop 128 logs", tokens: 1, icon: OAK_LOG }
+    stone: { type: MINE, target: "STONE,DEEPSLATE,COBBLESTONE,TUFF", amount: 512, name: "Mine 512 stone", tokens: 1, icon: STONE_PICKAXE }
+    fishing: { type: FISH, amount: 10, name: "Catch 10 fish", tokens: 1, xp: 150 }
+    travel: { type: TRAVEL, amount: 3000, name: "Travel 3000 blocks on foot", tokens: 1 }
+    wheat: { type: DELIVER, target: WHEAT, amount: 64, name: "Bring 64 wheat", tokens: 1, icon: WHEAT }
+    gold: { type: DELIVER, target: GOLD_INGOT, amount: 32, name: "Bring 32 gold ingots", tokens: 2, icon: GOLD_INGOT }
+    pvp: { type: KILL_PLAYER, amount: 1, name: "Kill a player", tokens: 2 }
+  weekly:
+    debris: { type: MINE, target: ANCIENT_DEBRIS, amount: 12, name: "Mine 12 ancient debris", tokens: 6, materials: 1, icon: ANCIENT_DEBRIS }
+    hunter: { type: KILL_PLAYER, amount: 5, name: "Kill 5 different players", tokens: 8, materials: 1 }
+    slayer: { type: KILL, target: ANY_MONSTER, amount: 400, name: "Kill 400 monsters", tokens: 5, materials: 1 }
+    diamonds: { type: DELIVER, target: DIAMOND, amount: 32, name: "Bring 32 diamonds", tokens: 6, materials: 1, icon: DIAMOND }
+    explorer: { type: TRAVEL, amount: 25000, name: "Travel 25000 blocks on foot", tokens: 5, materials: 1 }
+    wither: { type: KILL, target: WITHER, amount: 1, name: "Kill the Wither", tokens: 8, materials: 1, icon: WITHER_SKELETON_SKULL }
+    guardians: { type: KILL, target: "GUARDIAN,ELDER_GUARDIAN", amount: 40, name: "Kill 40 guardians", tokens: 5, materials: 1, icon: PRISMARINE_SHARD }
 
 # ------------------------------------------------------------
 #  COMBAT

@@ -74,6 +74,10 @@ class ConfigTest {
         Set<String> refs = refs();
         for (String kind : List.of("weapons", "relics")) {
             section(kind).forEach((id, s) -> {
+                if (Boolean.TRUE.equals(s.get("mythic"))) {
+                    assertTrue(TestFiles.list(s.get("forge")).isEmpty(), kind + "." + id + ": mythic weapons aren't forged");
+                    return;
+                }
                 List<Object> cost = TestFiles.list(s.get("forge"));
                 assertFalse(cost.isEmpty(), kind + "." + id + ": no forge cost");
                 assertTrue(cost.size() <= 5, kind + "." + id + ": more than 5 different forge materials");

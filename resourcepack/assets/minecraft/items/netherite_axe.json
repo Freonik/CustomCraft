@@ -23,6 +23,13 @@
           "type": "minecraft:model",
           "model": "customcraft:item/rimebreaker_thrown"
         }
+      },
+      {
+        "threshold": 1101,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/worldsplitter"
+        }
       }
     ],
     "fallback": {

@@ -72,7 +72,7 @@ public final class LegendManager implements Listener {
     }
 
     private boolean isLegend(ItemManager.Entry entry) {
-        return entry != null && entry.kind != ItemManager.Kind.MATERIAL;
+        return entry != null && entry.kind != ItemManager.Kind.MATERIAL && !entry.mythic;
     }
 
     public void start() {

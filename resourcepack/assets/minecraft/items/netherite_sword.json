@@ -23,6 +23,20 @@
           "type": "minecraft:model",
           "model": "customcraft:item/silk_needle"
         }
+      },
+      {
+        "threshold": 1102,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/bloodfang"
+        }
+      },
+      {
+        "threshold": 1103,
+        "model": {
+          "type": "minecraft:model",
+          "model": "customcraft:item/titans_echo"
+        }
       }
     ],
     "fallback": {
