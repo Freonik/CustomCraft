@@ -76,6 +76,8 @@ public final class AdvancementManager implements Listener {
                     "Be in the End when its Ancient Forge rises", "goal", false, 0),
             new Def("starfall", "ascension", "nether_star", "Starfall",
                     "Kill a player and knock the stars off a five-star legend", "challenge", false, 50),
+            new Def("clash_of_legends", "forgemaster", "weapon:knightfall", "Clash of Legends",
+                    "Kill a player carrying a legend with a legend in your hand", "goal", false, 0),
             new Def("hubris", "five_stars", "feather", "Hubris",
                     "Lose stars from a five-star legend without anyone's help", "task", true, 0),
             // sets

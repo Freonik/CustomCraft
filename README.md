@@ -27,6 +27,7 @@
 - [Legends](#legends)
 - [Enchantments](#enchantments)
 - [Bounties](#bounties)
+- [PvP](#pvp)
 - [Token shop](#token-shop)
 - [Events](#events)
 - [Meteors](#meteors)
@@ -426,6 +427,26 @@ Prices and timings are under `bounty:` in the config.
 
 ---
 
+## PvP
+
+### ⚔ Combat tag
+Hit a player or get hit by one and you are **in combat for 20 seconds** (a red bar counts it down).
+**Logging out in combat kills you**: your items drop and whoever hit you last gets the kill, with the bounty
+and the stars that go with it. Kicks and server restarts don't count. No elytra while in combat (can be turned
+off), and the config can block commands like `/home` or `/tpa` too.
+
+### Clash of legends
+Kill a player who carries a legend weapon **with a legend weapon in your hand** and your weapon grows by
+**½ star** - up to ★★★★, the last star still only comes from the End's Ancient Forge. The same victim gives it
+again after an hour.
+
+### No vanilla maces
+Vanilla maces can't be crafted. Knightfall is forged from Breeze Rods and two Heavy Cores instead.
+
+Everything is under `combat:` in the config.
+
+---
+
 ## Token shop
 Bounty Tokens are the server's currency. You get them from **bounties**, the **Forge Warden** (10 tokens)
 and **meteor caches** (2 to 5 tokens). Spend them in **`/shop`** (or right-click a token):
@@ -598,6 +619,7 @@ a toast pops up, the chat announces it, and progress is saved with the player. C
 | <img src="docs/items/recon_spyglass.png" width="40" alt=""> | **Pilgrim** | use all three Ancient Forges: the Scorched Lands, the Nether and the End *(challenge, 75 XP)* |
 | <img src="docs/items/seraph_feather.png" width="40" alt=""> | **Out of the Void** | be in the End when its Ancient Forge rises |
 | <img src="docs/items/bounty_token.png" width="40" alt=""> | **Starfall** | kill a player and knock the stars off a five-star legend *(challenge, 50 XP)* |
+| <img src="docs/items/valkyries_lance.png" width="40" alt=""> | **Clash of Legends** | kill a player carrying a legend with a legend in your hand |
 | <img src="docs/items/heartsteel_core.png" width="40" alt=""> | **Full Set** | wear all four pieces of a relic set |
 | <img src="docs/items/hide_mantle.png" width="40" alt=""> | **Wardrobe** | wear every relic set complete at least once *(challenge, 100 XP)* |
 | <img src="docs/items/graviton_core.png" width="40" alt=""> | **Scorched Earth** | set foot in the Scorched Lands |

@@ -838,8 +838,8 @@ weapons:
           damage: 12
           knockback: 1.5
     forge:
-      - { item: MACE, amount: 1 }
-      - { item: HEAVY_CORE, amount: 1 }
+      - { item: BREEZE_ROD, amount: 8 }
+      - { item: HEAVY_CORE, amount: 2 }
       - { item: GOLD_BLOCK, amount: 16 }
       - { item: IRON_CHAIN, amount: 16 }
       - { item: "material:fallen_crest", amount: 1 }
@@ -1694,6 +1694,32 @@ teams:
   share-spots: true
   # Killing a teammate pays out their bounty
   bounty-on-teammates: false
+
+# ------------------------------------------------------------
+#  COMBAT
+#  Hit a player (or get hit) and you are in combat for tag-seconds (a red bar shows how long).
+#  Logging out in combat kills you: your items drop and the last attacker gets the kill (bounty, stars...).
+#  Kicks and server restarts don't count. Teammates and creative/spectator players don't tag.
+#  Clash of legends: kill a player who carries a legend weapon while you hold one and your weapon
+#  gets stars (never above max-stars - the last stars only come from the Ancient Forges).
+#  The same victim gives it again only after same-victim-minutes.
+# ------------------------------------------------------------
+combat:
+  enabled: true
+  tag-seconds: 20
+  kill-on-logout: true
+  bossbar: true
+  # no flying away with an elytra while in combat
+  disable-elytra: true
+  # commands that can't be used in combat (e.g. [tpa, home, spawn, warp, rtp]); admins can use them
+  blocked-commands: []
+  # vanilla maces can't be crafted (Knightfall is forged without one)
+  disable-mace-crafting: true
+  duel:
+    enabled: true
+    stars: 0.5
+    max-stars: 4
+    same-victim-minutes: 60
 
 # ------------------------------------------------------------
 #  RECON SPYGLASS (in /shop)

@@ -36,6 +36,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     private Updater updater;
     private ScorchedLands scorched;
     private StarManager stars;
+    private PvpManager pvp;
     private boolean papi;
 
     /** Writes data files one after another in the background, so saving never stalls the server. */
@@ -193,6 +194,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         stars = new StarManager(this, items);
         getServer().getPluginManager().registerEvents(stars, this);
         stars.start();
+        pvp = new PvpManager(this, items);
+        getServer().getPluginManager().registerEvents(pvp, this);
+        pvp.start();
         scorched = new ScorchedLands(this);
         getServer().getPluginManager().registerEvents(scorched, this);
         scorched.start();
@@ -245,6 +249,9 @@ public final class Forgebound extends JavaPlugin implements Listener {
         if (rituals != null) {
             rituals.shutdown();
         }
+        if (pvp != null) {
+            pvp.shutdown();
+        }
         if (stars != null) {
             stars.shutdown();
         }
@@ -291,6 +298,10 @@ public final class Forgebound extends JavaPlugin implements Listener {
 
     public StarManager stars() {
         return stars;
+    }
+
+    public PvpManager pvp() {
+        return pvp;
     }
 
     public ScorchedLands scorched() {
@@ -392,7 +403,7 @@ public final class Forgebound extends JavaPlugin implements Listener {
     /** Sections where new default entries (new weapons, relics, materials, messages...) are added automatically. */
     private static final java.util.List<String> MERGED_SECTIONS = java.util.List.of("weapons", "relics", "materials",
             "craftable.weapons", "craftable.relics", "craftable.materials", "messages", "ability-settings", "relic-settings",
-            "ritual", "bounty", "meteor", "warden", "economy", "economy.rewards",
+            "ritual", "combat", "combat.duel", "bounty", "meteor", "warden", "economy", "economy.rewards",
             "economy.shop.permanent", "economy.shop.rotating",
             "events", "events.blood-moon", "events.rift", "events.legend-hunt", "events.happy-hour", "events.happy-hour.types",
             "events.forge-market", "events.forge-market.offers", "events.golden-shipment", "motd",
@@ -449,6 +460,31 @@ public final class Forgebound extends JavaPlugin implements Listener {
                 added.add(c[0] + " (" + c[1] + " -> " + c[2] + ")");
             }
             seenChanged |= seen.add(mark);
+        }
+        // vanilla maces can't be crafted any more: Knightfall's forge recipe swaps the mace for breeze rods
+        String maceMark = "changed:weapons.knightfall.forge=no-mace";
+        if (!seen.contains(maceMark)) {
+            java.util.List<java.util.Map<?, ?>> forge = getConfig().getMapList("weapons.knightfall.forge");
+            java.util.List<java.util.Map<String, Object>> fixed = new java.util.ArrayList<>();
+            boolean hadMace = false;
+            for (java.util.Map<?, ?> m : forge) {
+                java.util.Map<String, Object> copy = new java.util.LinkedHashMap<>();
+                m.forEach((k, v) -> copy.put(String.valueOf(k), v));
+                String item = String.valueOf(copy.get("item"));
+                if (item.equalsIgnoreCase("MACE")) {
+                    hadMace = true;
+                    copy.put("item", "BREEZE_ROD");
+                    copy.put("amount", 8);
+                } else if (item.equalsIgnoreCase("HEAVY_CORE")) {
+                    copy.put("amount", 2);
+                }
+                fixed.add(copy);
+            }
+            if (hadMace) {
+                getConfig().set("weapons.knightfall.forge", fixed);
+                added.add("weapons.knightfall.forge (MACE -> BREEZE_ROD x8, HEAVY_CORE x2)");
+            }
+            seenChanged |= seen.add(maceMark);
         }
         if (!added.isEmpty()) {
             saveConfig();
