@@ -730,7 +730,7 @@ A top-10 hologram is just ten lines like `&6#1 %forgebound_top_kills_1_name% &7-
 ---
 
 ## Teams
-The easiest way is **[Forgebound Teams](https://github.com/Freonik/ForgeboundTeams)**, the companion plugin:
+The easiest way is **[Forgebound Teams](https://github.com/Freonik/Forgebound-Teams)**, the companion plugin:
 small teams with a tag in front of the names, team chat, allies and a team leaderboard - Forgebound sees its
 teams **and their allies** on its own. Otherwise Forgebound knows who is on whose team from the same
 **vanilla team** (`/team`), or the same value of a **PlaceholderAPI placeholder** from your team or clan plugin
