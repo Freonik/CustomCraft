@@ -82,6 +82,8 @@ public final class AdvancementManager implements Listener {
                     "Finish a quest for the Questmaster", "task", false, 0),
             new Def("weekly_quest", "odd_jobs", "written_book", "Above and Beyond",
                     "Finish a weekly quest", "goal", false, 0),
+            new Def("cheat_death", "root", "totem_of_undying", "Not Yet",
+                    "Cheat death with a Totem of the Forge", "goal", false, 0),
             new Def("clash_of_legends", "forgemaster", "weapon:knightfall", "Clash of Legends",
                     "Kill a player carrying a legend with a legend in your hand", "goal", false, 0),
             new Def("hubris", "five_stars", "feather", "Hubris",

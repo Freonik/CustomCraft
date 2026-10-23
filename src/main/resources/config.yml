@@ -1287,6 +1287,7 @@ economy:
       trident: { material: TRIDENT, amount: 1, price: 15, limit: 1 }
       heavy_core: { material: HEAVY_CORE, amount: 1, price: 25, limit: 1 }
       beacon: { material: BEACON, amount: 1, price: 50, limit: 1 }
+      forge_totem: { material: forge_totem, amount: 1, price: 35, limit: 1 }
 
 # ------------------------------------------------------------
 #  HUD: sidebar, tab list and a title when you join
@@ -1864,12 +1865,14 @@ big-events:
     final-minutes: 5
     damage-per-block: 1.0
     winner-tokens: 10
+    winner-totems: 1
     player-tokens: 2
     mythic: worldsplitter
   hunt:
     minutes: 30
     same-victim-minutes: 5
     top-tokens: [10, 6, 4]
+    top-totems: [1, 0, 0]
     player-tokens: 1
     mythic: bloodfang
   boss:
@@ -1882,6 +1885,7 @@ big-events:
     minutes: 30
     xp: 1500
     top-tokens: [12, 8, 5]
+    top-totems: [1, 1, 1]
     # everyone else with at least 2% of the damage
     player-tokens: 3
     material-chance: 30
@@ -1893,7 +1897,8 @@ big-events:
 #  everybody. Progress counts anywhere (/quests shows it), the reward is claimed at the Questmaster.
 #  type: KILL (target: entity types or ANY_MONSTER), KILL_PLAYER (each victim once), MINE (target: blocks or a
 #  #block_tag like #logs; blocks you placed don't count), FISH, TRAVEL (blocks on foot), DELIVER (target: item;
-#  handed over at the NPC). Rewards: tokens (Bounty Tokens), materials (random legendary materials), xp.
+#  handed over at the NPC). Rewards: tokens (Bounty Tokens), materials (random legendary materials), xp,
+#  totems (Totems of the Forge).
 #  icon: optional item shown in the menu. enabled: false takes a quest out of the pool.
 # ------------------------------------------------------------
 quests:
@@ -1921,12 +1926,27 @@ quests:
     pvp: { type: KILL_PLAYER, amount: 1, name: "Kill a player", tokens: 2 }
   weekly:
     debris: { type: MINE, target: ANCIENT_DEBRIS, amount: 12, name: "Mine 12 ancient debris", tokens: 6, materials: 1, icon: ANCIENT_DEBRIS }
-    hunter: { type: KILL_PLAYER, amount: 5, name: "Kill 5 different players", tokens: 8, materials: 1 }
+    hunter: { type: KILL_PLAYER, amount: 5, name: "Kill 5 different players", tokens: 6, totems: 1 }
     slayer: { type: KILL, target: ANY_MONSTER, amount: 400, name: "Kill 400 monsters", tokens: 5, materials: 1 }
     diamonds: { type: DELIVER, target: DIAMOND, amount: 32, name: "Bring 32 diamonds", tokens: 6, materials: 1, icon: DIAMOND }
     explorer: { type: TRAVEL, amount: 25000, name: "Travel 25000 blocks on foot", tokens: 5, materials: 1 }
-    wither: { type: KILL, target: WITHER, amount: 1, name: "Kill the Wither", tokens: 8, materials: 1, icon: WITHER_SKELETON_SKULL }
+    wither: { type: KILL, target: WITHER, amount: 1, name: "Kill the Wither", tokens: 6, totems: 1, icon: WITHER_SKELETON_SKULL }
     guardians: { type: KILL, target: "GUARDIAN,ELDER_GUARDIAN", amount: 40, name: "Kill 40 guardians", tokens: 5, materials: 1, icon: PRISMARINE_SHARD }
+
+# ------------------------------------------------------------
+#  TOTEM OF THE FORGE - a totem of undying that also works from anywhere in the inventory (held in a hand it
+#  works like any totem). Back at full health, a few seconds untouchable, absorption, and a burst of fire that
+#  throws everyone around you back. From big events, weekly quests and the token shop (rotating offer).
+#  Angel's Wings save you first if they're ready. /forge totem gives you one.
+# ------------------------------------------------------------
+forge-totem:
+  enabled: true
+  invulnerable-seconds: 3
+  absorption-level: 4
+  absorption-seconds: 10
+  burst-radius: 5
+  burst-damage: 4
+  burst-knockback: 1.4
 
 # ------------------------------------------------------------
 #  COMBAT

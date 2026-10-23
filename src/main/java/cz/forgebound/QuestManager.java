@@ -67,7 +67,7 @@ public final class QuestManager implements Listener {
     enum Type { KILL, KILL_PLAYER, MINE, FISH, TRAVEL, DELIVER }
 
     record Quest(String key, boolean weekly, Type type, Set<String> targets, int amount, String name,
-                 int tokens, int materials, int xp) { }
+                 int tokens, int materials, int xp, int totems) { }
 
     private final Forgebound plugin;
     private final ItemManager items;
@@ -156,7 +156,8 @@ public final class QuestManager implements Listener {
                     }
                 }
                 list.add(new Quest(key, weekly, type, targets, Math.max(1, s.getInt("amount", 1)),
-                        s.getString("name", key), s.getInt("tokens", 0), s.getInt("materials", 0), s.getInt("xp", 0)));
+                        s.getString("name", key), s.getInt("tokens", 0), s.getInt("materials", 0), s.getInt("xp", 0),
+                        s.getInt("totems", 0)));
             } catch (IllegalArgumentException ex) {
                 plugin.getLogger().warning("quests." + (weekly ? "weekly." : "daily.") + key + ": " + ex.getMessage());
             }
@@ -588,6 +589,9 @@ public final class QuestManager implements Listener {
         if (q.xp() > 0) {
             parts.add("&a" + q.xp() + " XP");
         }
+        if (q.totems() > 0) {
+            parts.add("&6" + (q.totems() == 1 ? "a Totem of the Forge" : q.totems() + " Totems of the Forge"));
+        }
         return parts.isEmpty() ? "&7-" : String.join("&7, ", parts);
     }
 
@@ -667,6 +671,9 @@ public final class QuestManager implements Listener {
         }
         if (q.xp() > 0) {
             p.giveExp(q.xp());
+        }
+        for (int i = 0; i < q.totems() && plugin.totems() != null && plugin.bounty() != null; i++) {
+            plugin.bounty().give(p, plugin.totems().item());
         }
         p.sendMessage(plugin.msg("quest-claimed", "&6📜 &f{quest} &7- reward: {reward}", "quest", q.name(),
                 "reward", ItemManager.color(rewardText(q))));

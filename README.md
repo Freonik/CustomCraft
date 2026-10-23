@@ -32,6 +32,7 @@
 - [Events](#events)
 - [Big events and mythic weapons](#big-events-and-mythic-weapons)
 - [Quests](#quests)
+- [Totem of the Forge](#totem-of-the-forge)
 - [Meteors](#meteors)
 - [Scorched Lands](#scorched-lands)
 - [The Forge Warden](#the-forge-warden)
@@ -566,6 +567,19 @@ The quest pools, amounts and rewards are under `quests:` in the config.
 
 ---
 
+## Totem of the Forge
+
+<img src="docs/items/forge_totem.png" width="64" alt="" align="left">
+
+A totem of undying that **works from anywhere in your inventory** - no need to hold it. It brings you back at
+**full health**, untouchable for 3 seconds, with 8 hearts of absorption, and a burst of fire throws everyone
+around you back. If Angel's Wings are ready they save you first and the totem stays in your pocket.
+
+You get it from big events (the Colossus's top three, the winners of the Hunt and the Closing World), from some
+weekly quests, and now and then in the token shop's rotating offer. Settings are under `forge-totem:`.
+
+---
+
 ## Meteors
 Every **2 to 4 hours** (with at least 3 players online) a meteor falls somewhere within 2500 blocks of spawn.
 A boss bar counts down five minutes and the impact site is revealed step by step:
@@ -662,6 +676,7 @@ a toast pops up, the chat announces it, and progress is saved with the player. C
 | <img src="docs/items/seraph_feather.png" width="40" alt=""> | **Out of the Void** | be in the End when its Ancient Forge rises |
 | <img src="docs/items/bounty_token.png" width="40" alt=""> | **Starfall** | kill a player and knock the stars off a five-star legend *(challenge, 50 XP)* |
 | <img src="docs/items/titans_echo.png" width="40" alt=""> | **Champion** | win a big event and claim a mythic weapon *(challenge, 100 XP)* |
+| <img src="docs/items/forge_totem.png" width="40" alt=""> | **Not Yet** | cheat death with a Totem of the Forge |
 | <img src="docs/items/bounty_token.png" width="40" alt=""> | **Odd Jobs** | finish a quest for the Questmaster |
 | <img src="docs/items/bounty_token.png" width="40" alt=""> | **Above and Beyond** | finish a weekly quest |
 | <img src="docs/items/valkyries_lance.png" width="40" alt=""> | **Clash of Legends** | kill a player carrying a legend with a legend in your hand |
@@ -767,6 +782,7 @@ It takes over the settings from Forgebound 2.5 automatically.
 | `/forge recon` | `forgebound.admin` | give yourself a Recon Spyglass |
 | `/forge warden` | `forgebound.admin` | wake the Forge Warden where you stand |
 | `/forge token\|seal\|tracker [amount]` | `forgebound.admin` | give yourself Bounty Tokens, a Warden's Seal or a Legend Tracker |
+| `/forge totem` | `forgebound.admin` | give yourself a Totem of the Forge |
 | | `forgebound.nocooldown` | abilities and relics without cooldowns (for testing) |
 
 Aliases: `/recipes`, `/recepty`.

@@ -485,11 +485,16 @@ public final class BigEventManager implements Listener {
 
     /** Prizes go to online players right away, the rest when they join. */
     private void reward(UUID id, int tokens, String mythic, int materials, String type) {
+        reward(id, tokens, mythic, materials, type, 0);
+    }
+
+    private void reward(UUID id, int tokens, String mythic, int materials, String type, int totems) {
         Player p = Bukkit.getPlayer(id);
         if (p == null) {
             String base = "pending." + id + ".";
             data.set(base + "tokens", data.getInt(base + "tokens") + tokens);
             data.set(base + "materials", data.getInt(base + "materials") + materials);
+            data.set(base + "totems", data.getInt(base + "totems") + totems);
             if (mythic != null) {
                 List<String> list = new ArrayList<>(data.getStringList(base + "mythics"));
                 list.add(mythic);
@@ -499,8 +504,16 @@ public final class BigEventManager implements Listener {
             return;
         }
         give(p, tokens, mythic, materials);
+        giveTotems(p, totems);
         if (mythic != null) {
             plugin.award(p, "champion");
+        }
+    }
+
+    private void giveTotems(Player p, int totems) {
+        for (int i = 0; i < totems && plugin.totems() != null && plugin.bounty() != null; i++) {
+            plugin.bounty().give(p, plugin.totems().item());
+            p.sendMessage(plugin.msg("big-event-totem", "&d✦ &7You got a &6Totem of the Forge&7."));
         }
     }
 
@@ -541,10 +554,12 @@ public final class BigEventManager implements Listener {
             List<String> mythics = data.getStringList(base + ".mythics");
             int tokens = data.getInt(base + ".tokens");
             int materials = data.getInt(base + ".materials");
+            int totems = data.getInt(base + ".totems");
             data.set(base, null);
             plugin.saveYaml(data, file);
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 give(p, tokens, null, materials);
+                giveTotems(p, totems);
                 for (String m : mythics) {
                     give(p, 0, m, 0);
                     plugin.award(p, "champion");
@@ -774,7 +789,8 @@ public final class BigEventManager implements Listener {
                     "player", name(winner)));
             plugin.getLogger().info("[BigEvent] border won by " + name(winner) + " (" + everyone.size() + " players, kills "
                     + kills.getOrDefault(winner, 0) + ")");
-            reward(winner, c.getInt("winner-tokens", 10), c.getString("mythic", "worldsplitter"), 1, type());
+            reward(winner, c.getInt("winner-tokens", 10), c.getString("mythic", "worldsplitter"), 1, type(),
+                    c.getInt("winner-totems", 1));
             Set<UUID> rest = new LinkedHashSet<>(everyone);
             rest.remove(winner);
             tokensToAll(rest, c.getInt("player-tokens", 2));
@@ -886,8 +902,9 @@ public final class BigEventManager implements Listener {
                 Map.Entry<UUID, Integer> e = top.get(i);
                 podium.append(i == 0 ? "" : "&7, ").append("&f").append(i + 1).append(". &e").append(name(e.getKey()))
                         .append(" &7(").append(e.getValue()).append(")");
+                List<Integer> totems = cfg("hunt").getIntegerList("top-totems");
                 reward(e.getKey(), i < tokens.size() ? tokens.get(i) : 0, i == 0 ? cfg("hunt").getString("mythic", "bloodfang") : null,
-                        i == 0 ? 1 : 0, type());
+                        i == 0 ? 1 : 0, type(), i < totems.size() ? totems.get(i) : 0);
             }
             Bukkit.broadcast(plugin.msg("hunt-won", "&6⚔ The Hunt is over! {podium}", "podium", ItemManager.color(podium.toString())));
             plugin.getLogger().info("[BigEvent] hunt won by " + name(top.getFirst().getKey()) + " (" + top.getFirst().getValue() + " kills)");
@@ -1191,8 +1208,9 @@ public final class BigEventManager implements Listener {
                 if (i < 3) {
                     podium.append(i == 0 ? "" : "&7, ").append("&f").append(i + 1).append(". &e").append(name(e.getKey()))
                             .append(" &7(").append(share).append("%)");
+                    List<Integer> totems = c.getIntegerList("top-totems");
                     reward(e.getKey(), i < tokens.size() ? tokens.get(i) : 0, i == 0 ? c.getString("mythic", "titans_echo") : null,
-                            1, type());
+                            1, type(), i < totems.size() ? totems.get(i) : 0);
                 } else if (share >= 2) {
                     reward(e.getKey(), c.getInt("player-tokens", 3), null,
                             ThreadLocalRandom.current().nextInt(100) < c.getInt("material-chance", 30) ? 1 : 0, type());

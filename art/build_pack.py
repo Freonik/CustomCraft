@@ -46,6 +46,8 @@ run('arsenal.py', f'{CC}/textures/item')
 run('lastact.py', f'{CC}/textures/item')
 # mythic event weapons: Worldsplitter, Bloodfang, Titan's Echo
 run('mythics.py', f'{CC}/textures/item')
+# Totem of the Forge
+run('forge_totem.py', f'{CC}/textures/item')
 for n in os.listdir(f'{CC}/textures/item/gui'):
     os.remove(f'{CC}/textures/item/gui/{n}')
 run('gui.py', f'{CC}/textures/item/gui')
@@ -125,6 +127,9 @@ wjson(f'{MC}/netherite_axe.json', dispatch([(1006, model("customcraft:item/butch
                                             (1011, model("customcraft:item/rimebreaker")),
                                             (1014, model("customcraft:item/rimebreaker_thrown")),
                                             (1101, model("customcraft:item/worldsplitter"))], model("minecraft:item/netherite_axe")))
+# Totem of the Forge
+wjson(f'{CC}/models/item/forge_totem.json', {"parent": "minecraft:item/generated", "textures": {"layer0": "customcraft:item/forge_totem"}})
+wjson(f'{MC}/totem_of_undying.json', dispatch([(1601, model("customcraft:item/forge_totem"))], model("minecraft:item/totem_of_undying")))
 # Knightfall (mace)
 wjson(f'{MC}/mace.json', dispatch([(1010, model("customcraft:item/knightfall"))],
                                   json.load(open('/home/claude/ref/vanilla/i_mace.json'))['model']))

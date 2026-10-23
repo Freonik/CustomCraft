@@ -127,7 +127,7 @@ final class ForgeCommands {
 
     private LiteralArgumentBuilder<CommandSourceStack> forgeTree() {
         var root = Commands.literal("forge").executes(ctx -> forge(ctx));
-        for (String plain : List.of("reload", "status", "meteor", "warden", "recon", "seal", "tracker")) {
+        for (String plain : List.of("reload", "status", "meteor", "warden", "recon", "seal", "tracker", "totem")) {
             root.then(Commands.literal(plain).requires(ForgeCommands::admin).executes(ctx -> forge(ctx, plain)));
         }
         root.then(Commands.literal("give").requires(ForgeCommands::admin)

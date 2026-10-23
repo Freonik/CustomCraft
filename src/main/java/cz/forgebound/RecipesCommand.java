@@ -159,6 +159,11 @@ public final class RecipesCommand {
                     plugin.bounty().give(player, plugin.recon().item());
                 }
             }
+            case "totem" -> {
+                if (sender instanceof org.bukkit.entity.Player player && plugin.totems() != null) {
+                    plugin.bounty().give(player, plugin.totems().item());
+                }
+            }
             case "token", "seal", "tracker" -> {
                 if (!(sender instanceof org.bukkit.entity.Player player) || plugin.bounty() == null) {
                     sender.sendMessage(ItemManager.color("&cOnly players can do that."));
