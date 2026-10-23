@@ -38,6 +38,10 @@ public final class TopManager {
         CATEGORIES.put("hunts", "Legend Hunts survived");
         CATEGORIES.put("ghosts", "Doppelgangers destroyed");
         CATEGORIES.put("assists", "Recon assists");
+        CATEGORIES.put("quests", "Quests finished");
+        CATEGORIES.put("champions", "Big events won");
+        CATEGORIES.put("clashes", "Clashes of legends won");
+        CATEGORIES.put("stars", "The strongest legend (stars)");
     }
 
     public record Entry(UUID uuid, String name, double value) {
@@ -95,7 +99,34 @@ public final class TopManager {
         return p.getName() == null ? "?" : p.getName();
     }
 
+    /** The best stars on a legend weapon each online player carries (offline players keep their last value). */
+    private void scanStars() {
+        if (plugin.stars() == null || !plugin.stars().enabled()) {
+            return;
+        }
+        boolean changed = false;
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            int best = 0;
+            for (org.bukkit.inventory.ItemStack s : p.getInventory().getContents()) {
+                ItemManager.Entry e = plugin.items().weaponOf(s);
+                if (e != null && !e.mythic) {
+                    best = Math.max(best, plugin.stars().halvesOf(s));
+                }
+            }
+            String path = p.getUniqueId() + ".stars";
+            if (records.getInt(path, 0) != best) {
+                records.set(path, best);
+                records.set(p.getUniqueId() + ".name", p.getName());
+                changed = true;
+            }
+        }
+        if (changed) {
+            plugin.saveYaml(records, file);
+        }
+    }
+
     public void rebuild() {
+        scanStars();
         for (String cat : CATEGORIES.keySet()) {
             Map<UUID, Double> values = switch (cat) {
                 case "bounty" -> plugin.bounty() == null ? Map.of() : plugin.bounty().allBounties();
@@ -152,7 +183,9 @@ public final class TopManager {
         for (int i = 0; i < Math.min(10, list.size()); i++) {
             Entry e = list.get(i);
             String color = i == 0 ? "&6" : i == 1 ? "&f" : i == 2 ? "&c" : "&7";
-            sender.sendMessage(ItemManager.color(color + "#" + (i + 1) + " &f" + e.name() + " &8- &e" + format(e.value())));
+            String value = cat.equals("stars") ? Stars.starText((int) e.value()) + " &8(" + Stars.starCount((int) e.value()) + ")"
+                    : "&e" + format(e.value());
+            sender.sendMessage(ItemManager.color(color + "#" + (i + 1) + " &f" + e.name() + " &8- " + value));
         }
         if (sender instanceof Player p) {
             int r = rank(cat, p.getUniqueId());

@@ -707,7 +707,7 @@ New players get the **Forge Codex**, a book that explains the forge, rituals, le
 
 ### 🏆 Leaderboards
 **`/top <category>`** shows the top 10 (click a category to switch):
-`bounty`, `kills`, `mobkills`, `damage` (with legends), `wardens` (slain), `rifts` (closed), `hunts` (survived), `assists` (Recon assists).
+`bounty`, `kills`, `mobkills`, `damage` (with legends), `wardens` (slain), `rifts` (closed), `hunts` (survived), `assists` (Recon assists), `quests` (finished), `champions` (big events won), `clashes` (clashes of legends won), `stars` (the strongest legend weapon each player carries).
 
 ### Placeholders (PlaceholderAPI)
 With [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/) installed, other plugins

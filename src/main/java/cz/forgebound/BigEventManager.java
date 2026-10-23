@@ -538,6 +538,9 @@ public final class BigEventManager implements Listener {
                 } else {
                     p.getInventory().addItem(plugin.mythics().create(entry));
                 }
+                if (plugin.top() != null) {
+                    plugin.top().add(p, "champions");
+                }
                 Bukkit.broadcast(plugin.msg("big-event-mythic", "&5✦ {player} &7won the mythic {item}&7!",
                         "player", p.getName(), "item", ItemManager.nameOf(entry.item)));
                 p.playSound(p.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);

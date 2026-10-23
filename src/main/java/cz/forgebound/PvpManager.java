@@ -241,6 +241,9 @@ public final class PvpManager implements Listener {
         }
         duelCooldown.put(pair, now + plugin.getConfig().getLong("combat.duel.same-victim-minutes", 60) * 60_000L);
         plugin.award(killer, "clash_of_legends");
+        if (plugin.top() != null) {
+            plugin.top().add(killer, "clashes");
+        }
         Bukkit.broadcast(plugin.msg("duel-won", "&6⚔ Clash of legends: &e{killer} &7beat the legend carrier &e{player}&7!",
                 "killer", killer.getName(), "player", victim.getName()));
         StarManager stars = plugin.stars();

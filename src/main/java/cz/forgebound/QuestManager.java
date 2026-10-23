@@ -680,6 +680,9 @@ public final class QuestManager implements Listener {
         p.playSound(p.getLocation(), Sound.ENTITY_VILLAGER_CELEBRATE, 1f, 1f);
         p.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, p.getLocation().add(0, 1, 0), 20, 0.4, 0.6, 0.4, 0);
         plugin.award(p, q.weekly() ? "weekly_quest" : "odd_jobs");
+        if (plugin.top() != null) {
+            plugin.top().add(p, "quests");
+        }
         plugin.getLogger().info("[Quests] " + p.getName() + " finished the " + (q.weekly() ? "weekly" : "daily")
                 + " quest '" + q.key() + "'");
         // all three dailies of a day
