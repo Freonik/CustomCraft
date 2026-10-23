@@ -730,9 +730,12 @@ A top-10 hologram is just ten lines like `&6#1 %forgebound_top_kills_1_name% &7-
 ---
 
 ## Teams
-Forgebound knows who is on whose team: players in the same **vanilla team** (`/team`), or with the same value of
-a **PlaceholderAPI placeholder** from your team or clan plugin (set `teams.placeholder`, e.g. `%betterteams_name%`).
-Teammates:
+The easiest way is **[Forgebound Teams](https://github.com/Freonik/ForgeboundTeams)**, the companion plugin:
+small teams with a tag in front of the names, team chat, allies and a team leaderboard - Forgebound sees its
+teams **and their allies** on its own. Otherwise Forgebound knows who is on whose team from the same
+**vanilla team** (`/team`), or the same value of a **PlaceholderAPI placeholder** from your team or clan plugin
+(set `teams.placeholder`, e.g. `%betterteams_name%`). Team tags and colors also show for players with the
+Forgebound sidebar. Teammates:
 
 - aren't hurt by each other's abilities (`teams.friendly-fire` turns it back on)
 - are the ones **Devour** hides inside you; everyone else needs Taste stacks first

@@ -35,6 +35,21 @@ public final class TeamManager {
         if (!enabled() || a == null || b == null || a.equals(b)) {
             return false;
         }
+        // Forgebound Teams (or another team plugin) tells who is on the same side - teammates and allies
+        for (org.bukkit.plugin.RegisteredServiceProvider<java.util.function.BiPredicate> reg
+                : Bukkit.getServicesManager().getRegistrations(java.util.function.BiPredicate.class)) {
+            if (reg.getPlugin().getName().equals("ForgeboundTeams") && reg.getPlugin().isEnabled()) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    java.util.function.BiPredicate<Player, Player> side = reg.getProvider();
+                    if (side.test(a, b)) {
+                        return true;
+                    }
+                } catch (RuntimeException ignored) {
+                    // a different BiPredicate - not ours
+                }
+            }
+        }
         if (plugin.getConfig().getBoolean("teams.vanilla", true)) {
             Team ta = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(a.getName());
             Team tb = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(b.getName());

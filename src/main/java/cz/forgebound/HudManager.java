@@ -136,6 +136,7 @@ public final class HudManager implements Listener {
                 mine.keySet().removeIf(k -> k.startsWith("side"));   // a new board needs everything again
             }
         }
+        mirrorTeams(board);
         Objective obj = board.getObjective("cc_sidebar");
         if (obj == null) {
             obj = board.registerNewObjective("cc_sidebar", Criteria.DUMMY, Component.empty());
@@ -162,6 +163,59 @@ public final class HudManager implements Listener {
                 Map<String, String> mine = sent.get(p.getUniqueId());
                 if (mine != null) {
                     mine.remove("side" + i);
+                }
+            }
+        }
+    }
+
+    /**
+     * The sidebar needs its own scoreboard, which would hide the teams of the main one (tags and colors in the tab
+     * list, above heads and in chat - e.g. from Forgebound Teams or /team). So they're copied over.
+     */
+    private static void mirrorTeams(Scoreboard board) {
+        Scoreboard main = Bukkit.getScoreboardManager().getMainScoreboard();
+        for (org.bukkit.scoreboard.Team own : new java.util.ArrayList<>(board.getTeams())) {
+            if (main.getTeam(own.getName()) == null) {
+                own.unregister();
+            }
+        }
+        for (org.bukkit.scoreboard.Team t : main.getTeams()) {
+            org.bukkit.scoreboard.Team copy = board.getTeam(t.getName());
+            if (copy == null) {
+                copy = board.registerNewTeam(t.getName());
+            }
+            if (!t.prefix().equals(copy.prefix())) {
+                copy.prefix(t.prefix());
+            }
+            if (!t.suffix().equals(copy.suffix())) {
+                copy.suffix(t.suffix());
+            }
+            if (!t.displayName().equals(copy.displayName())) {
+                copy.displayName(t.displayName());
+            }
+            if (t.hasColor() && (!copy.hasColor() || copy.color() != t.color())) {
+                copy.color(net.kyori.adventure.text.format.NamedTextColor.nearestTo(t.color()));
+            }
+            if (copy.allowFriendlyFire() != t.allowFriendlyFire()) {
+                copy.setAllowFriendlyFire(t.allowFriendlyFire());
+            }
+            if (copy.canSeeFriendlyInvisibles() != t.canSeeFriendlyInvisibles()) {
+                copy.setCanSeeFriendlyInvisibles(t.canSeeFriendlyInvisibles());
+            }
+            for (org.bukkit.scoreboard.Team.Option o : org.bukkit.scoreboard.Team.Option.values()) {
+                if (copy.getOption(o) != t.getOption(o)) {
+                    copy.setOption(o, t.getOption(o));
+                }
+            }
+            java.util.Set<String> want = t.getEntries();
+            for (String e : copy.getEntries()) {
+                if (!want.contains(e)) {
+                    copy.removeEntry(e);
+                }
+            }
+            for (String e : want) {
+                if (!copy.hasEntry(e)) {
+                    copy.addEntry(e);
                 }
             }
         }
