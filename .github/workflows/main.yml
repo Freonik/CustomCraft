@@ -19,7 +19,16 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
+
+      # Maven cache that survives a version bump in pom.xml (falls back to the newest older cache), so a
+      # dependency repository that is down for a while (e.g. PlaceholderAPI's) doesn't break the build
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-
+            setup-java-Linux-x64-maven-
 
       - name: Build plugin
         run: mvn -B clean package 2>&1 | tee build.log; exit ${PIPESTATUS[0]}

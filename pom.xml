@@ -23,6 +23,11 @@
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/releases/</url>
         </repository>
+        <repository>
+            <!-- the same artifacts from HelpChat, if the first one is down -->
+            <id>helpchat</id>
+            <url>https://repo.helpch.at/releases/</url>
+        </repository>
     </repositories>
 
     <dependencies>
