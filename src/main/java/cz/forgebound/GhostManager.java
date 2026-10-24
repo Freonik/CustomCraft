@@ -141,6 +141,19 @@ public final class GhostManager implements Listener {
         return p == null ? "?" : p.getName();
     }
 
+    /** Refs of the legends the copy carries right now, and whose they were (for the console's holder list). */
+    public java.util.Map<String, String> stolenRefs() {
+        java.util.Map<String, String> out = new java.util.LinkedHashMap<>();
+        String victim = data.getString("stolen.victim-name", "?");
+        for (ItemStack s : stolen()) {
+            ItemManager.Entry e = plugin.items().customOf(s);
+            if (e != null) {
+                out.put(e.ref(), victim);
+            }
+        }
+        return out;
+    }
+
     @SuppressWarnings("unchecked")
     private List<ItemStack> stolen() {
         List<?> list = data.getList("stolen.items");

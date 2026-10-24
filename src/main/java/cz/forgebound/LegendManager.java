@@ -220,6 +220,7 @@ public final class LegendManager implements Listener {
                 }
             }
         }
+        java.util.Map<String, String> stolen = plugin.ghost() != null ? plugin.ghost().stolenRefs() : java.util.Map.of();
         List<String> held = new ArrayList<>();
         List<String> forging = new ArrayList<>();
         List<String> free = new ArrayList<>();
@@ -232,6 +233,10 @@ public final class LegendManager implements Listener {
             }
             String base = "holder." + key(entry.ref());
             List<String> online = carriedBy.getOrDefault(entry.ref(), List.of());
+            if (stolen.containsKey(entry.ref()) && online.isEmpty()) {
+                held.add(entry.ref() + "=the copy (stolen from " + stolen.get(entry.ref()) + ")");
+                continue;
+            }
             boolean known = legends.isSet(base + ".name");
             if (claim == null && online.isEmpty() && !known) {
                 free.add(entry.ref());

@@ -27,7 +27,7 @@ final class Stars {
 
     /** "3", "3½" */
     static String starCount(int halves) {
-        return (halves / 2) + (halves % 2 == 1 ? "½" : "");
+        return halves == 1 ? "½" : (halves / 2) + (halves % 2 == 1 ? "½" : "");
     }
 
     static int clamp(int halves) {
